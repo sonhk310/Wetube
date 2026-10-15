@@ -1,0 +1,13 @@
+services:
+  admin:
+    image: ${IMAGE_NAME}:${IMAGE_TAG}
+    container_name: wetube-admin-container
+    restart: always
+    ports:
+      - "5173:5173"
+    networks:
+      - web-network
+
+networks:
+  web-network:
+    external: true

@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: WeTube-service
+  profiles:
+    default: local
+
+  main:
+    allow-bean-definition-overriding: true
+
+  web:
+    cors:
+      allowed-origins: "https://wetube.name.vn"
+      allowed-methods: "*"
+      allowed-headers: "*"
+      allow-credentials: true
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URL}
+    username: ${ELASTIC_USERNAME}
+    password: ${ELASTIC_PASSWORD}
+    connection-timeout: 5s
+    socket-timeout: 10s
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 120MB
+
+app:
+  data:
+    auto-import: false
+  jwt:
+    issuer: "oauth2-service-v2"
+    access-token-ttl-hour: 1
+    refresh-token-ttl-days: 14
+    private-key-pem: "classpath:keys/private_key.pem"
+    public-key-pem: "classpath:keys/public_key.pem"
+
+geoip:
+  database: classpath:GeoLite/GeoLite2-Country.mmdb
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+debug: true
+
+myapp:
+  recommendation:
+    pool-size: 200
+
+translator:
+  service:
+    url: http://localhost:8888/api/translate

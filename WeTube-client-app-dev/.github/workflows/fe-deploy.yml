@@ -1,0 +1,32 @@
+name: Build and Push Frontend Docker Image
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build and Push to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          # ✅ Đảm bảo bạn có đoạn code này để đẩy 2 tag
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/wetube-client-app:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/wetube-client-app:latest
+          build-args: |
+            NEXT_PUBLIC_API_BASE=${{ secrets.NEXT_PUBLIC_API_BASE }}
+            NEXT_PUBLIC_LIVEKIT_URL=${{ secrets.NEXT_PUBLIC_LIVEKIT_URL }}
+            NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=${{ secrets.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }}

@@ -1,0 +1,20 @@
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables & secrets
+.env
+.env.*
+*.env
+*.env.properties
+*.env.local.properties
+
+# Logs
+*.log
+logs/

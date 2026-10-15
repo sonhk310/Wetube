@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+moviepy
+google-cloud-speech
+pydantic
+python-multipart

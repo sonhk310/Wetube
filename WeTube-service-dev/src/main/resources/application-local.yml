@@ -1,0 +1,101 @@
+spring:
+  config:
+    import: optional:file:.env.local.properties
+    activate:
+      on-profile: local
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    defer-datasource-initialization: false
+
+  sql:
+    init:
+      mode: NEVER
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${CLIENT_ID}
+            client-secret: ${CLIENT_SECRET}
+            scope: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_SCOPE}
+            redirect-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI}
+            client-authentication-method: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_AUTHENTICATION_METHOD}
+            authorization-grant-type: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_AUTHORIZATION_GRANT_TYPE}
+        provider:
+          google:
+            authorization-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_AUTHORIZATION_URI}
+            token-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_TOKEN_URI}
+            user-info-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_USER_INFO_URI}
+            jwk-set-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_JWK-SET_URI}
+            user-name-attribute: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GOOGLE_USER_NAME_ATTRIBUTE}
+
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URL}
+    connection-timeout: 5s
+    socket-timeout: 10s
+
+#  data:
+#    redis:
+#      host: ${REDIS_HOST}
+#      port: ${REDIS_PORT}
+#      password: ${REDIS_PASSWORD}
+#      database: ${REDIS_DATABASE}
+#      timeout: ${REDIS_TIMEOUT}ms
+#      jedis:
+#        pool:
+#          max-active: 8
+#          max-idle: 8
+#          min-idle: 0
+#          max-wait: -1ms
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.springframework.web: DEBUG
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+
+management:
+  endpoints:
+    web:
+      cors:
+        allowed-origins: ${CORS_ALLOWED_ORIGINS}
+        allowed-methods: ${CORS_ALLOWED_METHODS}
+        allowed-headers: ${CORS_ALLOWED_HEADERS}
+        exposed-headers: ${CORS_EXPOSED_HEADERS}
+        allow-credentials: ${CORS_ALLOW_CREDENTIALS}
+        max-age: 3600
+
+cloudinary:
+  url: ${CLOUDINARY_URL}
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+
+livekit:
+  url: ${LIVEKIT_WS_URL}
+  api-key: ${LIVEKIT_API_KEY}
+  api-secret: ${LIVEKIT_API_SECRET}
+
+momo:
+  partnerCode: ${PARTNER_CODE}
+  accessKey: ${ACCESS_KEY}
+  secretKey: ${SECRET_KEY}
+  endpoint: ${ENDPOINT}
+  redirectUrl: ${REDIRECT_URL}
+  ipnUrl: ${IP_URL}
+
+elasticsearch:
+  api-key: ${ELASTICSEARCH_API_KEY}
+
+gemini:
+  api-key: ${GEMINI_API_KEY}

@@ -1,0 +1,22 @@
+export const pageUrls = {
+    HOME: "/",
+    SUBSCRIPTIONS: "/feed/subscribed",
+    TRENDING: "/feed/trending",
+    HISTORY: "/playlists/history",
+    LIKED_VIDEOS: "/playlists/liked",
+    ALL_PLAYLISTS: "/playlists/allplaylists",
+    MUSICPLAYLIST: "/allplaylists/music",
+    STUDIO: "/studio",
+    PREMIUM:"/otherservices/premium",
+    SHORTS:"/shorts",
+    YOURVIDEO: "/studio",
+    CUSTOMIZATION: "/studio/customization",
+    WATCHLATER:"/playlists/watchlater",
+    ROOMS:"/rooms",
+    LIVESTREAM:"/livestream",
+    MUSIC: "/music",
+    SPORTS: "/sports",
+    REPORT: "/otherservices/reportdiary",
+    SUPPORT:"/otherservices/support",
+    FEEDBACK: "/otherservices/feedback"
+} as const;
