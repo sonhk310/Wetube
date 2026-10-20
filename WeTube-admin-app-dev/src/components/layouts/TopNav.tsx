@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Search, Bell, HelpCircle, Settings, User, LayoutDashboard, Video, Users, BarChart3, Menu, LogOut 
+  Search, Bell, HelpCircle, Settings, LayoutDashboard, Video, Users, BarChart3, Menu, LogOut 
 } from 'lucide-react';
 import type { INavItem } from "../../types/navItemTypes";
 import { useLocation } from 'react-router-dom';

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   useAddManagerMutation,
   useDeleteManagerMutation,
@@ -42,7 +42,6 @@ const Modal: React.FC<{
 
 export const ManageManagersPage: React.FC = () => {
   const { managerId } = useParams<{ managerId?: string }>();
-  const navigate = useNavigate();
 
   const [selectedManagerId, setSelectedManagerId] = useState<string | null>(
     managerId || null
@@ -72,8 +71,6 @@ export const ManageManagersPage: React.FC = () => {
 
   const {
     data: managers = [],
-    isLoading: isManagersLoading,
-    error: managersError,
   } = useGetManagersQuery();
 
   const [addManager] = useAddManagerMutation();
