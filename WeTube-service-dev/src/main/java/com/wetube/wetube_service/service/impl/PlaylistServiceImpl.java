@@ -30,6 +30,8 @@ import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.PlaylistService;
+import com.wetube.wetube_service.service.RedisService;
+import com.wetube.wetube_service.service.video.WatchProgressService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,6 +45,7 @@ public class PlaylistServiceImpl implements PlaylistService {
     private final UserRepository userRepo;
     private final ChannelRepository channelRepo;
     private final PlaylistMapper playlistMapper;
+    private final RedisService redisService;
 
     @Override
     public UserPlaylistDto createPlaylist(CreatePlaylistRequest dto){
@@ -229,6 +232,11 @@ public class PlaylistServiceImpl implements PlaylistService {
                         playlistId + " / " + videoId));
 
         playlistVideoRepo.delete(playlistVideo);
+        // Xoá khỏi lịch sử thì quên luôn vị trí đang xem (giống YouTube)
+        Playlist playlist = playlistVideo.getPlaylist();
+        if (playlist.getPlaylistType() == PlaylistType.HISTORY) {
+            redisService.delete(WatchProgressService.redisKey(playlist.getUser().getId(), videoId));
+        }
     }
 
 

@@ -86,6 +86,8 @@ export interface VideoDetailDto {
   channelId: string;
   like?: { likeCount: number; liked: boolean | null; disliked?: boolean | null };
   subtitles: VideoSubtitleDto[]; // ✅ subtitles
+  /** Giây đã xem lần trước (đã đăng nhập), để phát tiếp. */
+  resumeAt?: number | null;
 }
 
 export interface VideoDetailResponseDto {

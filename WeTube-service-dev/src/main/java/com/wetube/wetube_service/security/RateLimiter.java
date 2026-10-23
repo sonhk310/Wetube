@@ -28,7 +28,9 @@ public class RateLimiter {
         /** Gửi lượt xem, theo IP. */
         VIEW(120, Duration.ofMinutes(10), "Quá nhiều yêu cầu, vui lòng thử lại sau."),
         COMMENT(10, Duration.ofMinutes(1), "Bạn bình luận quá nhanh, vui lòng chờ một chút."),
-        REPORT(20, Duration.ofHours(1), "Bạn đã gửi quá nhiều báo cáo trong giờ này, vui lòng thử lại sau.");
+        REPORT(20, Duration.ofHours(1), "Bạn đã gửi quá nhiều báo cáo trong giờ này, vui lòng thử lại sau."),
+        /** Trình phát báo vị trí đang xem (bình thường ~4 lần/phút). */
+        PROGRESS(60, Duration.ofMinutes(1), "Quá nhiều yêu cầu, vui lòng thử lại sau.");
 
         private final int max;
         private final Duration window;

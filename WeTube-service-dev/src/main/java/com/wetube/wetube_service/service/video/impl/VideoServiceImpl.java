@@ -51,6 +51,7 @@ import com.wetube.wetube_service.service.RedisService;
 import com.wetube.wetube_service.service.interaction.LikeService;
 import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.video.VideoSubtitleService;
+import com.wetube.wetube_service.service.video.WatchProgressService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -81,6 +82,7 @@ public class VideoServiceImpl implements VideoService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final RedisService redisService;
+    private final WatchProgressService watchProgressService;
 
     private static final String ID_NOT_FOUND = "Video not found with id: ";
     private static final String VIDEO = "video";
@@ -353,6 +355,7 @@ public VideoDto createVideo(MultipartFile videoFile,
                 .description(video.getDescription())
                 .videoUrl(video.getVideoUrl())
                 .createAt(video.getCreatedAt())
+                .resumeAt(userId != null ? watchProgressService.get(userId, videoId) : null)
                 .totalView(video.getTotalView())
                 .name(video.getUser().getName())
                 .picture(video.getUser().getPicture())

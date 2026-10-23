@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
 import {
   FastForward,
   Loader2,
@@ -22,15 +23,30 @@ import { cn } from "@/lib/utils";
 import { useControls, useTheater } from "@/hooks/use-controls";
 import { useSubtitles } from "@/hooks/use-subtitles";
 import { useViewCounter } from "@/lib/viewTracking";
+import { saveWatchProgress } from "@/lib/watchProgress";
+import { useAuth } from "@/contexts/auth-context";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import ProgressBar from "./progress-bar";
 import SettingsMenu, { PLAYBACK_RATES } from "./settings-menu";
+import EndScreen from "./end-screen";
 import { formatTime } from "./format-time";
 
 const VOLUME_KEY = "wetube_player_volume";
+const AUTOPLAY_KEY = "wetube_autoplay_next";
 const HIDE_CONTROLS_MS = 2500;
 /** Khi kéo thanh tua, tua video thật tối đa mỗi khoảng này một lần (đỡ giật). */
 const SCRUB_SEEK_MS = 120;
+/** Đang phát thì gửi vị trí đang xem mỗi khoảng này (người đã đăng nhập). */
+const PROGRESS_INTERVAL_MS = 15_000;
+/** Xem chưa tới chừng này giây thì chưa tính vào lịch sử. */
+const MIN_PROGRESS_SECONDS = 3;
+
+/** Phát tiếp từ vị trí cũ, trừ khi mới xem vài giây hoặc đã xem gần hết (giống YouTube). */
+function resumePosition(saved: number | null | undefined, duration: number) {
+  if (!saved || !Number.isFinite(duration)) return 0;
+  const nearEnd = duration - Math.max(10, duration * 0.05);
+  return saved > 5 && saved < nearEnd ? saved : 0;
+}
 
 type FlashIcon = "play" | "pause" | "forward" | "back" | "volume" | "mute";
 type Flash = { icon: FlashIcon; label?: string; id: number };
@@ -103,11 +119,14 @@ const FLASH_ICONS: Record<FlashIcon, ReactNode> = {
 
 /** Trình phát video trên trang xem, điều khiển giống YouTube. Dùng thẻ <video> của trình duyệt. */
 export default function ActiveVideo({ videoId }: { videoId: string }) {
-  const detail = useVideoStore((s) => s.videoDetail?.detail);
+  const response = useVideoStore((s) => s.videoDetail);
   // Khi chuyển video, store còn giữ video cũ một lúc: chỉ phát khi đúng video của trang
-  const video = detail?.id === videoId ? detail : undefined;
+  const video = response?.detail.id === videoId ? response.detail : undefined;
+  const upNext = video ? (response?.recommend?.video ?? []).filter((v) => v.id !== videoId) : [];
+  const router = useRouter();
   const subtitles = video?.subtitles ?? [];
   const { setSeek } = useControls();
+  const { user } = useAuth();
   const { theater, toggleTheater } = useTheater();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -133,12 +152,29 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   const [active, setActive] = useState(true);
   const [scrubbing, setScrubbing] = useState(false);
   const [flash, setFlash] = useState<Flash | null>(null);
+  const [autoplayNext, setAutoplayNext] = useState(true);
 
   const idleTimer = useRef<number | undefined>(undefined);
   const startApplied = useRef(false);
   const scrubState = useRef<{ wasPlaying: boolean; lastSeek: number } | null>(null);
   const lastSubtitleIndex = useRef(0);
   const swallowTap = useRef(false);
+
+  // ---------- lưu vị trí đang xem (lịch sử + phát tiếp) ----------
+  const progressRef = useRef<{ userId?: string; videoId?: string; lastSent: number }>({ lastSent: -1 });
+  progressRef.current.userId = user?.sub;
+  progressRef.current.videoId = video?.id;
+
+  const reportProgress = useCallback((final: boolean) => {
+    const v = videoRef.current;
+    const p = progressRef.current;
+    if (!v || !p.userId || !p.videoId || scrubState.current) return;
+    const t = v.ended ? v.duration : v.currentTime;
+    if (!Number.isFinite(t) || t < MIN_PROGRESS_SECONDS) return;
+    if (Math.abs(t - p.lastSent) < 1) return;
+    p.lastSent = t;
+    saveWatchProgress(p.videoId, t, final);
+  }, []);
 
   const track = subtitleIndex >= 0 ? subtitles[subtitleIndex] : undefined;
   const cues = useSubtitles(track?.subtitleUrl);
@@ -150,6 +186,28 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   // Hộp thoại Chia sẻ cần giây đang xem; chỉ báo khi sang giây mới
   const wholeSecond = Math.floor(currentTime);
   useEffect(() => setSeek(wholeSecond), [wholeSecond, setSeek]);
+
+  // ---------- tự phát video tiếp theo ----------
+  useEffect(() => {
+    try {
+      setAutoplayNext(window.localStorage.getItem(AUTOPLAY_KEY) !== "0");
+    } catch {
+      // localStorage bị chặn: mặc định bật
+    }
+  }, []);
+
+  const toggleAutoplayNext = () => {
+    setAutoplayNext((prev) => {
+      try {
+        window.localStorage.setItem(AUTOPLAY_KEY, prev ? "0" : "1");
+      } catch {
+        // bỏ qua
+      }
+      return !prev;
+    });
+  };
+
+  const openVideo = useCallback((id: string) => router.push(`/watch/${id}`), [router]);
 
   // ---------- hiện/ẩn thanh điều khiển ----------
   const poke = useCallback(() => {
@@ -328,11 +386,12 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     v.volume = saved.volume;
     v.muted = saved.muted;
 
-    // Liên kết chia sẻ dạng /watch/<id>?t=<giây>
+    // Liên kết chia sẻ dạng /watch/<id>?t=<giây>; không có thì phát tiếp từ chỗ đã dừng lần trước
     const t = Number(new URLSearchParams(window.location.search).get("t"));
-    if (Number.isFinite(t) && t > 0 && t < v.duration) {
-      v.currentTime = t;
-      setCurrentTime(t);
+    const start = Number.isFinite(t) && t > 0 && t < v.duration ? t : resumePosition(video?.resumeAt, v.duration);
+    if (start > 0) {
+      v.currentTime = start;
+      setCurrentTime(start);
     }
     // Tự phát như YouTube; trình duyệt chặn thì chờ người xem bấm nút phát
     v.play().catch(() => setWaiting(false));
@@ -350,6 +409,27 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [playing]);
+
+  // Gửi vị trí định kỳ khi đang phát; gửi ngay khi ẩn tab / đóng tab / rời trang
+  useEffect(() => {
+    if (!playing) return;
+    const id = window.setInterval(() => reportProgress(false), PROGRESS_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [playing, reportProgress]);
+
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") reportProgress(true);
+    };
+    const onPageHide = () => reportProgress(true);
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", onPageHide);
+      reportProgress(true); // chuyển sang trang / video khác
+    };
+  }, [reportProgress]);
 
   useEffect(() => {
     setPipSupported(typeof document !== "undefined" && document.pictureInPictureEnabled === true);
@@ -522,10 +602,12 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
         onPause={() => {
           setPlaying(false);
           setWaiting(false);
+          reportProgress(true);
         }}
         onEnded={() => {
           setPlaying(false);
           setEnded(true);
+          reportProgress(true);
         }}
         onWaiting={() => setWaiting(true)}
         onPlaying={() => setWaiting(false)}
@@ -611,16 +693,27 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
         </div>
       )}
 
-      {/* Chưa phát (trình duyệt chặn tự phát) hoặc đã hết video */}
-      {!waiting && !failed && (ended || (!started && !playing)) && (
+      {/* Hết video: đếm ngược tự phát / lưới gợi ý */}
+      {ended && !failed && (
+        <EndScreen
+          videos={upNext}
+          autoplay={autoplayNext}
+          fullscreen={fullscreen}
+          onReplay={togglePlay}
+          onOpen={openVideo}
+        />
+      )}
+
+      {/* Chưa phát (trình duyệt chặn tự phát) */}
+      {!waiting && !failed && !ended && !started && !playing && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <button
             type="button"
-            aria-label={ended ? "Xem lại" : "Phát"}
+            aria-label="Phát"
             onClick={togglePlay}
             className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-full bg-black/60 text-white transition hover:scale-105 hover:bg-red-600"
           >
-            {ended ? <RotateCcw size={30} /> : <Play size={30} fill="currentColor" className="ml-1" />}
+            <Play size={30} fill="currentColor" className="ml-1" />
           </button>
         </div>
       )}
@@ -679,6 +772,32 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
           </span>
 
           <div className="flex-1" />
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autoplayNext}
+            aria-label="Tự phát video tiếp theo"
+            title={autoplayNext ? "Tự phát đang bật" : "Tự phát đang tắt"}
+            onClick={toggleAutoplayNext}
+            className="hidden h-10 shrink-0 items-center px-2 sm:flex"
+          >
+            <span
+              className={cn(
+                "relative h-3.5 w-8 rounded-full transition-colors",
+                autoplayNext ? "bg-white/70" : "bg-white/30"
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full shadow transition-all",
+                  autoplayNext ? "left-3 bg-white text-black" : "left-0 bg-neutral-300 text-neutral-700"
+                )}
+              >
+                {autoplayNext ? <Play size={10} fill="currentColor" /> : <Pause size={10} fill="currentColor" />}
+              </span>
+            </span>
+          </button>
 
           {subtitles.length > 0 && (
             <IconButton label={subtitleIndex >= 0 ? "Tắt phụ đề (c)" : "Bật phụ đề (c)"} onClick={toggleCaptions}>

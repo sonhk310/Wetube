@@ -32,4 +32,6 @@ public class VideoDetailDto {
     private List<CommentResponseDto> comments;
     private List<VideoSubtitleDto> subtitles;
     private boolean isShort;
+    /** Giây đã xem lần trước (người xem đã đăng nhập), để phát tiếp; null nếu chưa xem. */
+    private Float resumeAt;
 }

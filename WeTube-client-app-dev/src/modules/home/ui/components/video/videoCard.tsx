@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import VideoOverlay from "@/components/videos/VideoOverlayProps";
 import { useAuth } from "@/contexts/auth-context";
 import { VideoThumbnail } from '@/modules/videos/ui/components/video-thumbnail';
-import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
+import { useWatchProgress } from "@/lib/watchProgress";
 import { RecommendedVideoItem } from "@/types/video";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -26,15 +26,14 @@ const VideoCard = ({
   const router = useRouter();
   const displayTime = timeAgo(createAt);
   const { user } = useAuth();
+  const watched = useWatchProgress(id) ?? historyDuration ?? 0;
 
   const [saveInteraction] = useSaveInteractionMutation();
 
   const handleClick = async () => {
     try {
+      // Lịch sử xem được ghi khi thực sự xem (trình phát gửi vị trí), không ghi lúc bấm
       if (user?.sub && id) {
-        await playlistService.addToHistory(user.sub, id);
-        console.log("Đã lưu vào history:", id);
-
         await saveInteraction({
           userId: user.sub, 
           videoId: id,
@@ -42,8 +41,6 @@ const VideoCard = ({
         }).unwrap();
       }
     } catch (err) {
-      console.error("Failed to record VIEW interaction:", err);
-      console.error("Lỗi khi lưu history/interaction:", err);
       console.error("Ghi nhận VIEW thất bại:", err);
     } finally {
       router.push(`/watch/${id}`);
@@ -62,14 +59,9 @@ const VideoCard = ({
           title={title}
           duration={duration}
         />
-        {historyDuration &&
-          historyDuration > 0 &&
-          historyDuration < duration && (
-            <VideoOverlay
-              duration={duration}
-              progress={historyDuration / duration}
-            />
-          )}
+        {watched > 0 && duration > 0 && (
+          <VideoOverlay duration={duration} progress={watched / duration} />
+        )}
       </div>
 
       <div className="flex gap-3 pt-3 pr-3 pb-3 pl-0 items-start">

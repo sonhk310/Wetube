@@ -74,6 +74,14 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
+    public List<String> multiGet(List<String> keys) {
+        if (keys.isEmpty()) {
+            return List.of();
+        }
+        return call("MGET", keys.size() + " keys", () -> redis.opsForValue().multiGet(keys));
+    }
+
+    @Override
     public void set(String key, String value, Duration ttl) {
         call("SET", key, () -> {
             redis.opsForValue().set(key, value, ttl);

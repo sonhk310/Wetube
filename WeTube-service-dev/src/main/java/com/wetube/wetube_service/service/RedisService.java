@@ -1,6 +1,7 @@
 package com.wetube.wetube_service.service;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * Truy cập Redis có dự phòng: chưa cấu hình REDIS_URL hoặc Redis lỗi thì các hàm trả null / không làm gì,
@@ -18,6 +19,9 @@ public interface RedisService {
     Long incrementWithin(String key, Duration ttl);
 
     String get(String key);
+
+    /** Đọc nhiều khoá một lần (cùng thứ tự, phần tử null nếu không có). null nếu Redis không dùng được. */
+    List<String> multiGet(List<String> keys);
 
     void set(String key, String value, Duration ttl);
 

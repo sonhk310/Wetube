@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { RecommendVideoDto } from "@/types/video";
 import { formatViews, timeAgo } from "@/lib/utils";
+import { useWatchProgress } from "@/lib/watchProgress";
 
 const item = {
   hidden: { opacity: 0, scale: 0.9 },
@@ -11,6 +12,7 @@ const item = {
 
 export default function VideoPreview({ video }: { video: RecommendVideoDto }) {
   const router = useRouter();
+  const watched = useWatchProgress(video.id) ?? 0;
   const handleClick = () => {
     router.push(`/watch/${video.id}`);
   };
@@ -21,7 +23,7 @@ export default function VideoPreview({ video }: { video: RecommendVideoDto }) {
       className="grid grid-cols-11 gap-2 mb-2"
     >
       <div
-        className="col-span-5 rounded-lg bg-no-repeat bg-cover aspect-video relative cursor-pointer"
+        className="col-span-5 rounded-lg bg-no-repeat bg-cover aspect-video relative cursor-pointer overflow-hidden"
         style={{ backgroundImage: `url(${video.thumbnailUrl})` }}
         onClick={handleClick}
       >
@@ -31,6 +33,14 @@ export default function VideoPreview({ video }: { video: RecommendVideoDto }) {
         >
           {formatDuration(video.duration)}
         </p>
+        {watched > 0 && video.duration > 0 && (
+          <div className="absolute inset-x-0 bottom-0 h-1 bg-gray-300/80">
+            <div
+              className="h-full bg-red-600"
+              style={{ width: `${Math.min(100, (watched / video.duration) * 100)}%` }}
+            />
+          </div>
+        )}
       </div>
       <div className="col-span-6 flex flex-col justify-start gap-0.5">
         <p className="w-full text-sm font-bold overflow-hidden text-ellipsis line-clamp-2">

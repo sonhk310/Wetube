@@ -14,6 +14,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { playlistService } from "../list/playlist-API";
+import { useWatchProgress } from "@/lib/watchProgress";
 import { useRouter } from "next/navigation";
 
 interface VideoItemProps {
@@ -26,7 +27,6 @@ interface VideoItemProps {
   description?: string;
   thumbnailUrl?: string;
   historyDuration?: number;
-  onAddedToHistory?: () => void;
   onRemove?: (videoId: string) => void;
 }
 
@@ -40,13 +40,13 @@ export default function VideoItem({
   duration,
   thumbnailUrl,
   historyDuration = 0,
-  onAddedToHistory,
   onRemove,
 }: VideoItemProps) {
   const [watchLaterClicked, setWatchLaterClicked] = useState(false);
   const [addedPlaylistClicked, setAddedPlaylistClicked] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+  const watched = useWatchProgress(videoId) ?? historyDuration;
 
   const resetState = () => {
     setWatchLaterClicked(false);
@@ -61,24 +61,9 @@ export default function VideoItem({
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  const handleClickVideo = async () => {
-    if (!user?.sub) {
-      console.warn("User chưa login, redirect tới login");
-      router.push("/login");
-      return;
-    }
-
-    try {
-      await playlistService.addToHistory(user.sub, videoId);
-      console.log("Đã lưu history:", videoId);
-
-      if (onAddedToHistory) onAddedToHistory();
-
-      router.push(`/watch/${videoId}`);
-    } catch (err) {
-      console.error("Lỗi khi lưu history:", err);
-      router.push(`/watch/${videoId}`); 
-    }
+  // Lịch sử xem được ghi khi thực sự xem (trình phát gửi vị trí), không ghi lúc bấm
+  const handleClickVideo = () => {
+    router.push(`/watch/${videoId}`);
   };
 
   return (
@@ -144,7 +129,7 @@ export default function VideoItem({
 
             <VideoOverlay
               duration={Number(duration)}
-              progress={historyDuration}
+              progress={Number(duration) > 0 ? watched / Number(duration) : 0}
             />
           </div>
 

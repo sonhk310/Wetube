@@ -33,6 +33,7 @@ import com.wetube.wetube_service.search.VideoDocument;
 import com.wetube.wetube_service.service.VideoSearchService;
 import com.wetube.wetube_service.service.AI.SubtitleAiService;
 import com.wetube.wetube_service.service.video.VideoService;
+import com.wetube.wetube_service.service.video.WatchProgressService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +51,7 @@ public class VideoController {
     private final LikeService likeService;
     private final VideoAccess videoAccess;
     private final RateLimiter rateLimiter;
+    private final WatchProgressService watchProgressService;
 
     private static final PolicyFactory SANITIZER_POLICY = Sanitizers.FORMATTING.and(Sanitizers.LINKS);
 
@@ -263,6 +265,42 @@ public class VideoController {
                     : "ip:" + clientIp(request);
         }
         return ResponseEntity.ok(videoService.registerView(id, viewerKey, userId, CurrentUser.isAdmin(jwt)));
+    }
+
+    /**
+     * Trình phát báo vị trí đang xem (người đã đăng nhập): lưu vào lịch sử để phát tiếp và vẽ thanh đỏ.
+     * Tham số nằm trên URL, không có body, để trình duyệt gửi được cả khi đóng tab (fetch keepalive, không preflight).
+     * final=true khi dừng / hết video / rời trang: ghi MySQL ngay.
+     */
+    @PostMapping("/{id}/progress")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> saveProgress(
+            @PathVariable UUID id,
+            @RequestParam("t") float seconds,
+            @RequestParam(value = "final", defaultValue = "false") boolean flush,
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = CurrentUser.id(jwt);
+        rateLimiter.check(RateLimiter.Limit.PROGRESS, userId);
+        if (!Float.isFinite(seconds) || seconds < 0) {
+            throw new IllegalArgumentException("Thời điểm không hợp lệ");
+        }
+        videoAccess.requireViewable(id, jwt);
+        watchProgressService.record(userId, id, seconds, flush);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Vị trí đã xem của nhiều video (thanh đỏ trên thumbnail). Chưa đăng nhập thì trả rỗng. */
+    @GetMapping("/progress")
+    public ResponseEntity<Map<UUID, Float>> getProgress(
+            @RequestParam("ids") List<UUID> ids,
+            @AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) {
+            return ResponseEntity.ok(Map.of());
+        }
+        if (ids.size() > 100) {
+            throw new IllegalArgumentException("Tối đa 100 video mỗi lần");
+        }
+        return ResponseEntity.ok(watchProgressService.getMany(CurrentUser.id(jwt), ids));
     }
 
     /** Bật/tắt "không thích" của chính người dùng; chỉ trả về trạng thái của họ, không có số lượng. */
