@@ -38,7 +38,7 @@ Ghi kết quả vào cột cuối. Nếu có lỗi, ghi lại màn hình + giờ
 | 3.2 | Bấm Thích lần nữa | Bỏ thích; video biến mất khỏi "Đã thích" | |
 | 3.3 | Bấm "Xem sau" | Video có trong trang Xem sau; bấm lại thì gỡ ra | |
 | 3.4 | Bấm "Đăng ký" kênh của A | Đổi sang "Đã đăng ký"; kênh A có thêm 1 người đăng ký | |
-| 3.5 | Viết bình luận, trả lời một bình luận | Hiện ngay; xem được các trả lời | |
+| 3.5 | Viết bình luận mới | Hiện ngay trong danh sách | |
 | 3.6 | Xoá bình luận của chính mình | Bình luận biến mất | |
 | 3.7 | B thử xoá bình luận của A | Không có nút "Xoá" | |
 | 3.8 | Admin xoá bình luận của B | Có nút "Xoá" và xoá được | |
@@ -113,6 +113,10 @@ Ghi kết quả vào cột cuối. Nếu có lỗi, ghi lại màn hình + giờ
 
 ## Lỗi đã biết, chưa sửa
 
+- Trang xem **chưa có nút "Trả lời"** cho bình luận (chỉ xem được các phản hồi có sẵn, không tạo mới được). Cũng chưa sửa được bình luận.
+- Các ô chọn thể loại ở đầu trang chủ (Âm nhạc, Trò chơi...) **chưa lọc gì cả**.
+- Nút Chia sẻ, Cảm ơn, Không thích, chuông thông báo **chưa làm gì**.
+- Video bị admin ẩn có thể **hiện lại sau khi backend khởi động lại** (đang đồng bộ lại toàn bộ video vào Elasticsearch).
 - Mở trang xem của video **không tồn tại** thì backend trả lỗi 500 thay vì 404.
 - Nút "Đăng ký" ở trang kênh chỉ nhớ trạng thái trong phiên (tải lại trang thì hiện lại "Đăng ký").
 - Creator chưa duyệt/sửa được phụ đề AI trước khi đăng (PRD có yêu cầu).
