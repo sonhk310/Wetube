@@ -10,6 +10,8 @@ interface VideoThumbnailProps {
   imageUrl?: string | null;
   previewUrl?: string | null;
   duration: number;
+  /** Phần đã xem (0..1): vẽ thanh đỏ ở đáy thumbnail. */
+  progress?: number;
 }
 
 export const VideoThumbnailSkeleton = () => {
@@ -25,6 +27,7 @@ export const VideoThumbnail = ({
   title,
   previewUrl,
   duration,
+  progress,
 }: VideoThumbnailProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -92,6 +95,12 @@ export const VideoThumbnail = ({
         <div className="absolute bottom-2 right-2 px-1 py-0.5 rounded bg-black/80 text-white text-xs font-medium">
           {formatDuration(duration)}
         </div>
+
+        {progress !== undefined && progress > 0 && (
+          <div className="absolute inset-x-0 bottom-0 h-1 bg-gray-300/70">
+            <div className="h-full bg-red-600" style={{ width: `${Math.min(100, progress * 100)}%` }} />
+          </div>
+        )}
       </div>
     </div>
   );

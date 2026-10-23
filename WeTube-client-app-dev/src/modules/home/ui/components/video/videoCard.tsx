@@ -2,7 +2,6 @@
 
 import { useSaveInteractionMutation } from "@/app/api/interactionApi";
 import { Skeleton } from '@/components/ui/skeleton';
-import VideoOverlay from "@/components/videos/VideoOverlayProps";
 import { useAuth } from "@/contexts/auth-context";
 import { VideoThumbnail } from '@/modules/videos/ui/components/video-thumbnail';
 import { useWatchProgress } from "@/lib/watchProgress";
@@ -58,10 +57,8 @@ const VideoCard = ({
           previewUrl={videoUrl}
           title={title}
           duration={duration}
+          progress={duration > 0 ? watched / duration : 0}
         />
-        {watched > 0 && duration > 0 && (
-          <VideoOverlay duration={duration} progress={watched / duration} />
-        )}
       </div>
 
       <div className="flex gap-3 pt-3 pr-3 pb-3 pl-0 items-start">
