@@ -30,6 +30,7 @@ import java.util.UUID;
 @Transactional
 public class UserServiceImpl implements UserService {
     private static final String DEFAULT_ROLE = "ROLE_USER";
+    private static final String ADMIN_ROLE = "ROLE_ADMIN";
     public static final String PROVIDER_GOOGLE = "google";
 
     private final UserRepository userRepository;
@@ -39,6 +40,7 @@ public class UserServiceImpl implements UserService {
     private final ChannelServiceImpl channelService;
     private final ObjectMapper objectMapper;
     private final PlaylistService playlistService;
+    private final com.wetube.wetube_service.security.AdminAccess adminAccess;
 
     @Override
     public UserResponseDto getUserById(UUID userId) {
@@ -181,14 +183,24 @@ public class UserServiceImpl implements UserService {
 //    }
 
     private void ensureHasRole(AppUser user) {
+        grantRoleIfMissing(user, UserServiceImpl.DEFAULT_ROLE, true);
+        if (adminAccess.isAdminEmail(user.getEmail())) {
+            grantRoleIfMissing(user, ADMIN_ROLE, false);
+        }
+    }
+
+    private void grantRoleIfMissing(AppUser user, String code, boolean required) {
         boolean hasRole = user.getUserRoles().stream()
-                .anyMatch(ur -> UserServiceImpl.DEFAULT_ROLE.equals(ur.getRole().getCode()));
+                .anyMatch(ur -> code.equals(ur.getRole().getCode()));
         if (hasRole)
             return;
 
-        Role role = roleRepository.findByCode(UserServiceImpl.DEFAULT_ROLE)
-                .orElseThrow(() -> new IllegalStateException("Missing role code: " + UserServiceImpl.DEFAULT_ROLE));
-        user.addRole(role);
+        Optional<Role> role = roleRepository.findByCode(code);
+        if (role.isPresent()) {
+            user.addRole(role.get());
+        } else if (required) {
+            throw new IllegalStateException("Missing role code: " + code);
+        }
     }
 
     @Override
