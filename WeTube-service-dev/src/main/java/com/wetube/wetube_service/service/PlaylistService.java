@@ -43,4 +43,10 @@ public interface PlaylistService {
 
     List<PlaylistVideoDetailDto> addVideoToHistory(UUID userId, UUID videoId);
 
+    /** Thêm video vào playlist hệ thống (LIKED, WATCH_LATER) của user; thêm lần nữa không tạo bản sao. */
+    void addVideoToSystemPlaylist(UUID userId, UUID videoId, PlaylistType type);
+
+    /** Bỏ video khỏi playlist hệ thống của user; không có thì bỏ qua. */
+    void removeVideoFromSystemPlaylist(UUID userId, UUID videoId, PlaylistType type);
+
 }

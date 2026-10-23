@@ -133,6 +133,36 @@ public class PlaylistController {
         return ResponseEntity.ok(playlistService.addVideoToHistory(userId, videoId));
     }
 
+    /** Thêm / bỏ video khỏi playlist hệ thống của chính user (chỉ LIKED và WATCH_LATER). */
+    @PostMapping("/{userId}/system/{type}/{videoId}")
+    public ResponseEntity<Void> addToSystemPlaylist(
+            @PathVariable UUID userId,
+            @PathVariable PlaylistType type,
+            @PathVariable UUID videoId,
+            @AuthenticationPrincipal Jwt jwt) {
+        requireSelf(userId, jwt);
+        requireUserEditableType(type);
+        playlistService.addVideoToSystemPlaylist(userId, videoId, type);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{userId}/system/{type}/{videoId}")
+    public ResponseEntity<Void> removeFromSystemPlaylist(
+            @PathVariable UUID userId,
+            @PathVariable PlaylistType type,
+            @PathVariable UUID videoId,
+            @AuthenticationPrincipal Jwt jwt) {
+        requireSelf(userId, jwt);
+        requireUserEditableType(type);
+        playlistService.removeVideoFromSystemPlaylist(userId, videoId, type);
+        return ResponseEntity.ok().build();
+    }
+
+    private static void requireUserEditableType(PlaylistType type) {
+        if (type != PlaylistType.LIKED && type != PlaylistType.WATCH_LATER) {
+            throw new IllegalArgumentException("Chỉ hỗ trợ LIKED và WATCH_LATER");
+        }
+    }
 
     /** Dữ liệu riêng tư (lịch sử, đã thích): chỉ chủ tài khoản được xem hoặc ghi. */
     private static void requireSelf(UUID userId, Jwt jwt) {

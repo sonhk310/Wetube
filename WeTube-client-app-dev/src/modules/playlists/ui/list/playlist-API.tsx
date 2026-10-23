@@ -119,6 +119,29 @@ export const playlistService = {
     if (!res.ok) throw new Error("Failed to remove playlist");
     return res.json();
   },
+  // POST|DELETE /{userId}/system/{LIKED|WATCH_LATER}/{videoId}
+  addToSystemPlaylist: async (
+    userId: string,
+    videoId: string,
+    type: "LIKED" | "WATCH_LATER"
+  ) => {
+    const res = await apiFetch(`${API_BASE}/${userId}/system/${type}/${videoId}`, {
+      method: "POST",
+      headers: jsonHeaders(),
+    });
+    if (!res.ok) throw new Error(`Failed to add video to ${type}`);
+  },
+  removeFromSystemPlaylist: async (
+    userId: string,
+    videoId: string,
+    type: "LIKED" | "WATCH_LATER"
+  ) => {
+    const res = await apiFetch(`${API_BASE}/${userId}/system/${type}/${videoId}`, {
+      method: "DELETE",
+      headers: jsonHeaders(),
+    });
+    if (!res.ok) throw new Error(`Failed to remove video from ${type}`);
+  },
   // POST /{userId}/history/add/{videoId}
   addToHistory: async (userId: string, videoId: string) => {
     if (!userId || !videoId) throw new Error("   and VideoId are required");

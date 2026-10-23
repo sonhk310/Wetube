@@ -3,7 +3,9 @@ package com.wetube.wetube_service.service.interaction.impl;
 import com.wetube.wetube_service.dto.LikeDto;
 import com.wetube.wetube_service.entity.interaction.Like;
 import com.wetube.wetube_service.entity.interaction.Like.TargetType;
+import com.wetube.wetube_service.enumeration.PlaylistType;
 import com.wetube.wetube_service.repository.interaction.LikeRepository;
+import com.wetube.wetube_service.service.PlaylistService;
 import com.wetube.wetube_service.service.interaction.LikeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class LikeServiceImpl implements LikeService {
 
     private final LikeRepository likeRepository;
+    private final PlaylistService playlistService;
 
     @Override
     public LikeDto getLikeInfo(UUID targetId, Like.TargetType targetType, UUID userId) {
@@ -60,6 +63,15 @@ public class LikeServiceImpl implements LikeService {
                     .userId(userId)
                     .build();
             likeRepository.save(like);
+        }
+
+        // Thích video thì video vào playlist "Liked" của user; bỏ thích thì bị gỡ ra.
+        if (targetType == TargetType.VIDEO) {
+            if (alreadyLiked) {
+                playlistService.removeVideoFromSystemPlaylist(userId, targetId, PlaylistType.LIKED);
+            } else {
+                playlistService.addVideoToSystemPlaylist(userId, targetId, PlaylistType.LIKED);
+            }
         }
     }
 }

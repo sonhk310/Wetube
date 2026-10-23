@@ -106,7 +106,16 @@ export default function VideoItem({
                 className="p-2 bg-black/70 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setWatchLaterClicked(true);
+                  if (!user?.sub) return;
+                  const add = !watchLaterClicked;
+                  setWatchLaterClicked(add);
+                  const call = add
+                    ? playlistService.addToSystemPlaylist
+                    : playlistService.removeFromSystemPlaylist;
+                  call(user.sub, videoId, "WATCH_LATER").catch((err) => {
+                    console.error("Watch later failed:", err);
+                    setWatchLaterClicked(!add);
+                  });
                 }}
                 aria-label="Watch later"
               >

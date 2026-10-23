@@ -9,6 +9,7 @@ import {
   HandThumbUpIcon,
   HeartIcon,
 } from "@heroicons/react/24/outline";
+import { HandThumbUpIcon as HandThumbUpSolid } from "@heroicons/react/24/solid";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import { timeAgo } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -16,11 +17,21 @@ import {
   useSubscribeMutation,
   useUnsubscribeMutation,
 } from "@/app/api/subscriptionsApi";
-import TranscriptModal from "./transcriptModal";
+import { useGetLikeInfoQuery, useToggleLikeMutation } from "@/app/api/likeApi";
+import { useAuth } from "@/contexts/auth-context";
+import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
 
 export default function VideoMetadata() {
   const videoDetail = useVideoStore((state) => state.videoDetail);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [savedLater, setSavedLater] = useState(false);
+  const { user } = useAuth();
+  const videoId = videoDetail?.detail?.id;
+  const { data: likeInfo } = useGetLikeInfoQuery(
+    { targetId: videoId ?? "", targetType: "VIDEO", userId: user?.sub ?? "" },
+    { skip: !videoId || !user?.sub }
+  );
+  const [toggleLike] = useToggleLikeMutation();
 
   useEffect(() => {
     if (videoDetail?.detail?.subscribed !== undefined) {
@@ -45,18 +56,41 @@ export default function VideoMetadata() {
     channelId,
   } = videoDetail.detail;
 
+  const handleToggleLike = async () => {
+    if (!user?.sub) return;
+    try {
+      await toggleLike({ targetId: videoDetail.detail.id, targetType: "VIDEO", userId: user.sub }).unwrap();
+    } catch (err) {
+      console.error("Failed to toggle like:", err);
+    }
+  };
+
+  const handleWatchLater = async () => {
+    if (!user?.sub) return;
+    const add = !savedLater;
+    setSavedLater(add);
+    try {
+      if (add) await playlistService.addToSystemPlaylist(user.sub, videoDetail.detail.id, "WATCH_LATER");
+      else await playlistService.removeFromSystemPlaylist(user.sub, videoDetail.detail.id, "WATCH_LATER");
+    } catch (err) {
+      console.error("Failed to update watch later:", err);
+      setSavedLater(!add);
+    }
+  };
+
   const handleSubscribe = async () => {
+    if (!user?.sub) return;
     try {
       if (!isSubscribed) {
         await subscribe({
-          subscriberId: "current-user-id",
+          subscriberId: user.sub,
           channelId,
           tierId: undefined,
         }).unwrap();
         setIsSubscribed(true);
       } else {
         await unsubscribe({
-          subscriberId: "current-user-id",
+          subscriberId: user.sub,
           channelId,
         }).unwrap();
         setIsSubscribed(false);
@@ -107,15 +141,28 @@ export default function VideoMetadata() {
 
         <section className="flex justify-end items-center gap-3 ">
           <div className="cursor-pointer flex justify-between bg-gray-100 rounded-full overflow-hidden">
-            <button className="flex gap-2 py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-l-full cursor-pointer">
-              <HandThumbUpIcon className="size-5" />
-              <p className="text-sm font-bold">17K</p>
+            <button
+              onClick={handleToggleLike}
+              className="flex gap-2 py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-l-full cursor-pointer"
+            >
+              {likeInfo?.liked ? (
+                <HandThumbUpSolid className="size-5" />
+              ) : (
+                <HandThumbUpIcon className="size-5" />
+              )}
+              <p className="text-sm font-bold">{likeInfo?.likeCount ?? videoDetail.detail.like?.likeCount ?? 0}</p>
             </button>
             <div className="border-l-[1px] border-gray-300 my-2" />
             <button className="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-r-full cursor-pointer">
               <HandThumbDownIcon className="size-5" />
             </button>
           </div>
+          <button
+            onClick={handleWatchLater}
+            className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5"
+          >
+            <p className="text-sm font-bold">{savedLater ? "Đã lưu xem sau" : "Xem sau"}</p>
+          </button>
           <button className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5">
             <p className="text-sm font-bold">Share</p>
           </button>

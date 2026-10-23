@@ -84,6 +84,7 @@ export interface VideoDetailDto {
   comments: ApiComment[];
   subscribed: boolean;
   channelId: string;
+  like?: { likeCount: number; liked: boolean | null };
   subtitles: VideoSubtitleDto[]; // ✅ subtitles
 }
 

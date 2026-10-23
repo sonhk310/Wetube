@@ -253,4 +253,35 @@ public List<PlaylistVideoDetailDto> addVideoToHistory(UUID userId, UUID videoId)
     return playlistMapper.toPlaylistVideoDetailDtoList(playlistVideos);
 }
 
+@Override
+public void addVideoToSystemPlaylist(UUID userId, UUID videoId, PlaylistType type) {
+    List<Playlist> found = playlistRepo.findByUser_IdAndPlaylistType(userId, type);
+    if (found.isEmpty()) {
+        // user cũ có thể chưa có playlist hệ thống này: tạo bù
+        String title = type == PlaylistType.LIKED ? "Liked" : "Watch Later";
+        String visibility = type == PlaylistType.LIKED ? "private" : "public";
+        createPlaylist(new CreatePlaylistRequest(title, userId, type, visibility));
+        found = playlistRepo.findByUser_IdAndPlaylistType(userId, type);
+    }
+    Playlist playlist = found.get(0);
+
+    if (playlistVideoRepo.findByPlaylist_IdAndVideo_Id(playlist.getId(), videoId).isPresent()) {
+        return;
+    }
+    Video video = videoRepo.findById(videoId)
+            .orElseThrow(() -> new ResourceNotFoundException("Video", "id", videoId.toString()));
+    PlaylistVideo pv = playlistMapper.toPlaylistVideo(
+            new PlaylistaddRequest(playlist.getId(), videoId, 0f), playlist, video);
+    pv.setUpdatedAt(LocalDateTime.now());
+    playlistVideoRepo.save(pv);
+}
+
+@Override
+public void removeVideoFromSystemPlaylist(UUID userId, UUID videoId, PlaylistType type) {
+    for (Playlist playlist : playlistRepo.findByUser_IdAndPlaylistType(userId, type)) {
+        playlistVideoRepo.findByPlaylist_IdAndVideo_Id(playlist.getId(), videoId)
+                .ifPresent(playlistVideoRepo::delete);
+    }
+}
+
 }

@@ -53,9 +53,9 @@ server:
 
 logging:
   level:
-    org.springframework.security: DEBUG
-    org.springframework.web: DEBUG
-debug: true
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+debug: false
 
 myapp:
   recommendation:

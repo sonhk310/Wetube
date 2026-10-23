@@ -65,10 +65,10 @@ public class RecServiceImpl implements RecService {
         log.info("CACHE MISS! Generating new recommendation list for user {} with pool size {}.", userId, poolSize);
 
         List<String> userTags = getUserFavoriteTags(userId);
-        if (userTags.isEmpty()) return Collections.emptyList();
+        if (userTags.isEmpty()) return findLatestVideoIds();
 
         SearchHits<VideoDocument> hits = searchVideosInElasticsearch(userTags, Pageable.ofSize(this.poolSize));
-        if (hits.isEmpty()) return Collections.emptyList();
+        if (hits.isEmpty()) return findLatestVideoIds();
 
         List<VideoDocument> poolOfDocs = hits.getSearchHits().stream()
                 .map(SearchHit::getContent)
@@ -77,6 +77,16 @@ public class RecServiceImpl implements RecService {
         List<VideoDocument> sortedDocs = scoreAndSortVideos(poolOfDocs, userTags);
 
         return sortedDocs.stream().map(VideoDocument::getId).toList();
+    }
+
+    // Fallback for users without tag affinities (new accounts): newest videos first.
+    private List<String> findLatestVideoIds() {
+        CriteriaQuery query = new CriteriaQuery(new Criteria());
+        query.setPageable(Pageable.ofSize(this.poolSize));
+        query.addSort(Sort.by(Sort.Order.desc("createdAt")));
+        return elasticOps.search(query, VideoDocument.class).getSearchHits().stream()
+                .map(hit -> hit.getContent().getId())
+                .toList();
     }
 
     @Override
