@@ -144,6 +144,11 @@ import jakarta.transaction.Transactional;
                 PaymentMomo payment = paymentRepo.findByOrderId(orderId)
                         .orElseThrow(() -> new RuntimeException("Payment not found"));
 
+                // /redirect và /ipn cùng gọi vào đây: đã xử lý thành công thì không cộng gói lần nữa
+                if (payment.getStatus() == PaymentStatus.SUCCESS) {
+                    return "{ \"resultCode\": 0, \"message\": \"Confirm Success\" }";
+                }
+
                 if ("0".equals(resultCode)) {
                 
                     PremiumUser premiumUser = PremiumUser.builder()
