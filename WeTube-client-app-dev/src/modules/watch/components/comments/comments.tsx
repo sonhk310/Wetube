@@ -1,6 +1,6 @@
 
 import { CommentInput } from "../inputs/comment-input";
-import { CommentComponent, Comment } from "./comment";
+import { CommentComponent, Comment, mapApiCommentToUI } from "./comment";
 
 import { Loader } from "../misc/loader";
 import { useVideoStore } from "@/store/zustand/videoStore";
@@ -19,17 +19,6 @@ import { useGetCommentsByTargetQuery } from "@/app/api/commentApi";
 //   },
 // };
 
-const mapApiCommentToUI = (apiComment: any): Comment => ({
-    id: apiComment.id,
-    commenter: apiComment.user?.name ?? "Unknown",
-    comment: apiComment.content,
-    picture: apiComment.user?.picture ?? "",
-    commentedAt: apiComment.createdAt,
-    likes: apiComment.likeCount ?? 0,
-    dislikes: 0,
-    replyCount: apiComment.replyCount ?? 0,
-    replies: apiComment.replies ?? [],
-});
 
 export const Comments = () => {
     const videoDetail = useVideoStore((state) => state.videoDetail);

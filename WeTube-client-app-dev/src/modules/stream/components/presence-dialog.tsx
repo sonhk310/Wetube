@@ -36,7 +36,7 @@ function ParticipantListItem({
 
     const onInvite = async () => {
         // TODO: optimistic update
-        await fetch("/api/invite_to_stage", {
+        await fetch("/api/streamApi/invite_to_stage", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -50,7 +50,7 @@ function ParticipantListItem({
 
     // TODO: optimistic update
     const onRaiseHand = async () => {
-        await fetch("/api/raise_hand", {
+        await fetch("/api/streamApi/raise_hand", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -61,7 +61,7 @@ function ParticipantListItem({
 
     // TODO: optimistic update
     const onCancel = async () => {
-        await fetch("/api/remove_from_stage", {
+        await fetch("/api/streamApi/remove_from_stage", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

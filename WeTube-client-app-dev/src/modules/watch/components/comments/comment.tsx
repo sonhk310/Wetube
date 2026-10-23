@@ -9,6 +9,8 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useGetLikeInfoQuery, useToggleLikeMutation } from "@/app/api/likeApi";
 import { useAuth } from "@/contexts/auth-context";
+import { API_PREFIX } from "@/constants/appConstant";
+import { apiFetch } from "@/lib/apiFetch";
 // import { useCreateCommentMutation } from "@/app/api/commentApi";
 
 export interface Comment {
@@ -22,6 +24,20 @@ export interface Comment {
     replyCount: number;
     replies?: Comment[];
 }
+
+// Chuyển bình luận từ API sang dạng hiển thị
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const mapApiCommentToUI = (apiComment: any): Comment => ({
+    id: apiComment.id,
+    commenter: apiComment.user?.name ?? "Unknown",
+    comment: apiComment.content,
+    picture: apiComment.user?.picture ?? "",
+    commentedAt: apiComment.createdAt,
+    likes: apiComment.likeCount ?? 0,
+    dislikes: 0,
+    replyCount: apiComment.replyCount ?? 0,
+    replies: apiComment.replies ?? [],
+});
 
 const item = {
     hidden: { opacity: 0 },
@@ -94,10 +110,10 @@ export const CommentComponent = ({ comment }: { comment: Comment }) => {
         const fetchReplies = async (commentId: string) => {
             try {
                 setReplies((prev) => ({ ...prev, isLoading: true }));
-                const res = await fetch(`/api/comments/${commentId}/replies`);
+                const res = await apiFetch(`${API_PREFIX}/comments/reply/${commentId}`);
                 if (!res.ok) throw new Error("Failed to fetch replies");
-                const data: Comment[] = await res.json();
-                setReplies({ isLoading: false, replies: data });
+                const data = await res.json();
+                setReplies({ isLoading: false, replies: data.map(mapApiCommentToUI) });
             } catch (err) {
                 console.error(err);
                 setReplies({ isLoading: false, replies: [] });

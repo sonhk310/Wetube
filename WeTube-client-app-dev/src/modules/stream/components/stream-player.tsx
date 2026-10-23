@@ -103,7 +103,7 @@ export function StreamPlayer({ isHost = false }) {
 
   const authToken = useAuthToken();
   const onLeaveStage = async () => {
-    await fetch("/api/remove_from_stage", {
+    await fetch("/api/streamApi/remove_from_stage", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
