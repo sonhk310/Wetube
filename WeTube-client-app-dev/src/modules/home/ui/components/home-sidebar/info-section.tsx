@@ -15,22 +15,22 @@ import {usePathname} from "next/navigation";
 
 const items = [
     {
-        title: "Setting",
+        title: "Cài đặt",
         url: pageUrls.HISTORY,
         icon: Settings,
     },
     {
-        title: "Report diary",
+        title: "Nhật ký báo cáo",
         url: pageUrls.REPORT,
         icon: Flag  ,
     },
     {
-        title: "Support",
+        title: "Hỗ trợ",
         url: pageUrls.REPORT,
         icon: MessageCircleQuestionMark  
     },
     {
-        title: "Send feedback",
+        title: "Gửi phản hồi",
         url: pageUrls.FEEDBACK,
         icon: MessageSquareWarning   ,
     }

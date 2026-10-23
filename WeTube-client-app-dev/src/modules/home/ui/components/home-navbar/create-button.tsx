@@ -38,7 +38,7 @@ export const CreateButton: React.FC<CreateButtonProps> = ({triggerIcon: TriggerI
              text-black text-base md:text-md rounded-full shadow-md transition-all duration-200"
                 >
                     <TriggerIcon className="w-7 h-7"/>
-                    <span className="hidden md:block">Create</span>
+                    <span className="hidden md:block">Tạo</span>
                 </Button>
             </DropdownMenuTrigger>
 

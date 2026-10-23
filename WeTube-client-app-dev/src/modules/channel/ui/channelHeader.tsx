@@ -48,7 +48,7 @@ export default function ChannelHeader() {
         {channel.backgroundImgUrl && (
           <Image
             src={channel.backgroundImgUrl}
-            alt="Banner"
+            alt="Ảnh bìa"
             fill
             sizes="100vw"
             className="object-cover"

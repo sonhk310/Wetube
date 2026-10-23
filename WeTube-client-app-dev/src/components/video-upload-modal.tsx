@@ -37,7 +37,7 @@ export const VideoUploadModal: React.FC<UploadModalProps> = ({
         console.log("Selected file:", file);
         setVideoFile(file);
       } else {
-        alert("Please select a valid video file.");
+        alert("Vui lòng chọn tệp video hợp lệ.");
       }
     }
   };
@@ -88,7 +88,7 @@ export const VideoUploadModal: React.FC<UploadModalProps> = ({
     <div className="flex flex-col h-full">
       <DialogHeader className="p-4 border-b border-gray-200">
         <DialogTitle className="text-black text-2xl font-medium">
-          Upload video
+          Tải video lên
         </DialogTitle>
         <DialogClose asChild>
           <Button
@@ -96,7 +96,7 @@ export const VideoUploadModal: React.FC<UploadModalProps> = ({
             className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-200 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
           >
             <X className="h-7 w-7" />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">Đóng</span>
           </Button>
         </DialogClose>
       </DialogHeader>
@@ -120,7 +120,7 @@ export const VideoUploadModal: React.FC<UploadModalProps> = ({
                             justify-center cursor-pointer border-none p-0 appearance-none"
           >
             {/* <Upload size={90} className="text-black"/>
-                        <span className="sr-only">Select video file</span> */}
+                        <span className="sr-only">Chọn tệp video</span> */}
             {isDragOver ? (
               <Lottie
                 animationData={uploadAnimation}
@@ -138,37 +138,37 @@ export const VideoUploadModal: React.FC<UploadModalProps> = ({
           </button>
           <h3 className="text-gray-900 text-xl mb-2 font-medium">
             {isDragOver
-              ? "Drop the video file here"
-              : "Drag and drop video files to upload"}
+              ? "Thả tệp video vào đây"
+              : "Kéo và thả tệp video để tải lên"}
           </h3>
           <p className="text-gray-600 mb-8 text-sm">
-            Your videos will be private until you publish them.
+            Video của bạn sẽ ở chế độ riêng tư cho đến khi bạn công khai.
           </p>
           <Button
             onClick={handleChooseFiles}
             className="bg-gray-200 hover:bg-gray-300 text-black px-6 py-2 rounded-sm"
             type="button"
           >
-            Select Files
+            Chọn tệp
           </Button>
         </div>
         <div className="mt-8 text-center text-md text-zinc-400 leading-relaxed">
           <p>
             {
-              "By submitting your videos to WeTube, you acknowledge that you agree to WeTube "
+              "Khi tải video lên WeTube, bạn xác nhận đồng ý với "
             }
             <a
               href="/terms"
               className="text-blue-400 hover:text-blue-300"
             >
-              Terms of Service
+              Điều khoản dịch vụ
             </a>
-            {" and "}
+            {" và "}
             <a
               href="/community-guidelines"
               className="text-blue-400 hover:text-blue-300"
             >
-              Community Guidelines
+              Nguyên tắc cộng đồng
             </a>
             {"."}
           </p>

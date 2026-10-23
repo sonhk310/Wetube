@@ -19,10 +19,10 @@ interface VideoCarouselProps {
 
 const formatViews = (num: number) => {
   if (num >= 1_000_000)
-    return (num / 1_000_000).toFixed(1).replace(".0", "") + "M views";
+    return (num / 1_000_000).toFixed(1).replace(".0", "") + " Tr lượt xem";
   if (num >= 1_000)
-    return (num / 1_000).toFixed(1).replace(".0", "") + "K views";
-  return num + " views";
+    return (num / 1_000).toFixed(1).replace(".0", "") + " N lượt xem";
+  return num + " lượt xem";
 };
 
 export default function VideoCarousel({ title, videos }: VideoCarouselProps) {

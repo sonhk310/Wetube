@@ -95,7 +95,7 @@ const SearchInputSuspense = () => {
             }}
             onFocus={() => setIsOpen(true)}
             type="text"
-            placeholder="Search"
+            placeholder="Tìm kiếm"
             className="w-full pl-4 py-2 pr-12 rounded-l-full border focus:outline-none focus:border-blue-500"
             autoComplete="off"
           />
@@ -124,7 +124,7 @@ const SearchInputSuspense = () => {
       {isOpen && value.length > 0 && (
         <div className="absolute z-[9999] mt-1 w-full bg-white border rounded shadow max-h-72 overflow-y-auto">
           {isFetching && (
-            <div className="p-2 text-sm text-gray-500">Searching...</div>
+            <div className="p-2 text-sm text-gray-500">Đang tìm...</div>
           )}
 
           {/* {!isFetching && isError && (
@@ -134,7 +134,7 @@ const SearchInputSuspense = () => {
           )}
 
           {!isFetching && !isError && suggestions.length === 0 && (
-            <div className="p-2 text-sm text-gray-400">No suggestions</div>
+            <div className="p-2 text-sm text-gray-400">Không có gợi ý</div>
           )}
 
           {!isFetching &&
@@ -150,7 +150,7 @@ const SearchInputSuspense = () => {
                     publish(`/app/room/addSong/${room?.roomId}`, {
                       videoTitle: text,
                     });
-                    toastEmitter.success("Video Added!");
+                    toastEmitter.success("Đã thêm video!");
                   } else {
                     router.push(`/search?query=${encodeURIComponent(text)}`);
                   }
@@ -184,7 +184,7 @@ const SearchInputSuspense = () => {
                   ))
                 ) : (
                   <div className="p-2 text-sm text-gray-400">
-                    No suggestions
+                    Không có gợi ý
                   </div>
                 ))}
 
@@ -200,7 +200,7 @@ const SearchInputSuspense = () => {
                         publish(`/app/room/addSong/${room?.roomId}`, {
                           videoId: video.id,
                         });
-                        toastEmitter.success("Video Added!");
+                        toastEmitter.success("Đã thêm video!");
                         setIsOpen(false);
                       }}
                       className="flex w-full items-center gap-3 p-2 hover:bg-gray-100 text-left"
@@ -225,7 +225,7 @@ const SearchInputSuspense = () => {
                   ))
                 ) : (
                   <div className="p-2 text-sm text-gray-400">
-                    No results found
+                    Không tìm thấy kết quả
                   </div>
                 ))}
             </>

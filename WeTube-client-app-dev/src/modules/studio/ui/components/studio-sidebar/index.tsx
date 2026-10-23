@@ -31,7 +31,7 @@ export default function StudioSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={pathname === pageUrls.STUDIO}
-                tooltip="Content"
+                tooltip="Nội dung"
                 asChild
               >
                 <Link
@@ -39,14 +39,14 @@ export default function StudioSidebar() {
                   href={pageUrls.STUDIO}
                 >
                   <VideoIcon className="size-5" />
-                  <span className="text-sm">Content</span>
+                  <span className="text-sm">Nội dung</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={pathname === pageUrls.CUSTOMIZATION}
-                tooltip="Customization"
+                tooltip="Tuỳ chỉnh"
                 asChild
               >
                 <Link
@@ -54,14 +54,14 @@ export default function StudioSidebar() {
                   href={pageUrls.CUSTOMIZATION}
                 >
                   <SlidersHorizontal className="size-5" />
-                  <span className="text-sm">Customization</span>
+                  <span className="text-sm">Tuỳ chỉnh</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <Separator />
             <SidebarMenuItem>
               <SidebarMenuButton
-                tooltip="Exit studio"
+                tooltip="Thoát studio"
                 asChild
               >
                 <Link
@@ -69,7 +69,7 @@ export default function StudioSidebar() {
                   href={pageUrls.HOME}
                 >
                   <LogOutIcon className="size-5" />
-                  <span className="text-sm">Exit studio</span>
+                  <span className="text-sm">Thoát studio</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

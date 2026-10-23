@@ -116,13 +116,13 @@ export default function WatchRoomLayout() {
             {room && (
               <div className="flex flex-col md:flex-row justify-between items-center mb-3 gap-2">
                 <h2 className="text-lg md:text-xl font-semibold text-gray-800">
-                  Upcoming Videos
+                  Video sắp phát
                 </h2>
                 <button
                   onClick={handleLeaveRoom}
                   className="px-4 py-2 bg-red-600 text-white font-semibold rounded-full hover:bg-red-700 transition-colors"
                 >
-                  Leave Room
+                  Rời phòng
                 </button>
               </div>
             )}
@@ -164,7 +164,7 @@ export default function WatchRoomLayout() {
         <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-end z-50">
           <div className="bg-white w-full h-3/4 rounded-t-lg shadow-lg flex flex-col">
             <div className="flex justify-between items-center p-3 border-b">
-              <h2 className="font-semibold text-lg">Room Chat</h2>
+              <h2 className="font-semibold text-lg">Trò chuyện trong phòng</h2>
               <button
                 onClick={() => setChatOpen(false)}
                 className="text-gray-600 hover:text-black"

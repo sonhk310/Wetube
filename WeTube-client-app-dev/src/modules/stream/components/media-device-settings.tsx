@@ -49,7 +49,7 @@ export function MediaDeviceSettings() {
           variant={micEnabled ? "soft" : "surface"}
           onClick={() => setMicEnabled(!micEnabled)}
         >
-          Mic {micEnabled ? "On" : "Off"}
+          Mic {micEnabled ? "bật" : "tắt"}
         </Button>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger disabled={!micEnabled}>
@@ -78,7 +78,7 @@ export function MediaDeviceSettings() {
           variant={camEnabled ? "soft" : "surface"}
           onClick={() => setCamEnabled(!camEnabled)}
         >
-          Cam {camEnabled ? "On" : "Off"}
+          Camera {camEnabled ? "bật" : "tắt"}
         </Button>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger disabled={!camEnabled}>

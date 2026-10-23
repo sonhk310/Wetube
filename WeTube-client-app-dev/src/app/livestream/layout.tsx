@@ -4,7 +4,7 @@ import { Theme, ThemePanel } from "@radix-ui/themes";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Livestream with WeTube",
+  title: "Phát trực tiếp với WeTube",
 };
 
 export default function RootLayout({

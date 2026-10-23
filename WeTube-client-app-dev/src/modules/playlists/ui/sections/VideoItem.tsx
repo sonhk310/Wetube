@@ -117,7 +117,7 @@ export default function VideoItem({
                     setWatchLaterClicked(!add);
                   });
                 }}
-                aria-label="Watch later"
+                aria-label="Xem sau"
               >
                 {watchLaterClicked ? (
                   <Check className="w-4 h-4 text-green-400" />
@@ -132,7 +132,7 @@ export default function VideoItem({
                   e.stopPropagation();
                   setAddedPlaylistClicked(true);
                 }}
-                aria-label="Add to playlist"
+                aria-label="Thêm vào danh sách phát"
               >
                 {addedPlaylistClicked ? (
                   <Check className="w-4 h-4 text-green-400" />

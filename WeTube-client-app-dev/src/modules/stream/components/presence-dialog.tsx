@@ -81,30 +81,30 @@ function ParticipantListItem({
             ) {
                 return (
                     <Button size="1" variant="outline" onClick={onCancel}>
-                        Remove
+                        Gỡ
                     </Button>
                 );
             } else if (participantMetadata.hand_raised) {
                 return (
                     <Flex gap="2">
                         <Button size="1" onClick={onInvite}>
-                            Accept
+                            Chấp nhận
                         </Button>
                         <Button size="1" variant="outline" onClick={onCancel}>
-                            Reject
+                            Từ chối
                         </Button>
                     </Flex>
                 );
             } else if (participantMetadata.invited_to_stage) {
                 return (
                     <Button size="1" variant="outline" disabled>
-                        Pending
+                        Đang chờ
                     </Button>
                 );
             } else if (!participantMetadata.invited_to_stage) {
                 return (
                     <Button size="1" onClick={onInvite}>
-                        Invite to stage
+                        Mời lên sân khấu
                     </Button>
                 );
             }
@@ -119,7 +119,7 @@ function ParticipantListItem({
             ) {
                 return (
                     <Button size="1" onClick={onCancel}>
-                        Leave stage
+                        Rời sân khấu
                     </Button>
                 );
             } else if (
@@ -129,10 +129,10 @@ function ParticipantListItem({
                 return (
                     <Flex gap="2">
                         <Button size="1" onClick={onRaiseHand}>
-                            Accept
+                            Chấp nhận
                         </Button>
                         <Button size="1" variant="outline" onClick={onCancel}>
-                            Reject
+                            Từ chối
                         </Button>
                     </Flex>
                 );
@@ -142,7 +142,7 @@ function ParticipantListItem({
             ) {
                 return (
                     <Button size="1" variant="outline" onClick={onCancel}>
-                        Cancel
+                        Hủy
                     </Button>
                 );
             } else if (
@@ -151,7 +151,7 @@ function ParticipantListItem({
             ) {
                 return (
                     <Button size="1" onClick={onRaiseHand}>
-                        Raise hand
+                        Giơ tay
                     </Button>
                 );
             }
@@ -215,7 +215,7 @@ export function PresenceDialog({
                     {hosts.length > 0 && (
                         <Flex direction="column" gap="2">
                             <Text size="1" className="uppercase font-bold text-gray-11">
-                                {hosts.length > 1 ? "Co-Hosts" : "Host"}
+                                {hosts.length > 1 ? "Đồng chủ phòng" : "Chủ phòng"}
                             </Text>
                             {hosts.map((participant) => (
                                 <ParticipantListItem
@@ -232,7 +232,7 @@ export function PresenceDialog({
                     {viewers.length > 0 && (
                         <Flex direction="column" gap="2">
                             <Text size="1" className="uppercase font-bold text-gray-11">
-                                Viewers
+                                Người xem
                             </Text>
                             {viewers.map((participant) => (
                                 <ParticipantListItem

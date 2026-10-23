@@ -59,18 +59,17 @@ export function IngressDialog({ children }: { children: React.ReactNode }) {
       <Dialog.Content style={{ maxWidth: 450 }}>
         {ingressResponse ? (
           <>
-            <Dialog.Title>Start streaming now</Dialog.Title>
+            <Dialog.Title>Bắt đầu phát ngay</Dialog.Title>
             <Flex direction="column" gap="4" mt="4">
               <Text>
-                Copy these values into your OBS settings under{" "}
+                Sao chép các giá trị này vào phần cài đặt OBS tại{" "}
                 <Code>Stream</Code> → <Code>Service</Code> →{" "}
-                <Code>{type === "whip" ? "WHIP" : "Custom"}</Code>. When
-                you&rsquo;re ready, press &quot;Start Streaming&quot; and watch
-                the bits flow!
+                <Code>{type === "whip" ? "WHIP" : "Custom"}</Code>. Khi
+                đã sẵn sàng, bấm &quot;Start Streaming&quot; trong OBS để bắt đầu phát.
               </Text>
               <label>
                 <Text as="div" size="2" mb="1" weight="bold">
-                  Server URL
+                  Địa chỉ máy chủ
                 </Text>
                 <TextField.Root
                   type="text"
@@ -80,7 +79,7 @@ export function IngressDialog({ children }: { children: React.ReactNode }) {
               </label>
               <label>
                 <Text as="div" size="2" mb="1" weight="bold">
-                  Stream key
+                  Khoá phát
                 </Text>
                 <TextField.Root
                   type="text"
@@ -103,11 +102,11 @@ export function IngressDialog({ children }: { children: React.ReactNode }) {
           </>
         ) : (
           <>
-            <Dialog.Title>Setup ingress endpoint</Dialog.Title>
+            <Dialog.Title>Thiết lập điểm nhận luồng</Dialog.Title>
             <Flex direction="column" gap="4" mt="4">
               <label>
                 <Text as="div" size="2" mb="1" weight="bold">
-                  Room name
+                  Tên phòng
                 </Text>
                 <TextField.Root
                   type="text"
@@ -118,18 +117,18 @@ export function IngressDialog({ children }: { children: React.ReactNode }) {
               </label>
               <label>
                 <Text as="div" size="2" mb="1" weight="bold">
-                  Your name
+                  Tên của bạn
                 </Text>
                 <TextField.Root
                   type="text"
-                  placeholder="Roger Dunn"
+                  placeholder="Nguyễn Văn A"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </label>
               <label>
                 <Text as="div" size="2" mb="1" weight="bold">
-                  Ingress type
+                  Loại đầu vào
                 </Text>
                 <RadioGroup.Root>
                   <Flex gap="2" direction="column">
@@ -159,7 +158,7 @@ export function IngressDialog({ children }: { children: React.ReactNode }) {
               <Flex direction="column" gap="2">
                 <Flex justify="between">
                   <Text as="div" size="2" mb="1" weight="bold">
-                    Enable chat
+                    Bật trò chuyện
                   </Text>
                   <Switch
                     checked={enableChat}
@@ -169,7 +168,7 @@ export function IngressDialog({ children }: { children: React.ReactNode }) {
                 <Flex justify="between">
                   <Flex align="center" gap="2">
                     <Text as="div" size="2" weight="bold">
-                      Viewers can participate
+                      Cho phép người xem tham gia
                     </Text>
                     <AllowParticipationInfo />
                   </Flex>
@@ -194,7 +193,7 @@ export function IngressDialog({ children }: { children: React.ReactNode }) {
                     setAllowParticipation(true);
                   }}
                 >
-                  Cancel
+                  Hủy
                 </Button>
               </Dialog.Close>
               <Button
@@ -204,7 +203,7 @@ export function IngressDialog({ children }: { children: React.ReactNode }) {
                 {loading ? (
                   <Flex gap="2" align="center">
                     <Spinner />
-                    <Text>Creating...</Text>
+                    <Text>Đang tạo...</Text>
                   </Flex>
                 ) : (
                   "Create"

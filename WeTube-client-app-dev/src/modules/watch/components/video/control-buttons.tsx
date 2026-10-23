@@ -45,8 +45,8 @@ export default function ControlButtons({
         variant="ghost"
         size="icon"
         onClick={() => seekBy(-10)}
-        aria-label="Back 10 seconds"
-        title="Back 10s"
+        aria-label="Lùi 10 giây"
+        title="Lùi 10 giây"
         className="text-white hover:text-blue-400"
       >
         <Rewind size={20} />
@@ -66,8 +66,8 @@ export default function ControlButtons({
         variant="ghost"
         size="icon"
         onClick={() => seekBy(10)}
-        aria-label="Forward 10 seconds"
-        title="Forward 10s"
+        aria-label="Tiến 10 giây"
+        title="Tiến 10 giây"
         className="text-white hover:text-blue-400"
       >
         <FastForward size={22} />
@@ -79,7 +79,7 @@ export default function ControlButtons({
         size="icon"
         onClick={() => setVolume(volume > 0 ? 0 : 100)}
         className="text-white hover:text-blue-400"
-        title={volume > 0 ? "Mute" : "Unmute"}
+        title={volume > 0 ? "Tắt tiếng" : "Bật tiếng"}
       >
         {volume > 0 ? <Volume2 size={22} /> : <VolumeX size={22} />}
       </Button>
@@ -90,7 +90,7 @@ export default function ControlButtons({
         size="icon"
         onClick={() => setShowSubtitles((prev) => !prev)}
         className="hover:text-blue-400"
-        title={showSubtitles ? "Hide subtitles" : "Show subtitles"}
+        title={showSubtitles ? "Ẩn phụ đề" : "Hiện phụ đề"}
       >
         <Subtitles
           size={22}
@@ -104,7 +104,7 @@ export default function ControlButtons({
         size="icon"
         onClick={toggleFullscreen}
         className="text-white hover:text-blue-400"
-        title="Fullscreen"
+        title="Toàn màn hình"
       >
         <Maximize2 size={22} />
       </Button>

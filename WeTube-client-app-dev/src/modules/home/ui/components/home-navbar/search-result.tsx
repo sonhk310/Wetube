@@ -87,7 +87,7 @@ function SearchResultsContent() {
               duration: formatDuration(dto.duration),
               views: `${
                 dto.totalView ? Number(dto.totalView).toLocaleString() : 0
-              } views`,
+              } lượt xem`,
               uploadTime: new Date(dto.createdAt).toLocaleDateString("vi-VN"),
               channel: {
                 name: dto.author?.name || "Unknown",
@@ -158,7 +158,7 @@ function SearchResultsContent() {
     <main className="container mx-auto px-4 py-6">
       <div className="mb-6">
         <p className="text-gray-600">
-          About {results.length} results for <b>{query}</b>
+          Khoảng {results.length} kết quả cho <b>{query}</b>
         </p>
       </div>
       <div className="space-y-4">
@@ -230,7 +230,7 @@ function SearchResultsContent() {
 export default function SearchResults() {
   return (
     <div className="min-h-screen bg-gray-50 text-black">
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div>Đang tải...</div>}>
         <SearchResultsContent />
       </Suspense>
     </div>

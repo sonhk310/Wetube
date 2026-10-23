@@ -17,8 +17,8 @@ export default function Home() {
                         className="invert dark:invert-0 mt-8 mb-2"
                     />
                     <Text as="p" align="center" className="text-white">
-                        Welcome to the WeTube livestream. You can join or start
-                        your own stream. Hosted on{" "}
+                        Chào mừng đến với phát trực tiếp WeTube. Bạn có thể tham gia
+                        hoặc tự bắt đầu một buổi phát.
                     </Text>
                     <HomeActions/>
                     {/*<Separator orientation="horizontal" size="4" className="my-2"/>*/}

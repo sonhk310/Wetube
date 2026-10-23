@@ -16,62 +16,62 @@ export const playlistService = {
     description?: string;
     type: string;
   }) => {
-    if (!data.userId) throw new Error("UserId is required");
+    if (!data.userId) throw new Error("Thiếu userId");
 
     const res = await apiFetch(`${API_BASE}/create`, {
       method: "POST",
       headers: jsonHeaders(),
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error("Failed to create playlist");
+    if (!res.ok) throw new Error("Không tạo được danh sách phát");
     return res.json();
   },
 
 
   getByUser: async (userId: string) => {
-    if (!userId) throw new Error("UserId is required");
+    if (!userId) throw new Error("Thiếu userId");
 
     const res = await apiFetch(`${API_BASE}/all/${userId}`, {
       headers: jsonHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to fetch user playlists");
+    if (!res.ok) throw new Error("Không tải được danh sách phát của người dùng");
     return res.json();
   },
 
 
   getCreated: async (userId: string) => {
-    if (!userId) throw new Error("UserId is required");
+    if (!userId) throw new Error("Thiếu userId");
 
     const res = await apiFetch(`${API_BASE}/created/${userId}`, {
       headers: jsonHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to fetch created playlists");
+    if (!res.ok) throw new Error("Không tải được danh sách phát đã tạo");
     return res.json();
   },
 
   getDetail: async (playlistId: string) => {
-    if (!playlistId) throw new Error("PlaylistId is required");
+    if (!playlistId) throw new Error("Thiếu playlistId");
 
     const res = await apiFetch(`${API_BASE}/detail/${playlistId}`, {
       headers: jsonHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to fetch playlist detail");
+    if (!res.ok) throw new Error("Không tải được chi tiết danh sách phát");
     return res.json();
   },
   getByUserAndType: async (userId: string, playlistType: string) => {
-    if (!userId || !playlistType) throw new Error("UserId and playlistType are required");
+    if (!userId || !playlistType) throw new Error("Thiếu userId hoặc playlistType");
 
     const res = await apiFetch(
       `${API_BASE}/${userId}/playlistType?playlistType=${playlistType}`,
       { headers: jsonHeaders() }
     );
-    if (!res.ok) throw new Error("Failed to fetch playlist by user and type");
+    if (!res.ok) throw new Error("Không tải được danh sách phát");
     return res.json();
   },
 
   getDetailByChannelAndName: async (channelId: string, playlistName: string) => {
     if (!channelId || !playlistName)
-      throw new Error("channelId and playlistName are required");
+      throw new Error("Thiếu channelId hoặc tên playlist");
 
     const res = await apiFetch(
       `${API_BASE}/detail?channelId=${channelId}&playlistName=${encodeURIComponent(
@@ -79,44 +79,44 @@ export const playlistService = {
       )}`,
       { headers: jsonHeaders() }
     );
-    if (!res.ok) throw new Error("Failed to fetch playlist detail by channelId and name");
+    if (!res.ok) throw new Error("Không tải được chi tiết danh sách phát");
     return res.json();
   },
 
   // POST /add
   addVideo: async (playlistId: string, videoId: string) => {
-    if (!playlistId || !videoId) throw new Error("PlaylistId and VideoId required");
+    if (!playlistId || !videoId) throw new Error("Thiếu playlistId hoặc videoId");
 
     const res = await apiFetch(`${API_BASE}/add`, {
       method: "POST",
       headers: jsonHeaders(),
       body: JSON.stringify({ playlistId, videoId }),
     });
-    if (!res.ok) throw new Error("Failed to add video to playlist");
+    if (!res.ok) throw new Error("Không thêm được video vào danh sách phát");
     return res.json();
   },
 
   // DELETE /{playlistId}/{videoId}
   removeVideo: async (playlistId: string, videoId: string) => {
-    if (!playlistId || !videoId) throw new Error("PlaylistId and VideoId required");
+    if (!playlistId || !videoId) throw new Error("Thiếu playlistId hoặc videoId");
 
     const res = await apiFetch(`${API_BASE}/${playlistId}/${videoId}`, {
       method: "DELETE",
       headers: jsonHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to remove video from playlist");
+    if (!res.ok) throw new Error("Không gỡ được video khỏi danh sách phát");
     return res.json();
   },
 
   // DELETE /{playlistId}
   removePlaylist: async (playlistId: string) => {
-    if (!playlistId) throw new Error("PlaylistId is required");
+    if (!playlistId) throw new Error("Thiếu playlistId");
 
     const res = await apiFetch(`${API_BASE}/${playlistId}`, {
       method: "DELETE",
       headers: jsonHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to remove playlist");
+    if (!res.ok) throw new Error("Không xoá được danh sách phát");
     return res.json();
   },
   // POST|DELETE /{userId}/system/{LIKED|WATCH_LATER}/{videoId}
@@ -129,7 +129,7 @@ export const playlistService = {
       method: "POST",
       headers: jsonHeaders(),
     });
-    if (!res.ok) throw new Error(`Failed to add video to ${type}`);
+    if (!res.ok) throw new Error(`Không thêm được video vào ${type === "LIKED" ? "danh sách đã thích" : "danh sách xem sau"}`);
   },
   removeFromSystemPlaylist: async (
     userId: string,
@@ -140,28 +140,28 @@ export const playlistService = {
       method: "DELETE",
       headers: jsonHeaders(),
     });
-    if (!res.ok) throw new Error(`Failed to remove video from ${type}`);
+    if (!res.ok) throw new Error(`Không gỡ được video khỏi ${type === "LIKED" ? "danh sách đã thích" : "danh sách xem sau"}`);
   },
   // POST /{userId}/history/add/{videoId}
   addToHistory: async (userId: string, videoId: string) => {
-    if (!userId || !videoId) throw new Error("   and VideoId are required");
+    if (!userId || !videoId) throw new Error("Thiếu userId hoặc videoId");
 
     const res = await apiFetch(`${API_BASE}/${userId}/history/add/${videoId}`, {
       method: "POST",
       headers: jsonHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to add video to history");
+    if (!res.ok) throw new Error("Không thêm được video vào lịch sử");
     return res.json();
   },
 
   getHistory: async (userId: string) => {
-  if (!userId) throw new Error("UserId is required");
+  if (!userId) throw new Error("Thiếu userId");
 
   const res = await apiFetch(`${API_BASE}/${userId}/history`, {
     method: "GET",
     headers: jsonHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to fetch watch history");
+  if (!res.ok) throw new Error("Không tải được lịch sử xem");
   return res.json();
 },
 

@@ -180,7 +180,7 @@ export function StreamPlayer({ isHost = false }) {
       ))}
       <ConfettiCanvas />
       <StartAudio
-        label="Click to allow audio playback"
+        label="Bấm để bật âm thanh"
         className="absolute top-0 h-full w-full bg-gray-2-translucent text-white"
       />
       <div className="absolute top-0 w-full p-2">
@@ -208,7 +208,7 @@ export function StreamPlayer({ isHost = false }) {
                 {roomMetadata?.creatorIdentity !==
                   localParticipant.identity && (
                   <Button size="1" onClick={onLeaveStage}>
-                    Leave stage
+                    Rời sân khấu
                   </Button>
                 )}
               </Flex>
@@ -219,7 +219,7 @@ export function StreamPlayer({ isHost = false }) {
               <Flex gap="1" align="center">
                 <div className="rounded-6 bg-red-9 w-2 h-2 animate-pulse" />
                 <Text size="1" className="uppercase text-accent-11">
-                  Live
+                  Trực tiếp
                 </Text>
               </Flex>
             )}

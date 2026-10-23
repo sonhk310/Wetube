@@ -5,7 +5,7 @@ export const SubscriptionsSection = () => {
 
     return (
         <SidebarGroup>
-            <SidebarGroupLabel>Subscriptions Section</SidebarGroupLabel>
+            <SidebarGroupLabel>Kênh đăng ký</SidebarGroupLabel>
         </SidebarGroup>
     )
 }

@@ -101,7 +101,7 @@ export default function CreatePostForm({ userId: _userId, onSubmit }: CreatePost
             <div className="relative w-full">
               <Image
                 src={preview}
-                alt="Preview"
+                alt="Xem trước"
                 width={500}
                 height={300}
                 className="rounded-xl"
@@ -160,7 +160,7 @@ export default function CreatePostForm({ userId: _userId, onSubmit }: CreatePost
           <div className="flex justify-between items-center">
             <label className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-blue-600">
               <ImagePlus size={20} />
-              <span className="text-sm">Image</span>
+              <span className="text-sm">Hình ảnh</span>
               <input
                 type="file"
                 accept="image/*"
@@ -176,7 +176,7 @@ export default function CreatePostForm({ userId: _userId, onSubmit }: CreatePost
               }
               className="rounded-xl px-4"
             >
-              Post
+              Đăng
             </Button>
           </div>
         </form>

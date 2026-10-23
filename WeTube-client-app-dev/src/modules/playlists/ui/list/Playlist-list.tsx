@@ -28,12 +28,12 @@ export default function Playlistlist({ userId }: { userId: string }) {
   }, [userId]);
 
   const tabs = [
-    { label: "Playlists", value: "playlists", playlistType: null },
-    { label: "Watch Later", value: "watchlater", playlistType: "WATCH_LATER" },
-    { label: "Music", value: "music", playlistType: "MUSIC" },
-    { label: "Saved", value: "saved", playlistType: "SAVED" },
-    { label: "Your", value: "your", playlistType: "USER_SAVED" },
-    { label: "Liked", value: "liked", playlistType: "LIKED" },
+    { label: "Danh sách phát", value: "playlists", playlistType: null },
+    { label: "Xem sau", value: "watchlater", playlistType: "WATCH_LATER" },
+    { label: "Âm nhạc", value: "music", playlistType: "MUSIC" },
+    { label: "Đã lưu", value: "saved", playlistType: "SAVED" },
+    { label: "Của bạn", value: "your", playlistType: "USER_SAVED" },
+    { label: "Đã thích", value: "liked", playlistType: "LIKED" },
   ];
 
   const getPlaylistsForTab = (
@@ -55,7 +55,7 @@ export default function Playlistlist({ userId }: { userId: string }) {
 
   return (
     <div className="flex-1 px-6">
-      <h1 className="text-2xl font-bold mb-6">Playlists</h1>
+      <h1 className="text-2xl font-bold mb-6">Danh sách phát</h1>
 
       <Tabs defaultValue="playlists">
         <TabsList className="flex justify-start border-none p-0 h-auto gap-2 px-6 w-full">

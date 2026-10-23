@@ -40,7 +40,7 @@ export default function ShortVideo({short}: { short: Short }) {
                 <EllipsisVerticalIcon className="size-12 text-black"/>
             </motion.div>
             <motion.p variants={item} className="text-gray-700 text-sm">
-                {short.views} views
+                {short.views} lượt xem
             </motion.p>
         </motion.div>
     );

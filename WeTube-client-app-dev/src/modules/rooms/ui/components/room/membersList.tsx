@@ -31,7 +31,7 @@ export default function MemberList() {
         </DialogHeader>
         <ul className="mt-2 space-y-1 text-sm">
           {room?.members.length === 0 && (
-            <li className="text-muted-foreground italic">No members</li>
+            <li className="text-muted-foreground italic">Chưa có thành viên</li>
           )}
           {room!.members.map((m) => (
             <li key={m.username} className="px-2 py-1 rounded hover:bg-muted">

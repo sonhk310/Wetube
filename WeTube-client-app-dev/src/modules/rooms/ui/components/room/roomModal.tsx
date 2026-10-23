@@ -56,7 +56,7 @@ export default function RoomModal({ open, onOpenChange }: RoomProps) {
         toastEmitter.success("Room Joined!");
         router.push("/rooms");
       } catch (err) {
-        toastEmitter.error("Failed to parse room data");
+        toastEmitter.error("Không đọc được dữ liệu phòng");
         console.error(err);
       }
     });
@@ -94,11 +94,11 @@ export default function RoomModal({ open, onOpenChange }: RoomProps) {
 
         setMyUsername(username);
         setRoom(room);
-        toastEmitter.success("Room created!");
+        toastEmitter.success("Đã tạo phòng!");
         unsubscribe(subscription);
         router.push("/rooms");
       } catch (err) {
-        toastEmitter.error("Failed to parse room data");
+        toastEmitter.error("Không đọc được dữ liệu phòng");
         console.error(err);
       }
     });
@@ -111,15 +111,15 @@ export default function RoomModal({ open, onOpenChange }: RoomProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Join or Create a Room</DialogTitle>
+          <DialogTitle>Tham gia hoặc tạo phòng</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-6">
           {/* Username */}
           <div>
-            <label className="text-sm font-medium">Your Name</label>
+            <label className="text-sm font-medium">Tên của bạn</label>
             <Input
-              placeholder="Enter username"
+              placeholder="Nhập tên hiển thị"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
@@ -127,10 +127,10 @@ export default function RoomModal({ open, onOpenChange }: RoomProps) {
 
           {/* Join Room */}
           <div>
-            <label className="text-sm font-medium">Join with Room ID</label>
+            <label className="text-sm font-medium">Tham gia bằng mã phòng</label>
             <div className="flex gap-2 mt-1">
               <Input
-                placeholder="Enter Room ID"
+                placeholder="Nhập mã phòng"
                 value={roomId}
                 onChange={(e) => setRoomId(e.target.value)}
               />
@@ -138,21 +138,21 @@ export default function RoomModal({ open, onOpenChange }: RoomProps) {
                 onClick={handleJoin}
                 disabled={!roomId.trim() || !username.trim()}
               >
-                Join
+                Tham gia
               </Button>
             </div>
           </div>
 
           {/* Create Room */}
           <div>
-            <label className="text-sm font-medium">Create New Room</label>
+            <label className="text-sm font-medium">Tạo phòng mới</label>
             <div className="flex flex-col gap-2 mt-1">
               <Button
                 variant="secondary"
                 onClick={handleCreate}
                 disabled={!username.trim()}
               >
-                Create Room
+                Tạo phòng
               </Button>
             </div>
           </div>
@@ -160,7 +160,7 @@ export default function RoomModal({ open, onOpenChange }: RoomProps) {
 
         <DialogFooter>
           <p className="text-xs text-gray-500">
-            Share the Room ID with friends so they can join your room.
+            Chia sẻ mã phòng cho bạn bè để họ vào phòng của bạn.
           </p>
         </DialogFooter>
       </DialogContent>

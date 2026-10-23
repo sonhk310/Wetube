@@ -15,7 +15,7 @@ export default function Profile({
         <Image
             className={`rounded-full h-${size || "10"} w-${size || "10"} cursor-pointer`}
             src={url}
-            alt="user profile"
+            alt="ảnh đại diện"
             height={40}
             width={40}
         />

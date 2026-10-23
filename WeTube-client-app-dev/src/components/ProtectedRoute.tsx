@@ -17,7 +17,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p>Loading...</p>
+        <p>Đang tải...</p>
       </div>
     );
   }

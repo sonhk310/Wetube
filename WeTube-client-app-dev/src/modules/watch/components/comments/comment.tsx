@@ -31,7 +31,7 @@ export interface Comment {
 export const mapApiCommentToUI = (apiComment: any): Comment => ({
     id: apiComment.id,
     authorId: apiComment.user?.id,
-    commenter: apiComment.user?.name ?? "Unknown",
+    commenter: apiComment.user?.name ?? "Ẩn danh",
     comment: apiComment.content,
     picture: apiComment.user?.picture ?? "",
     commentedAt: apiComment.createdAt,
@@ -136,7 +136,7 @@ export const CommentComponent = ({
             try {
                 setReplies((prev) => ({ ...prev, isLoading: true }));
                 const res = await apiFetch(`${API_PREFIX}/comments/reply/${commentId}`);
-                if (!res.ok) throw new Error("Failed to fetch replies");
+                if (!res.ok) throw new Error("Không tải được các phản hồi");
                 const data = await res.json();
                 setReplies({ isLoading: false, replies: data.map(mapApiCommentToUI) });
             } catch (err) {
@@ -170,7 +170,7 @@ export const CommentComponent = ({
             {comment.commenter}
           </p>
           <p className="text-xs text-gray-600">
-            {new Date(comment.commentedAt).toLocaleDateString()}
+            {new Date(comment.commentedAt).toLocaleDateString("vi-VN")}
           </p>
         </span>
 
@@ -213,7 +213,7 @@ export const CommentComponent = ({
                             <ChevronDownIcon className="size-5" />
                         )}
                         <p className="text-sm font-bold">
-                            {comment.replyCount} replies
+                            {comment.replyCount} phản hồi
                         </p>
                     </button>
                 )}
@@ -222,7 +222,7 @@ export const CommentComponent = ({
                 {isRepliesSectionOpen && (
                     <div className="flex flex-col justify-center items-start w-full gap-6 ml-12 mt-2">
                         {replies.isLoading ? (
-                            <p className="text-xs text-gray-500">Loading replies...</p>
+                            <p className="text-xs text-gray-500">Đang tải phản hồi...</p>
                         ) : (
                             replies.replies.map((reply) => (
                                 <CommentComponent

@@ -66,7 +66,7 @@ export const CommentInput = () => {
           <div className="relative w-full flex justify-center items-center">
             <input
               className="w-full relative py-2 placeholder-gray-600 text-sm outline-0 border-b-[1px] border-gray-400 focus:outline-none"
-              placeholder="Add a comment..."
+              placeholder="Viết bình luận..."
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               value={value}
@@ -91,7 +91,7 @@ export const CommentInput = () => {
                 onClick={handleCancel}
                 className="bg-white hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-3"
               >
-                <p className="text-sm font-bold">Cancel</p>
+                <p className="text-sm font-bold">Hủy</p>
               </button>
               <button
                 onClick={handleSubmit}
@@ -99,7 +99,7 @@ export const CommentInput = () => {
                 className="bg-blue-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-2 px-3 rounded-full"
               >
                 <p className="text-sm font-bold">
-                  {isLoading ? "Posting..." : "Comment"}
+                  {isLoading ? "Đang đăng..." : "Bình luận"}
                 </p>
               </button>
             </div>

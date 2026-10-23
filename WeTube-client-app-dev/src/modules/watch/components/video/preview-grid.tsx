@@ -38,9 +38,9 @@ export default function PreviewGrid() {
           <section className="h-full w-full relative opacity-0 hover:opacity-100 transition-opacity duration-150 flex flex-col justify-between items-end p-1 bg-gradient-to-b from-black/50 to-transparent">
             <div className="p-1 text-white w-full">
               <p className="font-semibold text-xs">
-                We try Life Hacks that actually work
+                Thử những mẹo vặt thực sự hiệu quả
               </p>
-              <p className="text-xs">Channel • 1.2M views</p>
+              <p className="text-xs">Kênh • 1,2 Tr lượt xem</p>
             </div>
             <p
               style={{ fontSize: "11px" }}

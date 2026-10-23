@@ -28,7 +28,7 @@ export default function App({ videoId }: AppProps) {
           <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
     );
-  if (isError) return <p>Something went wrong.</p>;
+  if (isError) return <p>Đã có lỗi xảy ra.</p>;
 
   return (
     <section className="h-full w-full relative">

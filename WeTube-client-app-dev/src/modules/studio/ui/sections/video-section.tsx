@@ -76,7 +76,7 @@ export default function VideosSection() {
   if (error) {
     return (
       <div className="p-6 text-center text-red-500">
-        Failed to load videos. Please try again later.
+        Không tải được danh sách video. Vui lòng thử lại sau.
       </div>
     );
   }
@@ -84,7 +84,7 @@ export default function VideosSection() {
   if (videosFromPlaylist.length === 0) {
     return (
       <div className="p-6 text-center text-muted-foreground">
-        You have no uploaded videos.
+        Bạn chưa tải lên video nào.
       </div>
     );
   }
@@ -95,9 +95,9 @@ export default function VideosSection() {
         <TableHeader>
           <TableRow>
             <TableHead className="pl-6">Video</TableHead>
-            <TableHead className="w-[150px] text-center">Created at</TableHead>
-            <TableHead className="w-[150px] text-center">Updated at</TableHead>
-            <TableHead className="w-[100px] text-center">Views</TableHead>
+            <TableHead className="w-[150px] text-center">Ngày tạo</TableHead>
+            <TableHead className="w-[150px] text-center">Cập nhật</TableHead>
+            <TableHead className="w-[100px] text-center">Lượt xem</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -152,9 +152,9 @@ const VideosSectionSkeleton = () => {
         <TableHeader>
           <TableRow>
             <TableHead className="pl-6 w-[480px]">Video</TableHead>
-            <TableHead className="text-center">Created at</TableHead>
-            <TableHead className="text-center">Updated at</TableHead>
-            <TableHead className="text-center">Views</TableHead>
+            <TableHead className="text-center">Ngày tạo</TableHead>
+            <TableHead className="text-center">Cập nhật</TableHead>
+            <TableHead className="text-center">Lượt xem</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -30,7 +30,7 @@ export const StudioSidebarHeader = () => {
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
-          tooltip="Your profile"
+          tooltip="Hồ sơ của bạn"
           asChild
         >
           <Link
@@ -42,7 +42,7 @@ export const StudioSidebarHeader = () => {
               name={user.name}
               size="sm"
             />
-            <span className="text-sm">Your profile</span>
+            <span className="text-sm">Hồ sơ của bạn</span>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -57,12 +57,12 @@ export const StudioSidebarHeader = () => {
       >
         <UserAvatar
           imageUrl={user?.picture}
-          name={user?.name ?? "User"}
+          name={user?.name ?? "Người dùng"}
           className="size-[112px] hover:opacity-80 transition-opacity"
         />
       </Link>
       <div className="flex flex-col items-center mt-2 gap-y-2">
-        <p className="text-sm font-medium">Your profile</p>
+        <p className="text-sm font-medium">Hồ sơ của bạn</p>
         <p className="text-xs text-muted-foreground">{user.name}</p>
       </div>
     </SidebarHeader>

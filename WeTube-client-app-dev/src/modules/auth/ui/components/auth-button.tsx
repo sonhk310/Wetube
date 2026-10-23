@@ -42,9 +42,9 @@ const AuthButton = () => {
                   router.push(`/channel/${user.channelId}`); 
                 }}
               >
-                Profile
+                Hồ sơ
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={logout}>Logout</DropdownMenuItem>
+              <DropdownMenuItem onSelect={logout}>Đăng xuất</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -57,7 +57,7 @@ const AuthButton = () => {
             className="rounded-full px-4 py-2 flex items-center gap-2 text-black shadow-md"
             onClick={login}
         >
-            Sign In
+            Đăng nhập
         </Button>
     );
 };

@@ -3,10 +3,10 @@
 import { useParams, usePathname, useRouter } from "next/navigation";
 
 const tabs = [
-  { label: "Home", slug: "" },
-  { label: "Videos", slug: "videos" },
-  { label: "Playlists", slug: "playlists" },
-  { label: "Posts", slug: "posts" },
+  { label: "Trang chủ", slug: "" },
+  { label: "Video", slug: "videos" },
+  { label: "Danh sách phát", slug: "playlists" },
+  { label: "Bài đăng", slug: "posts" },
 ];
 
 export default function ChannelTabs() {

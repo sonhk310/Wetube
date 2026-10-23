@@ -5,19 +5,19 @@ export default function FeatureOffline() {
   return (
     <section className="py-20 px-6 bg-white">
       <h2 className="text-3xl md:text-5xl font-extrabold text-center mb-16">
-        Watch your favorite videos — without internet
+        Xem video yêu thích — không cần internet
       </h2>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         {/* Text content */}
         <div>
           <h3 className="text-2xl font-bold mb-4">
-            Watch offline anytime, anywhere
+            Xem ngoại tuyến mọi lúc, mọi nơi
           </h3>
           <p className="text-gray-600 leading-relaxed">
-            Download your favorite videos to watch anytime, without an internet
-            connection. <br />
-            Enjoy content from your favorite creators, even when you’re offline.
+            Tải video yêu thích về để xem bất cứ lúc nào, không cần kết nối
+            internet. <br />
+            Thưởng thức nội dung của các nhà sáng tạo bạn yêu thích ngay cả khi ngoại tuyến.
           </p>
         </div>
 
@@ -27,7 +27,7 @@ export default function FeatureOffline() {
             <div className="w-full h-full rounded-full overflow-hidden bg-white">
               <Image
                 src="/image/video-thumbnail.png"
-                alt="Watch offline"
+                alt="Xem ngoại tuyến"
                 fill
                 sizes="288px"
                 className="object-cover"

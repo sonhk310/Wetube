@@ -12,22 +12,22 @@ export default function HomeView({categoryId }: HomeViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryId );
 
   const categories = [
-    { value: "music", label: "Music" },
-    { value: "games", label: "Games" },
-    { value: "news", label: "News" },
-    { value: "sports", label: "Sports" },
-    { value: "education", label: "Education" },
-    { value: "entertainment", label: "Entertainment" },
-    { value: "technology", label: "Technology" },
-    { value: "lifestyle", label: "Lifestyle" },
-    { value: "travel", label: "Travel" },
-    { value: "food", label: "Food" },
-    { value: "fashion", label: "Fashion" },
-    { value: "finance", label: "Finance" },
-    { value: "health", label: "Health" },
-    { value: "science", label: "Science" },
-    { value: "automotive", label: "Automotive" },
-    { value: "movies", label: "Movies" },
+    { value: "music", label: "Âm nhạc" },
+    { value: "games", label: "Trò chơi" },
+    { value: "news", label: "Tin tức" },
+    { value: "sports", label: "Thể thao" },
+    { value: "education", label: "Giáo dục" },
+    { value: "entertainment", label: "Giải trí" },
+    { value: "technology", label: "Công nghệ" },
+    { value: "lifestyle", label: "Phong cách sống" },
+    { value: "travel", label: "Du lịch" },
+    { value: "food", label: "Ẩm thực" },
+    { value: "fashion", label: "Thời trang" },
+    { value: "finance", label: "Tài chính" },
+    { value: "health", label: "Sức khỏe" },
+    { value: "science", label: "Khoa học" },
+    { value: "automotive", label: "Ô tô" },
+    { value: "movies", label: "Phim" },
     ];
     
   return (

@@ -64,7 +64,7 @@ export default function RoomChat() {
         <input
           type="text"
           className="flex-1 border rounded px-2 py-1 text-sm"
-          placeholder="Type a message..."
+          placeholder="Nhập tin nhắn..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
@@ -72,7 +72,7 @@ export default function RoomChat() {
           type="submit"
           className="ml-2 px-3 py-1 bg-blue-600 text-white text-sm rounded"
         >
-          Send
+          Gửi
         </button>
       </form>
     </div>

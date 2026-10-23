@@ -20,7 +20,7 @@ export default function FeatureMusic() {
             <div className="h-8 w-60 bg-gray-700 rounded animate-pulse" />
           ) : (
             <h2 className="text-2xl md:text-3xl font-semibold">
-              Featured Music Apps
+              Ứng dụng âm nhạc nổi bật
             </h2>
           )}
         </div>
@@ -53,7 +53,7 @@ export default function FeatureMusic() {
                     App Name {index + 1}
                   </h3>
                   <p className="text-sm text-gray-400">
-                    A short description goes here.
+                    Mô tả ngắn hiển thị ở đây.
                   </p>
                 </div>
               </div>

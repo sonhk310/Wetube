@@ -20,14 +20,14 @@ export default function VideoUrlInput({ onSubmit }: Props) {
             <input
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Paste video URL..."
+                placeholder="Dán liên kết video..."
                 className="flex-1 bg-neutral-800 px-3 py-2 rounded-xl outline-none"
             />
             <button
                 onClick={handleSubmit}
                 className="bg-red-600 px-4 py-2 rounded-xl hover:bg-red-700"
             >
-                Load
+                Tải
             </button>
         </div>
     );

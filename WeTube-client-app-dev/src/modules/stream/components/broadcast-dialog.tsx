@@ -53,11 +53,11 @@ export function BroadcastDialog({ children }: { children: React.ReactNode }) {
       <Dialog.Trigger>{children}</Dialog.Trigger>
 
       <Dialog.Content style={{ maxWidth: 450 }} className="rounded-2xl shadow-lg bg-white">
-        <Dialog.Title>Create new stream</Dialog.Title>
+        <Dialog.Title>Tạo buổi phát trực tiếp mới</Dialog.Title>
         <Flex direction="column" gap="4" mt="4">
           <label>
             <Text as="div" size="2" mb="1" weight="bold">
-              Room name
+              Tên phòng
             </Text>
             <TextField.Root
               type="text"
@@ -68,11 +68,11 @@ export function BroadcastDialog({ children }: { children: React.ReactNode }) {
           </label>
           <label>
             <Text as="div" size="2" mb="1" weight="bold">
-              Your name
+              Tên của bạn
             </Text>
             <TextField.Root
               type="text"
-              placeholder="Roger Dunn"
+              placeholder="Nguyễn Văn A"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -80,7 +80,7 @@ export function BroadcastDialog({ children }: { children: React.ReactNode }) {
           <Flex direction="column" gap="2">
             <Flex justify="between">
               <Text as="div" size="2" mb="1" weight="bold">
-                Enable chat
+                Bật trò chuyện
               </Text>
               <Switch
                 checked={enableChat}
@@ -90,7 +90,7 @@ export function BroadcastDialog({ children }: { children: React.ReactNode }) {
             <Flex justify="between">
               <Flex align="center" gap="2">
                 <Text as="div" size="2" weight="bold">
-                  Viewers can participate
+                  Cho phép người xem tham gia
                 </Text>
                 <AllowParticipationInfo />
               </Flex>
@@ -114,14 +114,14 @@ export function BroadcastDialog({ children }: { children: React.ReactNode }) {
                 setAllowParticipation(true);
               }}
             >
-              Cancel
+              Hủy
             </Button>
           </Dialog.Close>
           <Button disabled={!(roomName && name) || loading} onClick={onGoLive}>
             {loading ? (
               <Flex gap="2" align="center">
                 <Spinner />
-                <Text>Creating...</Text>
+                <Text>Đang tạo...</Text>
               </Flex>
             ) : (
               "Create"

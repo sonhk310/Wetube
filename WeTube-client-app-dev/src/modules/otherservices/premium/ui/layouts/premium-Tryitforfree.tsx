@@ -6,23 +6,23 @@ import PaymentButton from './PaymentButton';
 const features = [
   {
     icon: "/icons/no-ads.png",
-    title: "Watch YouTube without ads",
-    desc: "immerse yourself in the videos you love without interruptions",
+    title: "Xem WeTube không quảng cáo",
+    desc: "đắm chìm trong những video bạn yêu thích, không bị gián đoạn",
   },
   {
     icon: "/icons/download.png",
-    title: "Download",
-    desc: "to watch when you don’t have an internet connection",
+    title: "Tải xuống",
+    desc: "để xem khi bạn không có kết nối internet",
   },
   {
     icon: "/icons/background-play.png",
-    title: "Background play",
-    desc: "keep videos playing while using other apps or when the screen is locked",
+    title: "Phát nền",
+    desc: "tiếp tục phát video khi dùng ứng dụng khác hoặc khi khoá màn hình",
   },
   {
     icon: "/icons/music.png",
-    title: "Ad-free music",
-    desc: "on the YouTube Music app",
+    title: "Nhạc không quảng cáo",
+    desc: "trên WeTube Music",
   },
 ];
 
@@ -46,18 +46,17 @@ export default function PremiumTryitforfree() {
         </div>
 
         <p className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-          Enjoy the full experience of{" "}
+          Trải nghiệm trọn vẹn{" "}
           <span className="text-blue-600">WeTube Premium</span>
         </p>
 
         <p className="text-lg text-gray-700 mb-6">
-          Experience WeTube and WeTube Music without ads, with background play,
-          and offline viewing.
+          Xem WeTube và nghe nhạc không quảng cáo, phát nền
+          và xem ngoại tuyến.
         </p>
 
         <p className="text-base text-gray-600 mb-2">
-          Try 1 month for <strong>free</strong>. After that only{" "}
-          <strong>₫49,000/month</strong> • VAT not included • Cancel anytime
+          Gói Basic chỉ <strong>₫99.000 / 30 ngày</strong> • Thanh toán qua MoMo • Chưa gồm VAT
         </p>
 
         <div className="mt-6">
@@ -65,7 +64,7 @@ export default function PremiumTryitforfree() {
         </div>
 
         <p className="mt-4 text-sm text-blue-700 underline cursor-pointer hover:text-blue-900">
-          Plans for family or students
+          Gói dành cho gia đình hoặc sinh viên
         </p>
       </div>
 

@@ -38,19 +38,19 @@ export function timeAgo(dateString: string): string {
   const months  = Math.floor(days / 30);
   const years   = Math.floor(days / 365);
 
-  if (seconds < 60) return 'Just now';
-  if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-  if (hours < 24)   return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-  if (days < 30)    return `${days} day${days > 1 ? 's' : ''} ago`;
-  if (months < 12)  return `${months} month${months > 1 ? 's' : ''} ago`;
-  return `${years} year${years > 1 ? 's' : ''} ago`;
+  if (seconds < 60) return 'Vừa xong';
+  if (minutes < 60) return `${minutes} phút trước`;
+  if (hours < 24)   return `${hours} giờ trước`;
+  if (days < 30)    return `${days} ngày trước`;
+  if (months < 12)  return `${months} tháng trước`;
+  return `${years} năm trước`;
 };
 
 export const formatViews = (num?: number) => {
-  if (!num) return "0 views";
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M views";
-  if (num >= 1_000) return (num / 1_000).toFixed(1) + "K views";
-  return num + " views";
+  if (!num) return "0 lượt xem";
+  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + " Tr lượt xem";
+  if (num >= 1_000) return (num / 1_000).toFixed(1) + " N lượt xem";
+  return num + " lượt xem";
 };
 
 export const generateId = () => crypto.randomUUID();

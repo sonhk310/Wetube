@@ -17,7 +17,7 @@
 "use client";
 
 const Page = () => {
-  return <div>Short id page</div>;
+  return <div>Trang Shorts</div>;
 };
 
 export default Page;

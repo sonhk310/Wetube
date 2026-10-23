@@ -40,7 +40,7 @@ export default function TranscriptModal({ videoId }: { videoId: string }) {
                 <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
                 <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[90vw] max-w-2xl max-h-[80vh] -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-6 overflow-y-auto">
                     <div className="flex justify-between items-center mb-4">
-                        <Dialog.Title className="text-lg font-bold">Transcript</Dialog.Title>
+                        <Dialog.Title className="text-lg font-bold">Bản ghi lời thoại</Dialog.Title>
                         <Dialog.Close asChild>
                             <button>
                                 <XMarkIcon className="size-6" />
@@ -59,16 +59,16 @@ export default function TranscriptModal({ videoId }: { videoId: string }) {
                             onClick={() => fetchTranscript("vi")}
                             className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
                         >
-                            Vietnamese
+                            Tiếng Việt
                         </button>
                     </div>
 
                     {loading ? (
-                        <p className="text-gray-500">Loading transcript...</p>
+                        <p className="text-gray-500">Đang tải bản ghi...</p>
                     ) : transcript ? (
                         <p className="whitespace-pre-line text-sm">{transcript}</p>
                     ) : (
-                        <p className="text-gray-400">Select a language to generate transcript.</p>
+                        <p className="text-gray-400">Chọn ngôn ngữ để tạo bản ghi lời thoại.</p>
                     )}
                 </Dialog.Content>
             </Dialog.Portal>

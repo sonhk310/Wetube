@@ -4,134 +4,50 @@ import { ChevronDown } from "lucide-react";
 
 const faqs = [
   {
-    question: "What does the YouTube Premium plan include?",
+    question: "Gói WeTube Premium gồm những gì?",
     answer: (
       <>
         <p>
-          As a YouTube Premium member, you can watch videos without ads on
-          YouTube. In addition, you can download videos to watch offline and
-          play videos in the background while using other apps.
+          Khi là thành viên WeTube Premium, bạn xem video trên WeTube mà không bị
+          quảng cáo làm gián đoạn.
         </p>
         <p className="mt-2">
-          The YouTube Premium membership also includes YouTube Music Premium.
-          Download the YouTube Music app to enjoy over 100 million songs without
-          ads, offline, and with your screen locked.
-        </p>
-        <p className="mt-2">
-          You can also watch ad-free videos on the YouTube Kids app.
+          Bạn cũng có thể tham gia hội viên của từng kênh để nhận huy hiệu và
+          nội dung dành riêng cho hội viên.
         </p>
       </>
     ),
   },
   {
-    question: "How can I download videos and music?",
+    question: "Tôi thanh toán bằng cách nào?",
     answer: (
       <>
         <p>
-          You can download videos/music to your mobile device when using the
-          YouTube, YouTube Music, or YouTube Kids apps. On desktop, you can also
-          watch and download videos using Chrome, Edge, or Opera browsers.
+          WeTube hỗ trợ thanh toán qua ví MoMo. Sau khi thanh toán xong, bạn sẽ
+          được đưa về WeTube và tài khoản sẽ được nâng cấp.
         </p>
-        <p className="mt-2">
-          You can view or listen offline for up to 30 days without an Internet
-          connection.
-        </p>
-        <a
-          href="https://support.google.com/youtube/answer/6141269"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-2 text-blue-600 underline"
-        >
-          Learn more about watching offline
-        </a>
       </>
     ),
   },
   {
-    question: "How can I add others to my plan?",
+    question: "Gói Premium kéo dài bao lâu?",
     answer: (
       <>
         <p>
-          You can add members to your YouTube Premium Family plan to share with
-          up to 5 other members. When you purchase the family plan, you can add
-          members if you are the family manager.
+          Mỗi gói có thời hạn riêng (30, 90, 180 hoặc 365 ngày). Hết thời hạn,
+          bạn có thể gia hạn bằng cách mua lại gói bất cứ lúc nào.
         </p>
-        <p className="mt-2">
-          Family members must live in the same household or have a Google
-          account within the family group.
-        </p>
-        <a
-          href="https://support.google.com/youtube/answer/6305528"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-2 text-blue-600 underline"
-        >
-          Learn more about the Family plan
-        </a>
       </>
     ),
   },
   {
-    question: "How can I play music and videos in the background?",
+    question: "WeTube Premium khác gì hội viên kênh?",
     answer: (
       <>
         <p>
-          With YouTube Premium, background play is enabled by default on
-          YouTube, YouTube Music, and YouTube Kids. This means if you’re
-          watching a video on YouTube and switch to another app, the video will
-          keep playing in the background until you pause it.
-        </p>
-        <p className="mt-2">You can turn off background play in settings.</p>
-        <a
-          href="https://support.google.com/youtube/answer/7548453"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-2 text-blue-600 underline"
-        >
-          Learn more about Background Play
-        </a>
-      </>
-    ),
-  },
-  {
-    question: "How is YouTube Premium different from YouTube Music Premium?",
-    answer: (
-      <>
-        <p>
-          With YouTube Premium, you can watch videos on the YouTube app without
-          ads, offline, and in the background.
-        </p>
-        <p className="mt-2">
-          The YouTube Premium membership also includes YouTube Music Premium.
-          Download the YouTube Music app to enjoy over 100 million songs without
-          ads, offline, and with your screen locked.
-        </p>
-        <a
-          href="https://support.google.com/youtube/answer/6305537"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-2 text-blue-600 underline"
-        >
-          Learn more about YouTube Music
-        </a>
-      </>
-    ),
-  },
-  {
-    question: "How can I cancel my membership?",
-    answer: (
-      <>
-        <p>
-          You can cancel your membership by going to{" "}
-          <a
-            href="https://www.youtube.com/paid_memberships"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline"
-          >
-            Paid Memberships
-          </a>
-          . You can rejoin YouTube Premium anytime.
+          WeTube Premium áp dụng cho cả tài khoản của bạn (xem không quảng cáo).
+          Hội viên kênh là khoản đóng góp cho một nhà sáng tạo cụ thể để nhận
+          quyền lợi riêng của kênh đó.
         </p>
       </>
     ),
@@ -148,7 +64,7 @@ export default function PremiumFaq() {
   return (
     <section className="w-full max-w-7xl bg-gray-100 rounded-4xl p-6 sm:p-10 mx-auto my-12">
       <div className="text-left">
-        <h2 className="text-4xl font-bold mb-6">Answering your questions</h2>
+        <h2 className="text-4xl font-bold mb-6">Giải đáp thắc mắc</h2>
 
         <div className="divide-y divide-gray-300">
           {faqs.map((faq, index) => (
@@ -175,15 +91,7 @@ export default function PremiumFaq() {
         </div>
 
         <div className="mt-6 text-sm">
-          Still have questions?{" "}
-          <a
-            href="https://support.google.com/youtube"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline"
-          >
-            YouTube Help Center
-          </a>
+          Còn thắc mắc? Hãy dùng mục “Gửi phản hồi” ở thanh bên để liên hệ với chúng tôi.
         </div>
       </div>
     </section>

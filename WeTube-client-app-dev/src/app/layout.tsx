@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "WeTube",
-  description: "Stream and Share Videos Seamlessly",
+  description: "Xem và chia sẻ video thật dễ dàng",
   icons: {
     icon: [{ url: "/favicon.ico" }],
   },
@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="vi"
       className="mdl-js"
     >
       <body

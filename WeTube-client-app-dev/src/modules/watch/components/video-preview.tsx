@@ -41,7 +41,7 @@ export default function VideoPreview({ video }: { video: RecommendVideoDto }) {
                     <CheckCircleIcon className="size-4 text-gray-500" />
         </span>
         <p className="flex text-xs justify-start items-center gap-2">
-          {video.totalView} views • {video.createAt}
+          {video.totalView} lượt xem • {video.createAt}
         </p>
       </div>
     </motion.div>

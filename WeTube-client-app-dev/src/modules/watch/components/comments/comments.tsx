@@ -38,7 +38,7 @@ export const Comments = () => {
     return (
         <div className="mt-4">
             <p className="text-xl font-bold">
-                {comments.length} {comments.length > 1 ? "Comments" : "Comment"}
+                {comments.length} bình luận
             </p>
 
             <div className="mt-3">

@@ -58,7 +58,7 @@ export const useStompStore = create<StompState>((set, get) => ({
             console.error("[STOMP] Broker error", frame);
             newClient?.deactivate();
             set({ connected: false, client: null });
-            reject(new Error("STOMP broker error"));
+            reject(new Error("Lỗi máy chủ nhắn tin"));
           }
         };
 

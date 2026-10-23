@@ -16,11 +16,11 @@ export function JoinDialog({ children }: { children: React.ReactNode }) {
       <Dialog.Trigger>{children}</Dialog.Trigger>
 
       <Dialog.Content style={{ maxWidth: 450 }}>
-        <Dialog.Title>Join existing stream</Dialog.Title>
+        <Dialog.Title>Tham gia buổi phát có sẵn</Dialog.Title>
         <Flex direction="column" gap="3" mt="4">
           <label>
             <Text as="div" size="2" mb="1" weight="bold">
-              Room name
+              Tên phòng
             </Text>
             <TextField.Root
               type="text"
@@ -40,7 +40,7 @@ export function JoinDialog({ children }: { children: React.ReactNode }) {
                 setRoomName("");
               }}
             >
-              Cancel
+              Hủy
             </Button>
           </Dialog.Close>
 
@@ -54,7 +54,7 @@ export function JoinDialog({ children }: { children: React.ReactNode }) {
             {loading ? (
               <Flex gap="2" align="center">
                 <Spinner />
-                <Text>Joining...</Text>
+                <Text>Đang tham gia...</Text>
               </Flex>
             ) : (
               "Join"

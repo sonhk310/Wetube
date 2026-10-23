@@ -64,10 +64,10 @@ export default function WatchPage({
           </Heading>
           <label>
             <Text as="div" size="2" mb="1" weight="bold">
-              Your name
+              Tên của bạn
             </Text>
               <TextField.Root
-                  placeholder="Roger Dunn"
+                  placeholder="Nguyễn Văn A"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -86,7 +86,7 @@ export default function WatchPage({
               {loading ? (
                 <Flex gap="2" align="center">
                   <Spinner />
-                  <Text>Joining...</Text>
+                  <Text>Đang tham gia...</Text>
                 </Flex>
               ) : (
                 <>

@@ -43,7 +43,7 @@ export default function PremiumFeatures() {
     fetchSubPacks();
   }, []);
 
-  if (loading) return <p className="text-center">Loading...</p>;
+  if (loading) return <p className="text-center">Đang tải...</p>;
 
   const handlePayment = async (subPackId: string) => {
     setPayLoading(subPackId);
@@ -61,16 +61,16 @@ export default function PremiumFeatures() {
         }
       );
 
-      if (!res.ok) throw new Error("Payment API failed");
+      if (!res.ok) throw new Error("Gọi API thanh toán thất bại");
 
       const data = await res.json();
       console.log("MoMo response:", data);
 
       if (data.payUrl) window.location.href = data.payUrl;
-      else alert("Payment link from MoMo not received");
+      else alert("Không nhận được liên kết thanh toán từ MoMo");
     } catch (err) {
       console.error(err);
-      alert("An error occurred while creating the payment");
+      alert("Có lỗi khi tạo thanh toán");
     } finally {
       setPayLoading(null);
     }
@@ -80,7 +80,7 @@ export default function PremiumFeatures() {
     <section className="py-20 px-4 bg-gray-50">
       <div className="text-center mb-16">
         <h2 className="text-4xl sm:text-5xl font-extrabold leading-tight text-gray-900">
-          Join Premium and enjoy all features
+          Tham gia Premium để dùng mọi tính năng
         </h2>
       </div>
 
@@ -99,7 +99,7 @@ export default function PremiumFeatures() {
             </div>
 
             <p className="text-lg font-bold text-gray-900 mb-2">
-              {plan.price.toLocaleString("en-US", { style: "currency", currency: "VND" })}
+              {plan.price.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
             </p>
             <p className="text-sm text-gray-700 mb-1">{plan.description}</p>
             <p className="text-xs text-gray-500 mb-4">

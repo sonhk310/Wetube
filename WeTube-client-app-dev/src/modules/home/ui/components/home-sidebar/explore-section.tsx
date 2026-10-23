@@ -8,22 +8,22 @@ import { usePathname } from "next/navigation";
 
 const items = [
     {
-        title: "Music",
+        title: "Âm nhạc",
         url: pageUrls.MUSIC,
         icon: Music 
     },
     {
-        title: "Game",
+        title: "Trò chơi",
         url: pageUrls.LIKED_VIDEOS,
         icon: Gamepad2 
     },
     {
-        title: "News",
+        title: "Tin tức",
         url: pageUrls.ALL_PLAYLISTS,
         icon: Newspaper 
     },
     {
-        title: "Sports",
+        title: "Thể thao",
         url: pageUrls.SPORTS,
         icon: Trophy  
     },
@@ -33,7 +33,7 @@ export const ExploreSection = () => {
     const pathname = usePathname();
     return (
         <SidebarGroup>
-            <SidebarGroupLabel>Explore</SidebarGroupLabel>
+            <SidebarGroupLabel>Khám phá</SidebarGroupLabel>
             <SidebarGroupContent>
                 <SidebarMenu>
                     {items.map((item) => (

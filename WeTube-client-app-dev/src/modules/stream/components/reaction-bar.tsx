@@ -22,27 +22,27 @@ export function ReactionBar() {
             align="center"
             className="border-t border-accent-5 bg-accent-3 h-[100px] text-center"
         >
-            <Tooltip content="Fire" delayDuration={0}>
+            <Tooltip content="Lửa" delayDuration={0}>
                 <Button size="4" variant="outline" onClick={() => onSend("🔥")}>
                     🔥
                 </Button>
             </Tooltip>
-            <Tooltip content="Applause">
+            <Tooltip content="Vỗ tay">
                 <Button size="4" variant="outline" onClick={() => onSend("👏")}>
                     👏
                 </Button>
             </Tooltip>
-            <Tooltip content="LOL">
+            <Tooltip content="Haha">
                 <Button size="4" variant="outline" onClick={() => onSend("🤣")}>
                     🤣
                 </Button>
             </Tooltip>
-            <Tooltip content="Love">
+            <Tooltip content="Yêu thích">
                 <Button size="4" variant="outline" onClick={() => onSend("❤️")}>
                     ❤️
                 </Button>
             </Tooltip>
-            <Tooltip content="Confetti">
+            <Tooltip content="Pháo giấy">
                 <Button size="4" variant="outline" onClick={() => onSend("🎉")}>
                     🎉
                 </Button>

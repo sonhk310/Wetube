@@ -43,25 +43,25 @@ const formSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(1, { message: "Title is required." })
-    .max(250, { message: "Title must be 250 characters or fewer." }),
+    .min(1, { message: "Vui lòng nhập tiêu đề." })
+    .max(250, { message: "Tiêu đề tối đa 250 ký tự." }),
   description: z
     .string()
-    .max(5000, { message: "Description must be 5000 characters or fewer." })
+    .max(5000, { message: "Mô tả tối đa 5000 ký tự." })
     .optional(),
   status: z.enum(["ACTIVE", "PRIVATE", "UNLISTED", "PENDING", "INACTIVE"]),
   tags: z
     .string()
-    .max(200, { message: "Tags must be 200 characters or fewer." })
+    .max(200, { message: "Thẻ tối đa 200 ký tự." })
     .refine((value) => value === "" || /^(#\w+(\s+#\w+)*)$/.test(value), {
-      message: 'Tags must be in the format "#tag1 #tag2"',
+      message: 'Thẻ phải có dạng "#the1 #the2"',
     })
     .optional(),
   thumbnailFile: z
     .instanceof(File)
     .refine(
       (file) => file.size <= MAX_THUMBNAIL_SIZE_BYTES,
-      `Thumbnail file must be ${MAX_THUMBNAIL_SIZE_MB}MB or less.`
+      `Ảnh thu nhỏ tối đa ${MAX_THUMBNAIL_SIZE_MB}MB.`
     )
     .optional(),
 });
@@ -248,7 +248,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
       // Wait a bit to show 100% progress
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      toast.success("Update successfully!");
+      toast.success("Cập nhật thành công!");
 
       // Navigate after showing success
       setTimeout(() => {
@@ -256,7 +256,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
       }, 300);
     } catch (err) {
       console.error("Failed to update video:", err);
-      toast.error("Failed to update video!");
+      toast.error("Cập nhật video thất bại!");
       setProgress(0);
       // setIsSubmitting(false);
       clearInterval(progressInterval);
@@ -268,7 +268,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
       return (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Saving...
+          Đang lưu...
         </>
       );
     }
@@ -277,7 +277,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
 
   if (isLoading) return <FormSectionSkeleton />;
   if (error || !video)
-    return <p className="text-red-500">Failed to load video details.</p>;
+    return <p className="text-red-500">Không tải được thông tin video.</p>;
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-80px)] relative">
@@ -287,7 +287,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
           className="flex flex-col flex-1 min-h-0"
         >
           <div className="flex items-center justify-between pb-4 border-b flex-shrink-0">
-            <h1 className="text-2xl font-bold">Video Details</h1>
+            <h1 className="text-2xl font-bold">Chi tiết video</h1>
             <Button
               type="submit"
               disabled={isUpdating || (!form.formState.isDirty && !hasChanges)}
@@ -303,11 +303,11 @@ export default function FormSection({ videoId }: FormSectionProps) {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-semibold">Title</FormLabel>
+                    <FormLabel className="font-semibold">Tiêu đề</FormLabel>
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Input video title"
+                        placeholder="Nhập tiêu đề video"
                         disabled={isUpdating}
                       />
                     </FormControl>
@@ -320,12 +320,12 @@ export default function FormSection({ videoId }: FormSectionProps) {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-semibold">Description</FormLabel>
+                    <FormLabel className="font-semibold">Mô tả</FormLabel>
                     <FormControl>
                       <Textarea
                         {...field}
                         rows={12}
-                        placeholder="Describe your video..."
+                        placeholder="Mô tả video của bạn..."
                         disabled={isUpdating}
                       />
                     </FormControl>
@@ -356,17 +356,17 @@ export default function FormSection({ videoId }: FormSectionProps) {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-semibold">Tags</FormLabel>
+                    <FormLabel className="font-semibold">Thẻ</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter tags, starting with #"
+                        placeholder="Nhập các thẻ, bắt đầu bằng #"
                         disabled={isUpdating}
                       />
                     </FormControl>
                     <FormMessage />
                     <p className="text-xs text-muted-foreground">
-                      Tags help others find your video.
+                      Thẻ giúp người khác tìm thấy video của bạn.
                     </p>
                   </FormItem>
                 )}
@@ -383,7 +383,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
                   />
                 </div>
                 <div className="p-4 space-y-2 bg-gray-300 mt-4 rounded-2xl">
-                  <p className="text-xs text-muted-foreground">Video link</p>
+                  <p className="text-xs text-muted-foreground">Liên kết video</p>
                   <Link
                     href={`/watch/${video.id}`}
                     className="text-sm text-blue-600 break-all"
@@ -394,7 +394,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
                     <div className="mt-4 space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
-                          Saving progress...
+                          Đang lưu tiến trình...
                         </span>
                         <span className="font-medium">
                           {Math.round(progress)}%
@@ -408,7 +408,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
                       </div>
                       {progress === 100 && (
                         <div className="flex items-center justify-center text-sm text-green-600 mt-2">
-                          <span>✓ Saved successfully! Redirecting...</span>
+                          <span>✓ Đã lưu! Đang chuyển trang...</span>
                         </div>
                       )}
                     </div>
@@ -416,7 +416,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
 
                   <div className="flex items-center gap-x-6">
                     <div>
-                      <p className="text-xs text-muted-foreground">Duration</p>
+                      <p className="text-xs text-muted-foreground">Thời lượng</p>
                       <div className="flex items-center gap-1.5 text-sm">
                         <Clock className="w-4 h-4" />
                         <span>{formatDuration(video.duration)}</span>
@@ -426,7 +426,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
                     {resolution && (
                       <div>
                         <p className="text-xs text-muted-foreground">
-                          Resolution
+                          Độ phân giải
                         </p>
                         <div className="flex items-center gap-1.5 text-sm">
                           <Film className="w-4 h-4" />
@@ -442,7 +442,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-semibold">Status</FormLabel>
+                    <FormLabel className="font-semibold">Trạng thái</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}

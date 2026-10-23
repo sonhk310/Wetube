@@ -82,7 +82,7 @@ const HomeNavbar = () => {
                           className="cursor-pointer text-base p-3"
                         >
                           <Video className="mr-2 h-5 w-5" />
-                          <span>Upload video</span>
+                          <span>Tải video lên</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
@@ -90,7 +90,7 @@ const HomeNavbar = () => {
                           className="cursor-pointer text-base p-3"
                         >
                           <RadioTower className="mr-2 h-5 w-5" />
-                          <span>Live stream</span>
+                          <span>Phát trực tiếp</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
@@ -98,7 +98,7 @@ const HomeNavbar = () => {
                           className="cursor-pointer text-base p-3"
                         >
                           <SquarePen className="mr-2 h-5 w-5" />
-                          <span>Create post</span>
+                          <span>Tạo bài đăng</span>
                         </DropdownMenuItem>
                       </>
                     )}

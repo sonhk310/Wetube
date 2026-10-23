@@ -1,6 +1,6 @@
 const Page = () => {
     return (
-       <div>game page</div> 
+       <div>Trang trò chơi</div> 
     )
 }
 

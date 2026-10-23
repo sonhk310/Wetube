@@ -133,7 +133,7 @@ export default function VideoMetadata() {
           >
             {isSubscribed && <BellIcon className="size-5" />}
             <p className="text-sm font-bold">
-              {isSubscribed ? "Subscribed" : "Subscribe"}
+              {isSubscribed ? "Đã đăng ký" : "Đăng ký"}
             </p>
             {isSubscribed && <ChevronDownIcon className="size-4.5" />}
           </button>
@@ -164,12 +164,12 @@ export default function VideoMetadata() {
             <p className="text-sm font-bold">{savedLater ? "Đã lưu xem sau" : "Xem sau"}</p>
           </button>
           <button className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5">
-            <p className="text-sm font-bold">Share</p>
+            <p className="text-sm font-bold">Chia sẻ</p>
           </button>
           <div className="hidden md:block">
             <button className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5">
               <HeartIcon className="size-5" />
-              <p className="text-sm font-bold">Thanks</p>
+              <p className="text-sm font-bold">Cảm ơn</p>
             </button>
           </div>
           <VideoMoreMenu videoId={videoDetail.detail.id} channelId={channelId} />
@@ -180,7 +180,7 @@ export default function VideoMetadata() {
       {/* Description */}
       <div className="bg-gray-100 p-3 mt-2 w-full rounded-xl text-sm">
         <p className="font-semibold">
-          {totalView.toLocaleString()} views · {timeAgo(createAt)}
+          {totalView.toLocaleString("vi-VN")} lượt xem · {timeAgo(createAt)}
         </p>
         <p>{description}</p>
       </div>

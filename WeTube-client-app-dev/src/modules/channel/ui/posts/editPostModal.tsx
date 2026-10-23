@@ -28,7 +28,7 @@ export default function EditPostModal({
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg">
-                <h2 className="text-lg font-semibold mb-4">Edit your post</h2>
+                <h2 className="text-lg font-semibold mb-4">Chỉnh sửa bài đăng</h2>
 
                 <textarea
                     value={content}
@@ -42,7 +42,7 @@ export default function EditPostModal({
                         onClick={onClose}
                         className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm"
                     >
-                        Cancel
+                        Hủy
                     </button>
                     <button
                         onClick={() => {
@@ -51,7 +51,7 @@ export default function EditPostModal({
                         }}
                         className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm"
                     >
-                        Save
+                        Lưu
                     </button>
                 </div>
             </div>

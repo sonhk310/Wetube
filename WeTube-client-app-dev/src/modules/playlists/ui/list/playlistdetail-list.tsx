@@ -43,7 +43,7 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
     }
   }, [playlist]);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <p>Đang tải...</p>;
   if (!playlist) return <p>Không tìm thấy playlist</p>;
 
   const firstVideo = playlist.videos?.[0];
@@ -59,7 +59,7 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
           <Image
             ref={imgRef}
             src={firstVideo?.thumbnailUrl || "/api/placeholder/300/200"}
-            alt="Playlist"
+            alt="Danh sách phát"
             width={300}
             height={200}
             priority

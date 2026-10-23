@@ -21,31 +21,31 @@ import { usePathname } from "next/navigation";
 
 const items = [
   {
-    title: "History",
+    title: "Lịch sử",
     url: pageUrls.HISTORY,
     icon: HistoryIcon,
     auth: true,
   },
   {
-    title: "Liked videos",
+    title: "Video đã thích",
     url: pageUrls.LIKED_VIDEOS,
     icon: ThumbsUpIcon,
     auth: true,
   },
   {
-    title: "All playlists",
+    title: "Tất cả danh sách phát",
     url: pageUrls.ALL_PLAYLISTS,
     icon: ListVideoIcon,
     auth: true,
   },
   {
-    title: "Your Video",
+    title: "Video của bạn",
     url: pageUrls.YOURVIDEO,
     icon: Youtube,
     auth: true,
   },
   {
-    title: "Watch Later",
+    title: "Xem sau",
     url: pageUrls.WATCHLATER,
     icon: Clock3,
     auth: true,
@@ -56,7 +56,7 @@ export const PersonalSection = () => {
   const pathname = usePathname();
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>You</SidebarGroupLabel>
+      <SidebarGroupLabel>Bạn</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item, index) => (

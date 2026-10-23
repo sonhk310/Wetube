@@ -112,7 +112,7 @@ export default function VideoPlayer({ onChangeVideo }: VideoPlayerProps) {
       <div className="flex flex-col items-center justify-center w-full h-full text-gray-500">
         <VideoOff className="w-12 h-12 mb-4" /> {/* Icon Lucide */}
         <p className="text-lg text-center">
-          Search and add a video to start the party 🎉
+          Hãy tìm và thêm một video để bắt đầu xem chung 🎉
         </p>
       </div>
     );

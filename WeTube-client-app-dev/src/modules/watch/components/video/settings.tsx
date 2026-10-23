@@ -41,7 +41,7 @@ export default function SettingsDropdown() {
         >
           <PlayCircle className="size-4 md:size-5" weight="bold" />
           <div className="w-full flex justify-between items-center">
-            <p>Playback Speed</p>
+            <p>Tốc độ phát</p>
             <p>{playbackSpeed}</p>
           </div>
         </MenuItem>
@@ -55,7 +55,7 @@ export default function SettingsDropdown() {
           className="px-2 py-2 w-full flex justify-start items-center cursor-pointer gap-1 hover:bg-gray-400/55"
         >
           <ArrowLeft className="size-4 md:size-5" weight="regular" />
-          <p>Playback Speed</p>
+          <p>Tốc độ phát</p>
         </MenuItem>
         {rates.map((rate, index) => (
           <MenuItem
@@ -65,7 +65,7 @@ export default function SettingsDropdown() {
             className="w-full flex justify-start items-center cursor-pointer gap-1 hover:bg-gray-400/55"
           >
             <p className="px-6 py-2 text-left">
-              {rate === 1 ? "Normal" : rate}
+              {rate === 1 ? "Bình thường" : rate}
             </p>
           </MenuItem>
         ))}

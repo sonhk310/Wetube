@@ -66,7 +66,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(
-      error instanceof Error ? error : new Error("Unknown error")
+      error instanceof Error ? error : new Error("Lỗi không xác định")
     );
   }
 );

@@ -35,30 +35,30 @@ const videoUploadSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(1, { message: "Title is required." })
-    .max(100, { message: "Title must be 100 characters or fewer." }),
+    .min(1, { message: "Vui lòng nhập tiêu đề." })
+    .max(100, { message: "Tiêu đề tối đa 100 ký tự." }),
   description: z
     .string()
-    .max(5000, { message: "Description must be 5000 characters or fewer." })
+    .max(5000, { message: "Mô tả tối đa 5000 ký tự." })
     .optional(),
   tags: z
     .string()
-    .max(200, { message: "Tags must be 200 characters or fewer." })
+    .max(200, { message: "Thẻ tối đa 200 ký tự." })
     .refine((value) => value === "" || /^(#\w+(\s+#\w+)*)$/.test(value), {
-      message: 'Tags must be in the format "#tag1 #tag2"',
+      message: 'Thẻ phải có dạng "#the1 #the2"',
     })
     .optional(),
   videoFile: z
-    .instanceof(File, { message: "Video file is required." })
+    .instanceof(File, { message: "Vui lòng chọn tệp video." })
     .refine(
       (file) => file.size <= MAX_VIDEO_SIZE_BYTES,
-      `Video file must be ${MAX_VIDEO_SIZE_MB}MB or less.`
+      `Tệp video tối đa ${MAX_VIDEO_SIZE_MB}MB.`
     ),
   thumbnailFile: z
-    .instanceof(File, { message: "Please select or generate a thumbnail." })
+    .instanceof(File, { message: "Vui lòng chọn hoặc tạo ảnh thu nhỏ." })
     .refine(
       (file) => file.size <= MAX_THUMBNAIL_SIZE_BYTES,
-      `Thumbnail file must be ${MAX_THUMBNAIL_SIZE_MB}MB or less.`
+      `Ảnh thu nhỏ tối đa ${MAX_THUMBNAIL_SIZE_MB}MB.`
     ),
 });
 
@@ -123,7 +123,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
     const values = getValues();
     const title = values.title?.trim();
     if (!title) {
-      toast.error("Please enter a title first.");
+      toast.error("Vui lòng nhập tiêu đề trước.");
       return;
     }
     try {
@@ -140,10 +140,10 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
           });
         if (res.data.tags)
           setValue("tags", res.data.tags, { shouldValidate: true });
-        toast.success("AI generated description & tags!");
+        toast.success("AI đã tạo mô tả và thẻ!");
       }
     } catch (err) {
-      toast.error("Failed to generate description & tags");
+      toast.error("Không tạo được mô tả và thẻ");
     } finally {
       setIsGeneratingDescription(false);
     }
@@ -156,7 +156,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         if (!ctx) {
-          reject(new Error("Could not get canvas context"));
+          reject(new Error("Không khởi tạo được vùng vẽ"));
           return;
         }
         canvas.width = video.videoWidth;
@@ -168,7 +168,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
               resolve(
                 new File([blob], "thumbnail.jpg", { type: "image/jpeg" })
               );
-            } else reject(new Error("Could not generate thumbnail"));
+            } else reject(new Error("Không tạo được ảnh thu nhỏ"));
           },
           "image/jpeg",
           0.8
@@ -234,7 +234,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
   // Submit upload
   const onSubmit = async (data: VideoFormData) => {
     if (!user) {
-      toast.error("You need to login to access.");
+      toast.error("Bạn cần đăng nhập để tiếp tục.");
       return;
     }
 
@@ -266,7 +266,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
       clearInterval(interval);
       setUploadProgress(100);
 
-      toast.success("Video upload successfully!", { duration: 3000 });
+      toast.success("Tải video lên thành công!", { duration: 3000 });
 
       // if (user) {
       //   dispatch(
@@ -307,7 +307,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
     <div className="flex flex-col h-full max-h-[90vh]">
       <DialogHeader className="p-4 border-b flex-shrink-0">
         <DialogTitle className="text-2xl font-medium">
-          Video Details
+          Chi tiết video
         </DialogTitle>
         <DialogClose asChild>
           <Button
@@ -316,7 +316,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
             disabled={isUploading}
           >
             <X className="h-7 w-7" />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">Đóng</span>
           </Button>
         </DialogClose>
       </DialogHeader>
@@ -331,7 +331,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
                 htmlFor="title"
                 className="font-semibold mb-2 block"
               >
-                Title
+                Tiêu đề
               </label>
               <Textarea
                 id="title"
@@ -349,7 +349,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
                 htmlFor="description"
                 className="font-semibold mb-2 block"
               >
-                Description
+                Mô tả
               </label>
               <Textarea
                 id="description"
@@ -371,7 +371,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
                 {isGeneratingDescription ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                    Generating...
+                    Đang tạo...
                   </>
                 ) : (
                   "AI Generate Description"
@@ -419,11 +419,11 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
                 htmlFor="tags"
                 className="font-semibold mb-2 block"
               >
-                Tags
+                Thẻ
               </label>
               <Input
                 id="tags"
-                placeholder="Enter the tags, starting with #"
+                placeholder="Nhập các thẻ, bắt đầu bằng #"
                 disabled={isUploading}
                 className={errors?.tags ? "border-red-500" : ""}
                 {...register("tags")}
@@ -434,7 +434,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
                 </p>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                Tags help others easily find your video.
+                Thẻ giúp người khác dễ tìm thấy video của bạn.
               </p>
             </div>
           </div>
@@ -495,7 +495,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
           onClick={onClose}
           disabled={isUploading}
         >
-          Return
+          Quay lại
         </Button>
         <Button
           onClick={handleSubmit(onSubmit)}

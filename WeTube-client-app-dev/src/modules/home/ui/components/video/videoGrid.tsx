@@ -136,9 +136,9 @@ export default function VideoGrid() {
     return <VideoGridSkeleton />;
 
   if (!isAuthLoading && !user)
-    return <p className="p-4">Please Sign In To Enjoy Our Video Community ❤</p>;
+    return <p className="p-4">Hãy đăng nhập để tham gia cộng đồng video WeTube ❤</p>;
 
-  if (error) return <p className="p-4 text-red-500">Error Downloading Video</p>;
+  if (error) return <p className="p-4 text-red-500">Không tải được video</p>;
 
   const isEmpty = !isRecommendFetching && displayedVideos.length === 0;
 
@@ -183,13 +183,13 @@ export default function VideoGrid() {
       )}
       {isEmpty && (
         <p className="text-center mt-6 text-gray-500">
-          No recommendations found for you yet. Start watching some videos!
+          Chưa có video gợi ý cho bạn. Hãy bắt đầu xem một vài video!
         </p>
       )}
 
       {!hasMore && displayedVideos.length > 0 && (
         <p className="text-center mt-6 text-gray-500">
-          You have reached the end of recommendations.
+          Bạn đã xem hết video gợi ý.
         </p>
       )}
     </div>

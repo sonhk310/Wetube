@@ -110,7 +110,7 @@ export default function NormalPostCard({
           <div className="rounded-lg overflow-hidden border border-neutral-800">
             <Image
               src={imageUrl}
-              alt={content.substring(0, 50) || "Post image"}
+              alt={content.substring(0, 50) || "Ảnh bài đăng"}
               width={600}
               height={400}
               className="w-full object-cover"

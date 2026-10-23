@@ -38,7 +38,7 @@ export default function MusicSidebar() {
           height={32}
           className="w-8 h-8 object-contain"
         />
-        <span className="text-2xl font-bold">Music</span>
+        <span className="text-2xl font-bold">Âm nhạc</span>
       </div>
 
       {/* Menu items */}

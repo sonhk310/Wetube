@@ -42,7 +42,7 @@ function ChatMessage({ message }: { message: ReceivedChatMessage }) {
               : "text-gray-11"
           }
         >
-          {message.from?.identity ?? "Unknown"}
+          {message.from?.identity ?? "Ẩn danh"}
         </Text>
         <Text size="1">{message.message}</Text>
       </Flex>
@@ -85,7 +85,7 @@ export function Chat() {
           size="2"
           className="font-mono text-accent-11"
         >
-          Live Chat
+          Trò chuyện trực tiếp
         </Text>
       </Box>
       <Flex
@@ -112,7 +112,7 @@ export function Chat() {
           <Box className="flex-1">
             <TextField.Root
               disabled={false}
-              placeholder={"Say something..."}
+              placeholder={"Nhập tin nhắn..."}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyUp={(e) => {

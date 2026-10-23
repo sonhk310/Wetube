@@ -46,10 +46,10 @@ export default function HistoryList({ userId }: { userId: string }) {
   if (!videos.length) return <p>Chưa có video nào trong lịch sử</p>;
 
   const tabs = [
-    { label: "All", value: "all", type: null },
+    { label: "Tất cả", value: "all", type: null },
     { label: "Video", value: "video", type: "VIDEO" },
     { label: "Podcast", value: "podcast", type: "PODCAST" },
-    { label: "Music", value: "music", type: "MUSIC" },
+    { label: "Âm nhạc", value: "music", type: "MUSIC" },
   ];
 
   const getVideosForTab = (tab: { value: string; type: string | null }) => {
@@ -59,7 +59,7 @@ export default function HistoryList({ userId }: { userId: string }) {
 
   return (
     <div className="max-w-4xl pl-12 pt-6 text-black">
-      <h1 className="text-4xl font-bold mb-3">Watch History</h1>
+      <h1 className="text-4xl font-bold mb-3">Lịch sử xem</h1>
 
       <Tabs defaultValue="all">
         <TabsList className="border-none gap-2 flex-wrap">

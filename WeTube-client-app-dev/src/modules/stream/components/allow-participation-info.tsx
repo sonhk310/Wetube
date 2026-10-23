@@ -14,7 +14,7 @@ export function AllowParticipationInfo() {
     <Popover.Root>
       <Popover.Trigger>
         <IconButton size="1" variant="ghost" color="gray">
-          <AccessibleIcon label="Learn more about panel background options">
+          <AccessibleIcon label="Tìm hiểu thêm về tuỳ chọn nền của khung hình">
             <InfoCircledIcon />
           </AccessibleIcon>
         </IconButton>
@@ -27,10 +27,10 @@ export function AllowParticipationInfo() {
         align="center"
       >
         <Text as="p" size="1">
-          If enabled, viewers can <Strong>raise their hand</Strong>. When
-          accepted by the host, they can share their audio and video. The host
-          can also <Strong>invite</Strong> viewers to share their audio and
-          video.
+          Khi bật, người xem có thể <Strong>giơ tay</Strong>. Nếu được
+          chủ phòng chấp nhận, họ có thể chia sẻ âm thanh và hình ảnh. Chủ phòng
+          cũng có thể <Strong>mời</Strong> người xem chia sẻ âm thanh và
+          hình ảnh.
         </Text>
       </Popover.Content>
     </Popover.Root>

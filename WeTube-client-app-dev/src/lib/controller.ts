@@ -93,11 +93,11 @@ export function getSessionFromReq(req: Request): Session {
   const authHeader = req.headers.get("authorization");
   const token = authHeader?.split(" ")[1];
   if (!token) {
-    throw new Error("No authorization header found");
+    throw new Error("Thiếu thông tin xác thực");
   }
   const verified = jwt.verify(token, process.env.LIVEKIT_API_SECRET!);
   if (!verified) {
-    throw new Error("Invalid token");
+    throw new Error("Mã xác thực không hợp lệ");
   }
   const decoded = jwt.decode(token) as Session;
   return decoded;
@@ -241,7 +241,7 @@ export class Controller {
     const rooms = await this.roomService.listRooms([session.roomName]);
 
     if (rooms.length === 0) {
-      throw new Error("Room does not exist");
+      throw new Error("Phòng không tồn tại");
     }
 
     const room = rooms[0];
@@ -249,7 +249,7 @@ export class Controller {
       .creatorIdentity;
 
     if (creatorIdentity !== session.identity) {
-      throw new Error("Only the creator can invite to stage");
+      throw new Error("Chỉ người tạo phòng mới được mời lên sân khấu");
     }
 
     await this.roomService.deleteRoom(session.roomName);
@@ -267,7 +267,7 @@ export class Controller {
     } catch {}
 
     if (exists) {
-      throw new Error("Participant already exists");
+      throw new Error("Người tham gia đã có trong phòng");
     }
 
     const at = new AccessToken(
@@ -301,7 +301,7 @@ export class Controller {
     const rooms = await this.roomService.listRooms([session.roomName]);
 
     if (rooms.length === 0) {
-      throw new Error("Room does not exist");
+      throw new Error("Phòng không tồn tại");
     }
 
     const room = rooms[0];
@@ -309,7 +309,7 @@ export class Controller {
       .creatorIdentity;
 
     if (creatorIdentity !== session.identity) {
-      throw new Error("Only the creator can invite to stage");
+      throw new Error("Chỉ người tạo phòng mới được mời lên sân khấu");
     }
 
     const participant = await this.roomService.getParticipant(
@@ -343,7 +343,7 @@ export class Controller {
     const rooms = await this.roomService.listRooms([session.roomName]);
 
     if (rooms.length === 0) {
-      throw new Error("Room does not exist");
+      throw new Error("Phòng không tồn tại");
     }
 
     const room = rooms[0];
@@ -352,7 +352,7 @@ export class Controller {
 
     if (creatorIdentity !== session.identity && identity !== session.identity) {
       throw new Error(
-        "Only the creator or the participant him self can remove from stage"
+        "Chỉ người tạo phòng hoặc chính người tham gia mới được rời sân khấu"
       );
     }
 

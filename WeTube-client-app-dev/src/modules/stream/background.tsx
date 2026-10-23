@@ -34,7 +34,7 @@ export default function NeonLinesBackground() {
         }
         setInterval(createLine, 400);
 
-        const text = "Welcome";
+        const text = "Chào mừng";
         ctx.font = "90px 'Pacifico', cursive";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";

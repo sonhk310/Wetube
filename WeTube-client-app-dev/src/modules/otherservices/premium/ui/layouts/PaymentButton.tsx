@@ -26,7 +26,7 @@ export default function PaymentButton() {
         }
       );
 
-      if (!res.ok) throw new Error("Payment API failed");
+      if (!res.ok) throw new Error("Gọi API thanh toán thất bại");
 
       const data = await res.json();
       console.log("MoMo response:", data);
@@ -34,11 +34,11 @@ export default function PaymentButton() {
       if (data.payUrl) {
         window.location.href = data.payUrl;
       } else {
-        alert("Did not receive payment link from MoMo");
+        alert("Không nhận được liên kết thanh toán từ MoMo");
       }
     } catch (err) {
       console.error(err);
-      alert("An error occurred while creating the payment.");
+      alert("Có lỗi khi tạo thanh toán.");
     } finally {
       setLoading(false);
     }

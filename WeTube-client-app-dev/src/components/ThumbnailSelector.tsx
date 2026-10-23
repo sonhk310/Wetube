@@ -41,7 +41,7 @@ export const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({
         htmlFor="thumbnail"
         className="font-semibold mb-2 block text-md"
       >
-        Thumbnail
+        Ảnh thu nhỏ
         {thumbnailPreview && !isGenerating && !disabled && (
           <span className="text-sm text-gray-500 block font-normal">
             (Auto-generated - Click to change)
@@ -71,7 +71,7 @@ export const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({
           {thumbnailPreview ? (
             <Image
               src={thumbnailPreview}
-              alt="Thumbnail"
+              alt="Ảnh thu nhỏ"
               width={1280}
               height={720}
               className="w-full h-auto aspect-video object-cover rounded-lg border transition-all pointer-events-none"
@@ -81,10 +81,10 @@ export const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({
               {isGenerating ? (
                 <div className="flex items-center gap-2 text-gray-500">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Generating...</span>
+                  <span>Đang tạo...</span>
                 </div>
               ) : (
-                <span className="text-gray-500">No thumbnail</span>
+                <span className="text-gray-500">Chưa có ảnh thu nhỏ</span>
               )}
             </div>
           )}

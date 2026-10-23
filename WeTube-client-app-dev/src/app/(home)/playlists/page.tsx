@@ -5,7 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 const Page = () => {
   return (
     <ProtectedRoute>
-      <div>Playlist</div>;
+      <div>Danh sách phát</div>;
     </ProtectedRoute>
   );
 };

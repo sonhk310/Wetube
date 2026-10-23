@@ -165,7 +165,7 @@ export default function VideoBubblePack({
   );
 
   if (isLoading) {
-    return <div className="text-center p-4">Loading subscriptions...</div>;
+    return <div className="text-center p-4">Đang tải kênh đăng ký...</div>;
   }
 
   return (
@@ -173,7 +173,7 @@ export default function VideoBubblePack({
       <div className="absolute top-150 left-1/2  z-50">
         <input
           type="text"
-          placeholder="Search bubble..."
+          placeholder="Tìm kênh..."
           className="px-4 py-2 rounded-full border border-gray-300 shadow-md"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -285,7 +285,7 @@ export default function VideoBubblePack({
                         </Link>
                       </h2>
                       <p className="text-sm text-white">
-                        {activeBubble.subscribers} subscribers
+                        {activeBubble.subscribers} người đăng ký
                       </p>
                     </div>
                   </div>

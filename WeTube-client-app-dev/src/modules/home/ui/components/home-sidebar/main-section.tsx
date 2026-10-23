@@ -17,11 +17,11 @@ import RoomModal from "@/modules/rooms/ui/components/room/roomModal";
 import {Bounce, toast } from "react-toastify";
 
 const items = [
-    { title: "Home", url: pageUrls.HOME, icon: HomeIcon },
-    { title: "Subscriptions", url: pageUrls.SUBSCRIPTIONS, icon: PlaySquareIcon, auth: true },
+    { title: "Trang chủ", url: pageUrls.HOME, icon: HomeIcon },
+    { title: "Kênh đăng ký", url: pageUrls.SUBSCRIPTIONS, icon: PlaySquareIcon, auth: true },
     { title: "Shorts", url: pageUrls.SHORTS, icon: FileVideo },
     { title: "WatchTogether", url: pageUrls.ROOMS, icon: Popcorn },
-    { title: "Live", url: pageUrls.LIVESTREAM, icon: Radio },
+    { title: "Trực tiếp", url: pageUrls.LIVESTREAM, icon: Radio },
 ];
 export const MainSection = () => {
     const pathname = usePathname();
@@ -39,7 +39,7 @@ export const MainSection = () => {
         }
         
         if (!userId) {
-            toast('👀 You need to sign in to use this feature !', {
+            toast('👀 Bạn cần đăng nhập để dùng tính năng này!', {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
