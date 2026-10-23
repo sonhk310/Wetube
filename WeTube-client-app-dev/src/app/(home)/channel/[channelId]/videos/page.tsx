@@ -1,5 +1,5 @@
-import VideoGrid from "@/modules/home/ui/components/video/videoGrid";
+import ChannelVideos from "@/modules/channel/ui/channelVideos";
 
 export default function VideosTab() {
-  return <VideoGrid />;
+  return <ChannelVideos size={30} />;
 }

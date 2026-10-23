@@ -16,5 +16,6 @@ public interface ChannelMapper {
 
 
 
+    @Mapping(target = "userId", expression = "java(channel.getUser() != null ? channel.getUser().getId() : null)")
     ChannelResponseDto toChannelResponseDto(Channel channel);
 }

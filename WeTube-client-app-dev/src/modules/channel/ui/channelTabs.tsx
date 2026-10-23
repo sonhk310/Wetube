@@ -1,7 +1,6 @@
 "use client";
 
-import { useAuth } from "@/contexts/auth-context";
-import { usePathname, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 
 const tabs = [
   { label: "Home", slug: "" },
@@ -13,9 +12,7 @@ const tabs = [
 export default function ChannelTabs() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
-
-  const channelId = user?.channelId;
+  const { channelId } = useParams<{ channelId: string }>();
   const currentTab = pathname.split("/").pop();
 
   const handleTabClick = (slug: string) => {
@@ -30,7 +27,7 @@ export default function ChannelTabs() {
             key={tab.slug}
             onClick={() => handleTabClick(tab.slug)}
             className={`cursor-pointer pb-2 ${
-              (tab.slug === "" && currentTab === "channel") ||
+              (tab.slug === "" && currentTab === channelId) ||
               currentTab === tab.slug
                 ? "text-black border-b-2 border-black"
                 : ""

@@ -16,6 +16,7 @@ import java.util.UUID;
 public class
 ChannelResponseDto {
     private UUID id;
+    private UUID userId;
     private String name;
     private String picture;
     private String backgroundImgUrl;

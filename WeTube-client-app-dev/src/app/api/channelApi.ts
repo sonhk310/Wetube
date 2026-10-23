@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_PREFIX } from "@/constants/appConstant";
-import { ChannelInfo, ChannelSection, ChannelStructure, UpdateCategoryOrderRequest } from '@/types/channel';
+import { ChannelInfo, ChannelVideo,ChannelSection, ChannelStructure, UpdateCategoryOrderRequest } from '@/types/channel';
 
 
 export const channelApi = createApi({
@@ -16,6 +16,14 @@ export const channelApi = createApi({
       providesTags: (result, error, channelId) => [
         { type: "ChannelInfo", id: channelId },
       ],
+    }),
+
+    getChannelVideos: builder.query<
+      { content: ChannelVideo[]; last: boolean },
+      { userId: string; page?: number; size?: number }
+    >({
+      query: ({ userId, page = 0, size = 12 }) =>
+        `/videos/by-user/${userId}?page=${page}&size=${size}`,
     }),
 
     getChannelLayout: builder.query<ChannelSection[], string>({
@@ -51,6 +59,7 @@ export const channelApi = createApi({
 
 export const {
   useGetChannelInfoQuery,
+  useGetChannelVideosQuery,
   useGetChannelLayoutQuery,
   useUpdateCategoryOrderMutation,
 } = channelApi;

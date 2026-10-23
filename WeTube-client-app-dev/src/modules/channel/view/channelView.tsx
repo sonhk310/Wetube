@@ -1,14 +1,10 @@
-// modules/channel/channel-view.tsx
-import FeaturedHero from "../ui/featuredHero";
-import SuggestedVideos from "../ui/suggestedVideo";
-import HighlightedVideos from "../ui/highlightedVideo";
+import ChannelVideos from "../ui/channelVideos";
 
 export default function ChannelView() {
   return (
     <div className="flex flex-col gap-4 px-4 pt-0 pb-4">
-      <FeaturedHero />
-      <SuggestedVideos />
-      <HighlightedVideos />
+      <h3 className="text-lg font-semibold">Video mới nhất</h3>
+      <ChannelVideos size={6} />
     </div>
   );
 }
