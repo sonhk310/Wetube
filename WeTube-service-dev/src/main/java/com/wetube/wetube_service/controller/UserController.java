@@ -1,6 +1,7 @@
 package com.wetube.wetube_service.controller;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.dto.PremiumUserDto;
 import com.wetube.wetube_service.dto.response.UserResponseDto;
