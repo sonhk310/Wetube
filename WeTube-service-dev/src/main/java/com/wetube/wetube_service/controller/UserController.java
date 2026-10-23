@@ -26,8 +26,15 @@ public class UserController {
     private final PremiumUserService premiumUserService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUserById(@PathVariable UUID id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    public ResponseEntity<UserResponseDto> getUserById(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        UserResponseDto user = userService.getUserById(id);
+        // Email là thông tin riêng tư: chỉ chính chủ hoặc admin mới thấy
+        boolean canSeeEmail = jwt != null
+                && (CurrentUser.isAdmin(jwt) || id.equals(CurrentUser.id(jwt)));
+        if (!canSeeEmail) {
+            user.setEmail(null);
+        }
+        return ResponseEntity.ok(user);
     }
 
     @GetMapping("/premium")

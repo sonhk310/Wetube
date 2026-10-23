@@ -41,9 +41,9 @@ public class AdminSeeder implements CommandLineRunner {
                                         + "AND NOT EXISTS (SELECT 1 FROM users_roles ur WHERE ur.user_id = u.id AND ur.role_id = r.id)")
                         .setParameter(1, email)
                         .executeUpdate();
-                if (granted > 0) {
-                    log.info("Đã cấp ROLE_ADMIN cho tài khoản quản trị");
-                }
+                // granted = 0 nghĩa là tài khoản chưa tồn tại, đã có quyền, hoặc thiếu role ROLE_ADMIN
+                log.info("ADMIN_EMAILS: cấp mới ROLE_ADMIN cho {} tài khoản (email khai báo: {})",
+                        granted, adminAccess.emails().size());
             } catch (Exception e) {
                 log.error("Không thể cấp ROLE_ADMIN cho email quản trị", e);
             }
