@@ -65,6 +65,14 @@ Cập nhật: 2026-10-23. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Đã kiểm tra:** 3 API (danh sách, chi tiết, gợi ý) trả cùng `2026-10-23T06:17:16.742Z` (13:17 giờ VN); `next build` và kiểm tra kiểu qua; các trang trả 200; log không lỗi. **Chưa kiểm tra:** bấm thử trình phát trên trình duyệt thật (em không có trình duyệt), anh cần thử.
 
+### Gói 5: giao diện trang xem (commit `d9a7ec5`, deploy 2026-10-23 21:06, chỉ client)
+- Thanh bên trên trang xem đóng sẵn, bấm ☰ thì mở dạng drawer đè lên trang (có logo, tự đóng khi chuyển trang). Làm bằng chế độ `drawer` mới của `SidebarProvider`.
+- Chế độ rạp: nút trên trình phát + phím T, nhớ lựa chọn; bật/tắt không làm video tải lại.
+- Menu cài đặt của trình phát: nền kính mờ thay cho nền đen.
+- Nút "Tạo" trên thanh trên cùng: gọn lại thành dạng viên thuốc (màn hình nhỏ chỉ còn nút tròn).
+
+**Chưa kiểm tra trên trình duyệt thật** (chỉ build, kiểm tra kiểu, các trang trả 200).
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
@@ -98,7 +106,7 @@ Nếu có lỗi: ghi giờ + màn hình, em tra log (`get_runtime_logs`).
 | Thống kê trong Studio | Lượt xem theo ngày, thời gian xem, người đăng ký mới |
 | SEO / thẻ chia sẻ (og:title, og:image) | Để link WeTube hiện đẹp khi dán vào Facebook/Zalo |
 | Giao diện tối | Chưa làm, anh chọn để dành |
-| Trình phát: chọn chất lượng, tự phát video tiếp theo, chế độ rạp, màn hình gợi ý khi hết video | Đã có PiP, phím tắt, tốc độ, chọn phụ đề (gói 4). Chọn chất lượng cần Cloudinary tạo sẵn bản 360p/720p (hoặc HLS) |
+| Trình phát: chọn chất lượng, tự phát video tiếp theo, màn hình gợi ý khi hết video | Đã có PiP, phím tắt, tốc độ, chọn phụ đề (gói 4). Chọn chất lượng cần Cloudinary tạo sẵn bản 360p/720p (hoặc HLS) |
 | Tìm kiếm: bộ lọc (thời lượng, ngày đăng, sắp xếp) | |
 | Bình luận: sắp xếp (mới nhất/nổi bật), ghim, báo cáo bình luận | |
 | Lịch sử xem: xoá từng mục / tạm dừng ghi lịch sử | |
