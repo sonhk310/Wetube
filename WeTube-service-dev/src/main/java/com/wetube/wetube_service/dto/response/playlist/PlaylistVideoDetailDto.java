@@ -2,7 +2,7 @@ package com.wetube.wetube_service.dto.response.playlist;
 
 import lombok.Builder;
 import lombok.Data;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -17,6 +17,6 @@ public class PlaylistVideoDetailDto {
     private int totalView;
     /** Chế độ hiển thị của video (ACTIVE, UNLISTED, PRIVATE, INACTIVE...), để Studio hiện nhãn. */
     private String videoStatus;
-    private LocalDate createdAt;
-    private LocalDate updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

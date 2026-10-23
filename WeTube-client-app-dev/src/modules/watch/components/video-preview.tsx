@@ -2,6 +2,7 @@ import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { RecommendVideoDto } from "@/types/video";
+import { formatViews, timeAgo } from "@/lib/utils";
 
 const item = {
   hidden: { opacity: 0, scale: 0.9 },
@@ -41,7 +42,7 @@ export default function VideoPreview({ video }: { video: RecommendVideoDto }) {
                     <CheckCircleIcon className="size-4 text-gray-500" />
         </span>
         <p className="flex text-xs justify-start items-center gap-2">
-          {video.totalView} lượt xem • {video.createAt}
+          {formatViews(video.totalView)} • {timeAgo(video.createAt)}
         </p>
       </div>
     </motion.div>

@@ -352,7 +352,7 @@ public VideoDto createVideo(MultipartFile videoFile,
                 .title(video.getTitle())
                 .description(video.getDescription())
                 .videoUrl(video.getVideoUrl())
-                .createAt(video.getCreatedAt().toLocalDate())
+                .createAt(video.getCreatedAt())
                 .totalView(video.getTotalView())
                 .name(video.getUser().getName())
                 .picture(video.getUser().getPicture())
@@ -457,8 +457,8 @@ public VideoDto createVideo(MultipartFile videoFile,
                 .thumbnailUrl(video.getThumbnailUrl())
                 .status(video.getVideosStatus() != null ? video.getVideosStatus().toString() : null)
                 .duration(video.getDuration())
-                .createdAt(video.getCreatedAt() != null ? video.getCreatedAt().toLocalDate() : null)
-                .updatedAt(video.getUpdatedAt() != null ? video.getUpdatedAt().toLocalDate() : null)
+                .createdAt(video.getCreatedAt())
+                .updatedAt(video.getUpdatedAt())
                 .tags(tags)
                 .build();
     }

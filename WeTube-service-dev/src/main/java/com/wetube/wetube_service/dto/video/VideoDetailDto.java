@@ -1,6 +1,6 @@
 package com.wetube.wetube_service.dto.video;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,7 +21,7 @@ public class VideoDetailDto {
     private String title;
     private String description;
     private String videoUrl;
-    private LocalDate createAt;
+    private LocalDateTime createAt;
     private Integer totalView;
     private String name;
     private String picture;

@@ -125,8 +125,8 @@ public class PlaylistServiceImpl implements PlaylistService {
                             .totalView(video.getTotalView())
                             .videoStatus(video.getVideosStatus() != null ? video.getVideosStatus().name() : null)
                             .description(video.getDescription())
-                            .createdAt(video.getCreatedAt() != null ? video.getCreatedAt().toLocalDate() : null)
-                            .updatedAt(video.getUpdatedAt() != null ? video.getUpdatedAt().toLocalDate() : null)
+                            .createdAt(video.getCreatedAt())
+                            .updatedAt(video.getUpdatedAt())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -136,7 +136,7 @@ public class PlaylistServiceImpl implements PlaylistService {
                 .playlistTitle(playlist.getTitle())
                 .playlistType(playlist.getPlaylistType())
                 .totalVideos(videoDetails.size())
-                .createdAt(playlist.getCreatedAt() != null ? playlist.getCreatedAt().toLocalDate().atStartOfDay() : null)
+                .createdAt(playlist.getCreatedAt())
                 .videos(videoDetails)
                 .build();
     }

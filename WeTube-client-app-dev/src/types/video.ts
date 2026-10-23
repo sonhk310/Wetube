@@ -76,7 +76,7 @@ export interface VideoDetailDto {
   title: string;
   description: string;
   videoUrl: string;
-  createAt: string; // YYYY-MM-DD
+  createAt: string; // ISO, giờ UTC (…Z)
   totalView: number;
   name: string; // channel name
   picture: string; // channel avatar
