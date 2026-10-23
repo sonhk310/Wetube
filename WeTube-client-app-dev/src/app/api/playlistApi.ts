@@ -26,15 +26,6 @@ export const playlistApi = createApi({
       ],
     }),
 
-    // 🔹 Lấy playlist HISTORY của user
-    getHistoryPlaylist: builder.query<PlaylistSummary[], string>({
-      query: (userId) => `${userId}/playlistType?playlistType=HISTORY`,
-      providesTags: (result, error, userId) => [
-        { type: "Playlist", id: `HISTORY_${userId}` },
-        "Playlist",
-      ],
-    }),
-
     // 🔹 Thêm video vào playlist (bao gồm cả HISTORY)
     addVideoToPlaylist: builder.mutation<
       VideoFromApi, // backend trả PlaylistVideoDto
@@ -57,6 +48,5 @@ export const playlistApi = createApi({
 export const {
   useGetPlaylistsByUserIdQuery,
   useGetPlaylistDetailsQuery,
-  useGetHistoryPlaylistQuery,   // ✅ hook mới để lấy history
   useAddVideoToPlaylistMutation, // ✅ mutation thêm video
 } = playlistApi;

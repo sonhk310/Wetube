@@ -15,15 +15,6 @@ export const videoApi = createApi({
     }),
     tagTypes: ["VideoList", "VideoDetail", "Playlist"],
     endpoints: (builder) => ({
-        getVideos: builder.query<
-            Video[],
-            { categoryId?: string; page?: number; limit?: number }
-        >({
-            query: ({categoryId = "", page = 1, limit = 6}) =>
-                `/videos?categoryId=${categoryId}&page=${page}&limit=${limit}`,
-            providesTags: ["VideoList"],
-        }),
-
         getVideoDetail: builder.query<
             VideoDetailResponseDto,
             { videoId: string }
@@ -67,7 +58,6 @@ export const videoApi = createApi({
 });
 
 export const {
-    useGetVideosQuery,
     useGetVideoDetailQuery,
     useGetVideoFormDetailsQuery,
     useUpdateVideoDetailsMutation,

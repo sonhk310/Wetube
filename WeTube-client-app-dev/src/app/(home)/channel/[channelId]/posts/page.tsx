@@ -1,15 +1,20 @@
 "use client";
 
-import { useAuth } from "@/contexts/auth-context";
+import { useParams } from "next/navigation";
+import { useGetChannelInfoQuery } from "@/app/api/channelApi";
 import CommunityPosts from "@/modules/channel/ui/posts/communityPosts";
 
-
 export default function ChannelPostsPage() {
-  const { user } = useAuth();
-  
-  if (!user) return null;
+  const { channelId } = useParams<{ channelId: string }>();
+  const { data: channel } = useGetChannelInfoQuery(channelId);
 
-  const userId = user.sub;
+  if (!channel?.userId) return null;
 
-  return <CommunityPosts userId={userId} />;
+  return (
+    <CommunityPosts
+      userId={channel.userId}
+      ownerName={channel.name}
+      ownerPicture={channel.picture}
+    />
+  );
 }

@@ -45,22 +45,23 @@ public class PlaylistController {
 
     @Deprecated
     @GetMapping("/all/{userId}")
-    public ResponseEntity<List<UserPlaylistDto>> getAllPlaylistsByUser(@PathVariable UUID userId) {
-        return ResponseEntity.ok(playlistService.getAllPlaylistByUserId(userId));
+    public ResponseEntity<List<UserPlaylistDto>> getAllPlaylistsByUser(@PathVariable UUID userId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(visibleTo(playlistService.getAllPlaylistByUserId(userId), userId, jwt));
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<List<UserPlaylistDto>> getUserPlaylistsById(@PathVariable UUID userId) {
-        return ResponseEntity.ok(playlistService.getUserPlaylistById(userId));
+    public ResponseEntity<List<UserPlaylistDto>> getUserPlaylistsById(@PathVariable UUID userId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(visibleTo(playlistService.getUserPlaylistById(userId), userId, jwt));
     }
 
     @GetMapping("/created/{userId}")
-    public ResponseEntity<List<UserPlaylistDto>> getUserCreatedPlaylistsById(@PathVariable UUID userId) {
-        return ResponseEntity.ok(playlistService.getUserCreatedPlaylistById(userId));
+    public ResponseEntity<List<UserPlaylistDto>> getUserCreatedPlaylistsById(@PathVariable UUID userId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(visibleTo(playlistService.getUserCreatedPlaylistById(userId), userId, jwt));
     }
 
     @GetMapping("/detail/{playlistId}")
-    public ResponseEntity<PlaylistDetailDto> getPlaylistVideoById(@PathVariable UUID playlistId) {
+    public ResponseEntity<PlaylistDetailDto> getPlaylistVideoById(@PathVariable UUID playlistId, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.playlistReadable(playlistId, jwt);
         return ResponseEntity.ok(playlistService.getPlaylistDetailedById(playlistId));
     }
 
@@ -162,6 +163,14 @@ public class PlaylistController {
         if (type != PlaylistType.LIKED && type != PlaylistType.WATCH_LATER) {
             throw new IllegalArgumentException("Chỉ hỗ trợ LIKED và WATCH_LATER");
         }
+    }
+
+    /** Người khác chỉ thấy playlist công khai; lịch sử, đã thích, xem sau và playlist riêng tư chỉ chủ (hoặc admin) thấy. */
+    private static List<UserPlaylistDto> visibleTo(List<UserPlaylistDto> playlists, UUID ownerId, Jwt jwt) {
+        if (jwt != null && (ownerId.toString().equals(jwt.getSubject()) || CurrentUser.isAdmin(jwt))) {
+            return playlists;
+        }
+        return playlists.stream().filter(p -> OwnershipGuard.isPublicPlaylist(p.getPlaylistType(), p.getPrivacy())).toList();
     }
 
     /** Dữ liệu riêng tư (lịch sử, đã thích): chỉ chủ tài khoản được xem hoặc ghi. */

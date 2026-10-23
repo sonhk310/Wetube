@@ -1,5 +1,6 @@
 package com.wetube.wetube_service.security;
 
+import com.wetube.wetube_service.enumeration.PlaylistType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,30 @@ public class OwnershipGuard {
     @Transactional(readOnly = true)
     public void channelOwner(UUID channelId, Jwt jwt) {
         check(single("select u.id from AppUser u where u.channel.id = :id", channelId), jwt);
+    }
+
+    /** Playlist công khai thì ai cũng xem được; còn lại chỉ chủ hoặc admin (404 nếu không có quyền, để không lộ sự tồn tại). */
+    @Transactional(readOnly = true)
+    public void playlistReadable(UUID playlistId, Jwt jwt) {
+        List<Object[]> rows = em.createQuery(
+                        "select p.user.id, p.playlistType, p.privacy from Playlist p where p.id = :id", Object[].class)
+                .setParameter("id", playlistId).setMaxResults(1).getResultList();
+        if (rows.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy");
+        }
+        Object[] row = rows.get(0);
+        if (isPublicPlaylist((PlaylistType) row[1], (String) row[2])) {
+            return;
+        }
+        boolean allowed = jwt != null && (row[0].toString().equals(jwt.getSubject()) || CurrentUser.isAdmin(jwt));
+        if (!allowed) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy");
+        }
+    }
+
+    public static boolean isPublicPlaylist(PlaylistType type, String privacy) {
+        return type != PlaylistType.HISTORY && type != PlaylistType.LIKED && type != PlaylistType.WATCH_LATER
+                && !"private".equalsIgnoreCase(privacy);
     }
 
     @Transactional(readOnly = true)

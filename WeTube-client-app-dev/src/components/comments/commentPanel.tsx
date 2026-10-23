@@ -28,6 +28,8 @@ export default function CommentPanel({
                                      }: CommentsProps) {
     const { user } = useAuth();
     const currentUserId = user?.sub;
+    // Mặc định lấy quyền admin từ tài khoản đang đăng nhập
+    const canModerate = isAdmin ?? !!user?.roles?.includes("ROLE_ADMIN");
 
     const { data: comments = [], isLoading, refetch } = useGetCommentsByTargetQuery({
         targetId,
@@ -82,7 +84,7 @@ export default function CommentPanel({
                                     targetType={targetType}
                                     currentUserId={currentUserId}
                                     isOwnerOfPost={isOwnerOfPost}
-                                    isAdmin={isAdmin}
+                                    isAdmin={canModerate}
                                     onPin={onPin}
                                 />
                             ))}

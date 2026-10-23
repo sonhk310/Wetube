@@ -3,16 +3,22 @@
 import { useState } from "react";
 import { Play } from "lucide-react";
 import Link from "next/link";
-import { PlaylistItem } from "./mockPL";
 import Image from 'next/image';
+
+export interface PlaylistItem {
+  id: string;
+  title: string;
+  videoCount: number;
+  stackThumbnails: string[];
+}
 
 export default function PlaylistCard({ playlist }: { playlist: PlaylistItem }) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   return (
     <Link
-      href={`/playlist/${playlist.id}`}
-      className="block w-[280px] group text-white"
+      href={`/playlists/${playlist.id}`}
+      className="block w-[280px] group"
     >
       <div className="relative h-[160px]">
         {/* Các thumbnail stack */}

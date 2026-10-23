@@ -47,7 +47,7 @@ export const Comments = () => {
 
             <div className="mt-3">
                 {comments.map((c) => (
-                    <CommentComponent key={c.id} comment={c} />
+                    <CommentComponent key={c.id} comment={c} targetId={videoDetail.detail.id} />
                 ))}
             </div>
         </div>

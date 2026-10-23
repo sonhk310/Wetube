@@ -11,10 +11,11 @@ import { useGetLikeInfoQuery, useToggleLikeMutation } from "@/app/api/likeApi";
 import { useAuth } from "@/contexts/auth-context";
 import { API_PREFIX } from "@/constants/appConstant";
 import { apiFetch } from "@/lib/apiFetch";
-// import { useCreateCommentMutation } from "@/app/api/commentApi";
+import { useDeleteCommentMutation } from "@/app/api/commentApi";
 
 export interface Comment {
     id: string;
+    authorId?: string;
     commenter: string;
     comment: string;
     picture: string;
@@ -29,6 +30,7 @@ export interface Comment {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const mapApiCommentToUI = (apiComment: any): Comment => ({
     id: apiComment.id,
+    authorId: apiComment.user?.id,
     commenter: apiComment.user?.name ?? "Unknown",
     comment: apiComment.content,
     picture: apiComment.user?.picture ?? "",
@@ -58,7 +60,16 @@ const getRandomBackground = () => {
     return colors[num];
 };
 
-export const CommentComponent = ({ comment }: { comment: Comment }) => {
+export const CommentComponent = ({
+    comment,
+    targetId,
+    onDeleted,
+}: {
+    comment: Comment;
+    /** Video (bình luận gốc) hoặc bình luận cha (trả lời): dùng để làm mới danh sách sau khi xoá. */
+    targetId: string;
+    onDeleted?: (id: string) => void;
+}) => {
     const [isRepliesSectionOpen, setIsRepliesSectionOpen] = useState(false);
     const [replies, setReplies] = useState<{
         isLoading: boolean;
@@ -72,6 +83,20 @@ export const CommentComponent = ({ comment }: { comment: Comment }) => {
         { skip: !userId }
     );
     const [toggleLike] = useToggleLikeMutation();
+    const [deleteComment, { isLoading: isDeleting }] = useDeleteCommentMutation();
+    // Chủ bình luận hoặc admin được xoá (backend cũng kiểm tra quyền)
+    const canDelete =
+        !!userId && (userId === comment.authorId || !!user?.roles?.includes("ROLE_ADMIN"));
+
+    const handleDelete = async () => {
+        if (!window.confirm("Xoá bình luận này?")) return;
+        try {
+            await deleteComment({ id: comment.id, targetId }).unwrap();
+            onDeleted?.(comment.id);
+        } catch (err) {
+            console.error("Delete comment failed:", err);
+        }
+    };
 
     // const [createComment] = useCreateCommentMutation();
 
@@ -165,6 +190,15 @@ export const CommentComponent = ({ comment }: { comment: Comment }) => {
                             </p>
                         )}
                     </button>
+                    {canDelete && (
+                        <button
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="text-xs text-gray-500 hover:text-red-600 disabled:opacity-50"
+                        >
+                            Xoá
+                        </button>
+                    )}
                 </div>
 
                 {/* Nút xem replies */}
@@ -191,7 +225,17 @@ export const CommentComponent = ({ comment }: { comment: Comment }) => {
                             <p className="text-xs text-gray-500">Loading replies...</p>
                         ) : (
                             replies.replies.map((reply) => (
-                                <CommentComponent key={reply.id} comment={reply} />
+                                <CommentComponent
+                                    key={reply.id}
+                                    comment={reply}
+                                    targetId={comment.id}
+                                    onDeleted={(id) =>
+                                        setReplies((prev) => ({
+                                            ...prev,
+                                            replies: prev.replies.filter((r) => r.id !== id),
+                                        }))
+                                    }
+                                />
                             ))
                         )}
                     </div>

@@ -6,11 +6,15 @@ import CreatePostForm from "@/modules/channel/ui/posts/createPost";
 import {useAuth} from "@/contexts/auth-context";
 
 type Props = {
+    /** Chủ kênh: bài đăng của người này được hiển thị. */
     userId: string;
+    ownerName?: string;
+    ownerPicture?: string | null;
 };
 
-export default function CommunityPosts({ userId }: Props) {
+export default function CommunityPosts({ userId, ownerName, ownerPicture }: Props) {
     const {user} = useAuth();
+    const isOwner = !!user?.sub && user.sub === userId;
 
     const { data: posts, isLoading, isError, refetch } = useGetPostsByUserQuery(userId, {
         skip: !userId,
@@ -42,21 +46,18 @@ export default function CommunityPosts({ userId }: Props) {
     };
 
 
-    if (isLoading) return <div>LOADING...</div>;
-    if (isError) return <div>ERROR</div>;
+    if (isLoading) return <div className="p-4 text-gray-500">Đang tải...</div>;
+    if (isError) return <div className="p-4 text-red-500">Không tải được bài đăng.</div>;
 
     const postsWithAuthor =
         posts
             ?.map((post) => ({
                 ...post,
-                author: post.author ||
-                    (user
-                        ? {
-                            id: user.sub,
-                            name: user.name,
-                            avatarUrl: user.picture,
-                        }
-                        : undefined),
+                author: post.author || {
+                    id: userId,
+                    name: ownerName ?? "",
+                    avatarUrl: ownerPicture ?? "",
+                },
             }))
             .sort(
                 (a, b) =>
@@ -66,13 +67,17 @@ export default function CommunityPosts({ userId }: Props) {
 
     return (
         <div className="flex flex-col gap-4 px-4 py-4">
-            <CreatePostForm userId={userId} onSubmit={handleCreatePost} />
+            {isOwner && <CreatePostForm userId={userId} onSubmit={handleCreatePost} />}
+
+            {postsWithAuthor.length === 0 && (
+                <p className="text-center text-gray-500">Kênh này chưa có bài đăng nào.</p>
+            )}
 
             {postsWithAuthor?.map((post) => (
                 <PostCard
                     key={post.id}
                     post={post}
-                    userId={userId}
+                    userId={user?.sub ?? ""}
                 />
             ))}
         </div>
