@@ -57,6 +57,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class VideoServiceImpl implements VideoService {
 
+    /** Video dài không quá 60 giây được coi là Shorts. */
+    private static final float SHORT_MAX_SECONDS = 60f;
+
     private final VideoRepository videoRepository;
     private final TagRepository tagRepository;
     private final VideoTagRepository videoTagRepository;
@@ -114,6 +117,7 @@ public VideoDto createVideo(MultipartFile videoFile,
     entity.setVideoUrl(videoUrl);
     entity.setThumbnailUrl(thumbnailUrl);
     entity.setVideosStatus(ActiveStatus.ACTIVE);
+    entity.setShort(entity.getDuration() > 0 && entity.getDuration() <= SHORT_MAX_SECONDS);
 
     LocalDateTime now = LocalDateTime.now();
     if (entity.getCreatedAt() == null) entity.setCreatedAt(now);
@@ -260,6 +264,14 @@ public VideoDto createVideo(MultipartFile videoFile,
 
     @Override
     @Transactional(readOnly = true)
+    public CustomPageResponse<VideoDto> getShorts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Video> shorts = videoRepository.findShorts(ActiveStatus.ACTIVE, SHORT_MAX_SECONDS, pageable);
+        return new CustomPageResponse<>(shorts.map(videoMapper::toDto));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<VideoDto> getAllVideo() {
         List<Video> videos = videoRepository.findAll();
         return videoMapper.toDtoList(videos);
@@ -303,6 +315,11 @@ public VideoDto createVideo(MultipartFile videoFile,
     public VideoDetailResponseDto getDetailWithRecommend(UUID videoId, UUID userId) {
         var video = videoRepository.findById(videoId)
                 .orElseThrow(() -> new RuntimeException(ID_NOT_FOUND + videoId));
+        // Video bị admin ẩn (INACTIVE) chỉ chủ video còn xem được
+        if (video.getVideosStatus() == ActiveStatus.INACTIVE
+                && (userId == null || !userId.equals(video.getUser().getId()))) {
+            throw new ResourceNotFoundException("Video", "id", videoId.toString());
+        }
 
         List<TagDto> tags = tagRepository.findByVideoTags_Video_Id(videoId)
                 .stream().map(tag -> new TagDto(tag.getId(), tag.getName(), tag.getCreatedAt(), 0)).toList();

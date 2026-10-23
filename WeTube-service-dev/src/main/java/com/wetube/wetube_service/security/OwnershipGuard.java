@@ -43,6 +43,11 @@ public class OwnershipGuard {
     }
 
     @Transactional(readOnly = true)
+    public void videoOwner(UUID videoId, Jwt jwt) {
+        check(single("select v.user.id from Video v where v.id = :id", videoId), jwt);
+    }
+
+    @Transactional(readOnly = true)
     public void tierOwner(UUID tierId, Jwt jwt) {
         check(single(
                 "select u.id from AppUser u where u.channel.id = (select t.channel.id from MembershipTier t where t.id = :id)",

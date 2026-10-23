@@ -381,17 +381,19 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
 
             {/* Dropdown chọn ngôn ngữ */}
             <div className="mt-4">
-              <label className="font-semibold mb-2 block">Video Language</label>
+              <label className="font-semibold mb-2 block">Phụ đề AI (dịch sang)</label>
               <select
                 value={targetLang}
                 onChange={(e) => setTargetLang(e.target.value)}
                 className="border rounded px-3 py-2 w-full"
                 disabled={isUploading}
               >
-                <option value="">--None--</option>
+                <option value="">Không tạo phụ đề</option>
                 <option value="en">English</option>
                 <option value="vi">Tiếng Việt</option>
                 <option value="ko">한국어</option>
+                <option value="ja">日本語</option>
+                <option value="zh">中文</option>
               </select>
             </div>
 

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Service
@@ -141,6 +142,47 @@ public class CloudinaryService {
         }
     }
 
+
+    /** URL bản mp3 của video (Cloudinary tự chuyển định dạng khi được yêu cầu). */
+    public String audioUrlFor(String videoUrl) {
+        return cloudinary.url()
+                .resourceType("video")
+                .format("mp3")
+                .secure(true)
+                .generate(publicIdFromDeliveryUrl(videoUrl));
+    }
+
+    /** Upload file phụ đề WebVTT (dạng raw) và trả về URL công khai. */
+    public String uploadSubtitle(String vtt, String publicId) {
+        try {
+            Map<?, ?> result = cloudinary.uploader().upload(
+                    vtt.getBytes(StandardCharsets.UTF_8),
+                    ObjectUtils.asMap(
+                            "resource_type", "raw",
+                            "public_id", publicId,
+                            "overwrite", true));
+            return result.get("secure_url").toString();
+        } catch (IOException e) {
+            throw new RuntimeException("Upload subtitle to Cloudinary failed", e);
+        }
+    }
+
+    /**
+     * Lấy public_id từ URL giao hàng của Cloudinary, bỏ phần transformation (vd. q_auto,vc_h264),
+     * version (v123) và đuôi file.
+     */
+    static String publicIdFromDeliveryUrl(String url) {
+        String path = url.substring(url.indexOf("/upload/") + "/upload/".length());
+        String[] segments = path.split("/");
+        int i = 0;
+        while (i < segments.length - 1
+                && (segments[i].matches("[a-z]{1,3}_[^/]*") || segments[i].matches("v\\d+"))) {
+            i++;
+        }
+        String rest = String.join("/", java.util.Arrays.copyOfRange(segments, i, segments.length));
+        int dot = rest.lastIndexOf('.');
+        return dot > 0 ? rest.substring(0, dot) : rest;
+    }
 
     private String extractPublicId(String url) {
         String withoutExtension = url.substring(0, url.lastIndexOf('.'));

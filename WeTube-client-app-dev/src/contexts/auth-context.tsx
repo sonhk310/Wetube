@@ -18,6 +18,7 @@ interface User {
   email: string;
   picture: string;
   channelId: string;
+  roles?: string[];
     channel: {
     id: string;
     backgroundImgUrl: string;

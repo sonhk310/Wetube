@@ -34,6 +34,8 @@ public interface VideoService {
 
     CustomPageResponse<VideoDto> getVideosByUserId(UUID userId, int page, int size);
 
+    CustomPageResponse<VideoDto> getShorts(int page, int size);
+
     List<VideoDto> getVideosByTag(String tagName);
 
     VideoFormDetailDto getVideoDetail(UUID videoId);

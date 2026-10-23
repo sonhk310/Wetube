@@ -49,4 +49,14 @@ public interface VideoRepository extends JpaRepository<Video, UUID> {
 
     Page<Video> findByUserId(UUID userId, Pageable pageable);
 
+    /** Shorts: video được đánh dấu isShort, hoặc video cũ dài không quá maxSeconds. */
+    @Query("""
+                SELECT v FROM Video v
+                WHERE v.videosStatus = :status
+                  AND (v.isShort = true OR (v.duration > 0 AND v.duration <= :maxSeconds))
+            """)
+    Page<Video> findShorts(@Param("status") ActiveStatus status,
+                           @Param("maxSeconds") float maxSeconds,
+                           Pageable pageable);
+
 }

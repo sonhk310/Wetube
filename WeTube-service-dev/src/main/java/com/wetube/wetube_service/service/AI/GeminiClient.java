@@ -10,17 +10,62 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
 public class GeminiClient {
 
     private final String geminiApiKey;
+    private final String model;
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public GeminiClient(@Value("${gemini.api-key}") String geminiApiKey) {
+    public GeminiClient(@Value("${gemini.api-key}") String geminiApiKey,
+                        @Value("${gemini.model:gemini-flash-latest}") String model) {
         this.geminiApiKey = geminiApiKey;
+        this.model = model;
+    }
+
+    /**
+     * Gửi audio (mp3) kèm prompt, yêu cầu Gemini trả JSON; trả về nguyên văn JSON (không hậu xử lý).
+     */
+    public String generateJsonFromAudio(byte[] mp3, String prompt) throws Exception {
+        Map<String, Object> body = Map.of(
+                "contents", List.of(Map.of("parts", List.of(
+                        Map.of("inline_data", Map.of(
+                                "mime_type", "audio/mpeg",
+                                "data", Base64.getEncoder().encodeToString(mp3))),
+                        Map.of("text", prompt)))),
+                "generationConfig", Map.of(
+                        "responseMimeType", "application/json",
+                        "temperature", 0.2));
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(endpoint()))
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofMinutes(5))
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            log.error("[Gemini] API error: {}", response.body());
+            throw new RuntimeException("Gemini API error: " + response.statusCode());
+        }
+        JsonNode parts = objectMapper.readTree(response.body())
+                .path("candidates").path(0).path("content").path("parts");
+        if (!parts.isArray() || parts.isEmpty()) {
+            throw new RuntimeException("No content parts returned from Gemini");
+        }
+        return parts.get(0).path("text").asText("");
+    }
+
+    private String endpoint() {
+        return "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + geminiApiKey;
     }
 
     public String generateText(String prompt) throws Exception {
@@ -39,7 +84,7 @@ public class GeminiClient {
         );
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + geminiApiKey))
+                .uri(URI.create(endpoint()))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();

@@ -14,17 +14,26 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+/**
+ * Loads the JWT RSA key pair. The key content comes from JWT_PRIVATE_KEY / JWT_PUBLIC_KEY
+ * (PEM, with or without the BEGIN/END lines) when set; otherwise from the PEM files, which
+ * are kept out of git and only used for local development.
+ */
 @Component
 public class KeyLoader {
+    @Value("${app.jwt.private-key:}")
+    private String privateKeyInline;
+    @Value("${app.jwt.public-key:}")
+    private String publicKeyInline;
     @Value("${app.jwt.private-key-pem}")
     private Resource privateKeyPem;
     @Value("${app.jwt.public-key-pem}")
     private Resource publicKeyPem;
 
     public RSAPrivateKey loadPrivateKey() {
-        try (InputStream is = privateKeyPem.getInputStream()) {
-            String key = new String(is.readAllBytes());
-            key = key.replace("-----BEGIN PRIVATE KEY-----", "")
+        try {
+            String key = readKey(privateKeyInline, privateKeyPem)
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
                     .replace("-----END PRIVATE KEY-----", "")
                     .replaceAll("\\s+", "");
             byte[] decoded = Base64.getDecoder().decode(key);
@@ -38,9 +47,9 @@ public class KeyLoader {
     }
 
     public RSAPublicKey loadPublicKey() {
-        try (InputStream is = publicKeyPem.getInputStream()) {
-            String key = new String(is.readAllBytes());
-            key = key.replace("-----BEGIN PUBLIC KEY-----", "")
+        try {
+            String key = readKey(publicKeyInline, publicKeyPem)
+                    .replace("-----BEGIN PUBLIC KEY-----", "")
                     .replace("-----END PUBLIC KEY-----", "")
                     .replaceAll("\\s+", "");
             byte[] decoded = Base64.getDecoder().decode(key);
@@ -52,5 +61,13 @@ public class KeyLoader {
             throw new RuntimeException("Failed to load public key", e);
         }
     }
-}
 
+    private static String readKey(String inline, Resource file) throws IOException {
+        if (inline != null && !inline.isBlank()) {
+            return inline;
+        }
+        try (InputStream is = file.getInputStream()) {
+            return new String(is.readAllBytes());
+        }
+    }
+}

@@ -24,7 +24,7 @@ import com.wetube.wetube_service.dto.video.VideoDetailResponseDto;
 import com.wetube.wetube_service.dto.video.VideoDto;
 import com.wetube.wetube_service.search.VideoDocument;
 import com.wetube.wetube_service.service.VideoSearchService;
-import com.wetube.wetube_service.service.client.TranslationClient;
+import com.wetube.wetube_service.service.AI.SubtitleAiService;
 import com.wetube.wetube_service.service.video.VideoService;
 
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,7 @@ public class VideoController {
 
     private final VideoService videoService;
     private final VideoSearchService searchService;
-    private final TranslationClient translationClient;
+    private final SubtitleAiService subtitleAiService;
 
     private static final PolicyFactory SANITIZER_POLICY = Sanitizers.FORMATTING.and(Sanitizers.LINKS);
 
@@ -81,17 +81,9 @@ public class VideoController {
             // Tạo video chính
             VideoDto createdVideo = videoService.createVideo(videoFile, thumbnailFile, meta, authenticatedUserId);
 
-            // 🔥 Nếu targetLang khác null/blank và khác "none" thì mới gọi dịch
-            if (targetLang != null && !targetLang.isBlank() && !"none".equalsIgnoreCase(targetLang)) {
-                try {
-                    translationClient.requestTranslation(
-                            createdVideo.getId(),
-                            createdVideo.getVideoUrl(),
-                            targetLang);
-                } catch (Exception ex) {
-                    // Không chặn flow chính nếu microservice lỗi
-                    System.err.println("⚠️ Translation service error: " + ex.getMessage());
-                }
+            // Có chọn ngôn ngữ thì tạo phụ đề AI (Gemini) chạy nền, không chặn upload
+            if (SubtitleAiService.isSupported(targetLang)) {
+                subtitleAiService.generateAsync(createdVideo.getId(), createdVideo.getVideoUrl(), targetLang);
             }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdVideo);
@@ -134,6 +126,13 @@ public class VideoController {
 
         CustomPageResponse<VideoDto> videoPage = videoService.getVideosByUserId(userId, page, size);
         return ResponseEntity.ok(videoPage);
+    }
+
+    @GetMapping("/shorts")
+    public ResponseEntity<CustomPageResponse<VideoDto>> getShorts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(videoService.getShorts(page, Math.min(size, 50)));
     }
 
     @GetMapping("/by-tag")

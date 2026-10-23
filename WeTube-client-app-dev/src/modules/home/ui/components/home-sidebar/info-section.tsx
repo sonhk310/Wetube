@@ -8,7 +8,8 @@ import {
     SidebarMenuItem
 } from "@/components/ui/sidebar";
 import {pageUrls} from "@/lib/enums/page-urls";
-import {Settings, MessageCircleQuestionMark, Flag, MessageSquareWarning} from "lucide-react";
+import {Settings, MessageCircleQuestionMark, Flag, MessageSquareWarning, ShieldCheck} from "lucide-react";
+import {useAuth} from "@/contexts/auth-context";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 
@@ -35,13 +36,23 @@ const items = [
     }
 ];
 
+const adminItems = [
+    {
+        title: "Quản lý báo cáo",
+        url: "/admin/reports",
+        icon: ShieldCheck,
+    },
+];
+
 export const InfoSection = () => {
     const pathname = usePathname();
+    const {user} = useAuth();
+    const visibleItems = user?.roles?.includes("ROLE_ADMIN") ? [...adminItems, ...items] : items;
     return (
         <SidebarGroup>
             <SidebarGroupContent>
                 <SidebarMenu>
-                    {items.map((item) => (
+                    {visibleItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                             tooltip={item.title}

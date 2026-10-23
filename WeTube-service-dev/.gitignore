@@ -40,3 +40,7 @@ out/
 logs/
 .env*
 logs
+
+### JWT keys (prod uses JWT_PRIVATE_KEY / JWT_PUBLIC_KEY env vars) ###
+src/main/resources/keys/
+src/main/resources/keystore/

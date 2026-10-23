@@ -1,6 +1,5 @@
 import {Separator} from "@/components/ui/separator";
 import {Sidebar, SidebarContent} from "@/components/ui/sidebar";
-import {ExploreSection} from "./explore-section";
 import {InfoSection} from "./info-section";
 import {MainSection} from "./main-section";
 import {OtherServices} from "./otherservices-section";
@@ -16,8 +15,6 @@ const HomeSidebar = () => {
                 <PersonalSection/>
                 <Separator/>
                 <SubscriptionsSection/>
-                <Separator/>
-                <ExploreSection/>
                 <Separator/>
                 <OtherServices/>
                 <Separator />

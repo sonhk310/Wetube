@@ -1,96 +1,81 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Volume2,
   VolumeX,
   ThumbsUp,
-  ThumbsDown,
   MessageCircle,
   Share2,
-  X,
   Maximize2,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useGetLikeInfoQuery, useToggleLikeMutation } from "@/app/api/likeApi";
+import { formatViews } from "@/lib/utils";
+import type { ShortVideo } from "@/modules/shorts/hooks/useShortsFeed";
 
-interface ShortsVideoCardProps {
-  videoUrl: string;
-  caption: string;
-  username: string;
-  avatar: string;
-  hashtags: string;
-  music: string;
+interface ShortsVideoCardProps extends ShortVideo {
   onReachEnd?: () => void;
 }
 
 export default function ShortsVideoCard({
+  id,
   videoUrl,
-  caption,
-  username,
-  avatar,
-  hashtags,
-  music,
+  title,
+  totalView,
+  tagsAsString,
+  user: author,
   onReachEnd,
 }: ShortsVideoCardProps) {
+  const router = useRouter();
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  // const observerRef = useRef<IntersectionObserver | null>(null);
-
-  const [showComment, setShowComment] = useState(false);
-  const [commentInput, setCommentInput] = useState("");
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
-  const [comments, setComments] = useState<string[]>(
-    Array.from({ length: 10 }, (_, i) => `Đây là bình luận số ${i + 1}`)
+  const [copied, setCopied] = useState(false);
+
+  const { data: likeInfo } = useGetLikeInfoQuery(
+    { targetId: id, targetType: "VIDEO", userId: user?.sub ?? "" },
+    { skip: !user?.sub }
   );
+  const [toggleLike] = useToggleLikeMutation();
 
   const handleTogglePlay = () => {
-    if (videoRef.current) {
-      if (videoRef.current.paused) {
-        videoRef.current.play();
-        setPaused(false);
-      } else {
-        videoRef.current.pause();
-        setPaused(true);
-      }
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) {
+      v.play();
+      setPaused(false);
+    } else {
+      v.pause();
+      setPaused(true);
     }
   };
 
-  const handleToggleComment = () => setShowComment(!showComment);
+  const handleLike = async () => {
+    if (!user?.sub) return;
+    try {
+      await toggleLike({ targetId: id, targetType: "VIDEO", userId: user.sub }).unwrap();
+    } catch (err) {
+      console.error("Like short failed:", err);
+    }
+  };
 
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (commentInput.trim() !== "") {
-      setComments((prev) => [...prev, commentInput.trim()]);
-      setCommentInput("");
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/watch/${id}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Copy link failed:", err);
     }
   };
 
   const handleToggleFullscreen = () => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const requestFullscreen =
-      el.requestFullscreen ||
-      (
-        el as HTMLElement & {
-          webkitRequestFullscreen?: () => Promise<void>;
-          mozRequestFullScreen?: () => Promise<void>;
-          msRequestFullscreen?: () => Promise<void>;
-        }
-      ).webkitRequestFullscreen ||
-      (
-        el as HTMLElement & {
-          mozRequestFullScreen?: () => Promise<void>;
-        }
-      ).mozRequestFullScreen ||
-      (
-        el as HTMLElement & {
-          msRequestFullscreen?: () => Promise<void>;
-        }
-      ).msRequestFullscreen;
-
-    if (requestFullscreen) {
-      requestFullscreen.call(el);
-    }
+    containerRef.current?.requestFullscreen?.();
   };
 
   useEffect(() => {
@@ -99,46 +84,32 @@ export default function ShortsVideoCard({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (videoRef.current) {
-          const isVisible =
-            entry.isIntersecting && entry.intersectionRatio > 0.6;
-
-          if (!showComment) {
-            if (isVisible) {
-              videoRef.current.play();
-              setPaused(false);
-              onReachEnd?.();
-            } else {
-              videoRef.current.pause();
-              setPaused(true);
-            }
-          }
+        const v = videoRef.current;
+        if (!v) return;
+        if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+          v.play().catch(() => setPaused(true));
+          setPaused(false);
+          onReachEnd?.();
+        } else {
+          v.pause();
+          setPaused(true);
         }
       },
       { threshold: 0.6 }
     );
 
     observer.observe(currentContainer);
-
-    return () => {
-      if (currentContainer) {
-        observer.unobserve(currentContainer);
-      }
-    };
-  }, [onReachEnd, showComment]);
+    return () => observer.unobserve(currentContainer);
+  }, [onReachEnd]);
 
   return (
     <div
       ref={containerRef}
-      className="relative bg-white flex justify-center items-center overflow-hidden snap-start"
+      className="relative bg-white flex justify-center items-center overflow-hidden snap-start h-full"
     >
-      <div
-        className={`flex items-center gap-6 transition-transform duration-500 ease-in-out ${
-          showComment ? "-translate-x-60" : ""
-        }`}
-      >
+      <div className="flex items-center gap-6">
         <div
-          className="relative aspect-[9/14] w-[360px] max-w-[90vw] sm:rounded-xl overflow-hidden bg-white"
+          className="relative aspect-[9/14] w-[360px] max-w-[90vw] sm:rounded-xl overflow-hidden bg-black"
           onClick={handleTogglePlay}
         >
           <video
@@ -155,101 +126,59 @@ export default function ShortsVideoCard({
             </div>
           )}
 
-          <div className="absolute top-4 left-4 right-4 sm:right-20 text-white text-sm font-semibold bg-black/60 px-3 py-1 rounded-md">
-            {caption}
-          </div>
-
-          <div className="absolute bottom-4 left-4 right-20 text-white text-sm space-y-2">
-            <div className="flex items-center gap-3">
-              <Image
-                src={avatar}
-                alt="avatar"
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-              <div>
-                <p className="font-semibold">{username}</p>
-                <button className="text-xs text-blue-400">Đăng ký</button>
+          <div className="absolute bottom-4 left-4 right-4 text-white text-sm space-y-2">
+            <p className="font-semibold line-clamp-2">{title}</p>
+            {author && (
+              <div className="flex items-center gap-3">
+                <Image
+                  src={author.picture || "https://placehold.co/40x40?text=W"}
+                  alt={author.name}
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+                <p className="font-semibold">{author.name}</p>
               </div>
-            </div>
-            <p className="text-sm">{hashtags}</p>
-            <p className="text-xs text-gray-300">🎵 {music}</p>
+            )}
+            {tagsAsString && <p className="text-xs">{tagsAsString}</p>}
+            <p className="text-xs text-gray-300">{formatViews(totalView)}</p>
           </div>
         </div>
 
         <div className="hidden sm:flex flex-col items-center justify-center gap-6 text-black text-sm">
-            <ActionButton
-              icon={Maximize2}
-              label="Fullscreen"
-              onClick={handleToggleFullscreen}
-            />
+          <ActionButton icon={Maximize2} label="Toàn màn hình" onClick={handleToggleFullscreen} />
           <ActionButton
             icon={muted ? VolumeX : Volume2}
             label={muted ? "Tắt tiếng" : "Có tiếng"}
             onClick={() => setMuted((prev) => !prev)}
           />
-          <ActionButton icon={ThumbsUp} label="27N" />
-          <ActionButton icon={ThumbsDown} label="Không" />
+          <ActionButton
+            icon={ThumbsUp}
+            label={String(likeInfo?.likeCount ?? 0)}
+            active={!!likeInfo?.liked}
+            onClick={handleLike}
+          />
           <ActionButton
             icon={MessageCircle}
-            label={comments.length.toString()}
-            onClick={handleToggleComment}
+            label="Bình luận"
+            onClick={() => router.push(`/watch/${id}`)}
           />
-          <ActionButton icon={Share2} label="Chia sẻ" />
+          <ActionButton icon={Share2} label={copied ? "Đã sao chép" : "Chia sẻ"} onClick={handleShare} />
         </div>
-      </div>
-
-      <div
-        className={`absolute top-0 right-10 rounded-xl h-full w-[450px] max-w-[90vw] bg-[#111] text-white px-4 py-4 transition-all duration-500 ease-in-out ${
-          showComment
-            ? "translate-x-0 opacity-100"
-            : "translate-x-full opacity-0 pointer-events-none"
-        }`}
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="font-bold text-lg">Bình luận {comments.length}</h2>
-          <button onClick={handleToggleComment}>
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="space-y-4 overflow-y-auto max-h-[calc(100%-100px)] pr-2 pb-24">
-          {comments.map((cmt, i) => (
-            <div key={i}>
-              <p className="font-semibold">@user{i + 1}</p>
-              <p>{cmt}</p>
-            </div>
-          ))}
-        </div>
-
-        <form
-          onSubmit={handleSubmitComment}
-          className="absolute bottom-4 left-0 right-0 px-4"
-        >
-          <input
-            type="text"
-            value={commentInput}
-            onChange={(e) => setCommentInput(e.target.value)}
-            placeholder="Viết bình luận..."
-            className="w-full px-4 py-2 rounded-full bg-[#222] text-white placeholder-gray-400 border border-gray-600 focus:outline-none"
-          />
-        </form>
       </div>
     </div>
   );
 }
 
-import type { LucideIcon } from "lucide-react";
-import Image from 'next/image';
-
 function ActionButton({
   icon: Icon,
   label,
+  active,
   onClick,
 }: {
   icon: LucideIcon;
   label: string;
+  active?: boolean;
   onClick?: () => void;
 }) {
   return (
@@ -257,8 +186,8 @@ function ActionButton({
       onClick={onClick}
       className="flex flex-col items-center cursor-pointer hover:scale-110 active:scale-95 transition"
     >
-      <Icon className="text-black w-6 h-6" />
-      <span className="text-xs mt-1 text-black">{label}</span>
+      <Icon className={`w-6 h-6 ${active ? "text-blue-600 fill-blue-600" : "text-black"}`} />
+      <span className="text-xs mt-1">{label}</span>
     </div>
   );
 }

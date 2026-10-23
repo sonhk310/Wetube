@@ -4,7 +4,6 @@ import Image from "next/image";
 import {
   BellIcon,
   ChevronDownIcon,
-  EllipsisHorizontalIcon,
   HandThumbDownIcon,
   HandThumbUpIcon,
   HeartIcon,
@@ -19,6 +18,7 @@ import {
 } from "@/app/api/subscriptionsApi";
 import { useGetLikeInfoQuery, useToggleLikeMutation } from "@/app/api/likeApi";
 import { useAuth } from "@/contexts/auth-context";
+import VideoMoreMenu from "./video-more-menu";
 import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
 
 export default function VideoMetadata() {
@@ -172,9 +172,7 @@ export default function VideoMetadata() {
               <p className="text-sm font-bold">Thanks</p>
             </button>
           </div>
-          <button className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer">
-            <EllipsisHorizontalIcon className="size-6" />
-          </button>
+          <VideoMoreMenu videoId={videoDetail.detail.id} channelId={channelId} />
             {/*<TranscriptModal videoId={videoDetail.detail.id} />*/}
         </section>
       </div>
