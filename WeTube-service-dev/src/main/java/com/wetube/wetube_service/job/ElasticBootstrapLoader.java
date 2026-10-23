@@ -4,6 +4,8 @@ import com.wetube.wetube_service.entity.video.VideoTag;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.repository.video.VideoSearchRepository;
 import com.wetube.wetube_service.search.VideoDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +15,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class ElasticBootstrapLoader implements CommandLineRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(ElasticBootstrapLoader.class);
 
     private final VideoRepository videoRepository;
     private final VideoSearchRepository videoSearchRepository;
@@ -26,6 +30,15 @@ public class ElasticBootstrapLoader implements CommandLineRunner {
     @Override
     @Transactional(readOnly = true)
     public void run(String... args) {
+        try {
+            sync();
+        } catch (Exception e) {
+            // Không để lỗi đồng bộ Elasticsearch làm sập cả ứng dụng
+            log.error("❌ Sync MySQL → Elasticsearch thất bại, bỏ qua và tiếp tục khởi động", e);
+        }
+    }
+
+    private void sync() {
         System.out.println("🚀 Bắt đầu sync dữ liệu cũ MySQL → Elasticsearch...");
 
         var videos = videoRepository.findAll();
