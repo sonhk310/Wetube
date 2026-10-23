@@ -56,6 +56,15 @@ Cập nhật: 2026-10-23. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Đã kiểm tra trên server:** log có "Kết nối Redis OK (PONG)", không có ERROR; lượt xem tính 1 lần rồi gửi lại không tăng (video `be49c4b5…` lên 10 lượt do lần thử này); gửi 121 lần thì từ lần thứ 121 trả 429; gọi gợi ý 3 lần chỉ tính 1 lần (lần đầu 1,4 giây, sau đó khoảng 0,6 giây). Header `X-Forwarded-For` giả không lách được giới hạn theo IP (proxy của Vibe Host ghi đè).
 
+### Gói 4: giờ đăng + trình phát mới (commit `fdb1ae9`, `435b5d7`, deploy 2026-10-23 20:47)
+- **Giờ đăng lệch:** trang chủ "6 giờ trước", trang xem "13 giờ trước". Nguyên nhân: DB lưu giờ UTC nhưng API trả không kèm múi giờ (trình duyệt hiểu là giờ VN), còn trang xem chỉ trả ngày (`2026-10-23`, bị hiểu là 7h sáng). Sửa: mọi thời gian trong JSON có dạng `…Z` (`configuration/JacksonConfig.java`), JVM cố định UTC, trang xem / playlist / Studio trả đủ giờ. Danh sách video bên phải trang xem hiện "x giờ trước" thay vì chuỗi thô.
+- **Trình phát viết lại** (`modules/watch/components/video/`), dùng thẻ `<video>` của trình duyệt, bỏ `react-player`:
+  - Lỗi cũ đã bỏ: một trình phát ẩn (miniplayer) tải song song cùng video và giành thanh tiến trình; kéo thanh tua là video dừng luôn; hết video thì hiện lưới ảnh giả; trạng thái dính sang video sau.
+  - Điều khiển giống YouTube: thanh tua (phần đã tải, rê chuột xem thời điểm, kéo bằng chuột/ngón tay), phát/xem lại, âm lượng (rê để chỉnh, nhớ giữa các lần), thời gian, nút phụ đề, cài đặt (tốc độ, chọn ngôn ngữ phụ đề), trình phát thu nhỏ (PiP), toàn màn hình thật. Tự ẩn khi đang phát, vòng xoay khi tải, tự phát, `?t=`.
+  - Phím tắt: Space/K, J/L (±10s), ←/→ (±5s), ↑/↓ (âm lượng, khi đang ở trên video), M, F, C, 0–9, Home/End, `<` `>` (tốc độ).
+
+**Đã kiểm tra:** 3 API (danh sách, chi tiết, gợi ý) trả cùng `2026-10-23T06:17:16.742Z` (13:17 giờ VN); `next build` và kiểm tra kiểu qua; các trang trả 200; log không lỗi. **Chưa kiểm tra:** bấm thử trình phát trên trình duyệt thật (em không có trình duyệt), anh cần thử.
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
@@ -89,7 +98,7 @@ Nếu có lỗi: ghi giờ + màn hình, em tra log (`get_runtime_logs`).
 | Thống kê trong Studio | Lượt xem theo ngày, thời gian xem, người đăng ký mới |
 | SEO / thẻ chia sẻ (og:title, og:image) | Để link WeTube hiện đẹp khi dán vào Facebook/Zalo |
 | Giao diện tối | Chưa làm, anh chọn để dành |
-| Trình phát: chất lượng video, tự phát tiếp, picture-in-picture, chế độ rạp, phím tắt | Hiện chỉ có phát/tạm dừng/tua/âm lượng |
+| Trình phát: chọn chất lượng, tự phát video tiếp theo, chế độ rạp, màn hình gợi ý khi hết video | Đã có PiP, phím tắt, tốc độ, chọn phụ đề (gói 4). Chọn chất lượng cần Cloudinary tạo sẵn bản 360p/720p (hoặc HLS) |
 | Tìm kiếm: bộ lọc (thời lượng, ngày đăng, sắp xếp) | |
 | Bình luận: sắp xếp (mới nhất/nổi bật), ghim, báo cáo bình luận | |
 | Lịch sử xem: xoá từng mục / tạm dừng ghi lịch sử | |
