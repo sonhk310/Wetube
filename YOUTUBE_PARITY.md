@@ -73,6 +73,15 @@ Cập nhật: 2026-10-23. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Chưa kiểm tra trên trình duyệt thật** (chỉ build, kiểm tra kiểu, các trang trả 200).
 
+### Gói 6: A1–A5 (commit `e4a1e8d`, `c06b722`)
+- **A1 Nhớ vị trí đang xem:** trình phát gửi vị trí mỗi 15 giây khi đang phát, và gửi ngay khi dừng / hết video / ẩn tab / rời trang (`POST /api/videos/{id}/progress?t=&final=`). Vị trí mới nhất nằm trong Redis (`wp:{user}:{video}`); MySQL (`history_duration`) ghi tối đa mỗi phút, hoặc ngay khi `final`. Mở lại video thì phát tiếp (trừ khi mới xem dưới 5 giây hoặc đã gần hết; `?t=` được ưu tiên). Thanh đỏ trên thumbnail ở trang chủ, trang kênh, lịch sử, playlist, danh sách bên phải trang xem; mỗi trang tải vị trí bằng một request (`GET /api/videos/progress?ids=`). Xoá video khỏi lịch sử thì quên luôn vị trí. Người chưa đăng nhập: không lưu (giống YouTube).
+- **A2** Lịch sử được ghi khi thực sự xem, không còn ghi lúc bấm thumbnail; mở bằng link ngoài cũng được ghi.
+- **A3** Hết video: thẻ "Tiếp theo trong 5" (Huỷ / Phát ngay) khi bật Tự phát, ngược lại là lưới gợi ý + Xem lại. Công tắc Tự phát trên thanh điều khiển, có nhớ.
+- **A4 Thông báo:** bảng `notifications` (tạo lúc khởi động bởi `NotificationTableInitializer`). Video công khai (lúc upload, hoặc chuyển sang công khai) báo cho người đăng ký còn bật thông báo, mỗi video một lần; trả lời bình luận báo người viết bình luận gốc; bình luận mới báo chủ video. Chuông trên thanh trên cùng: số chưa đọc (hỏi mỗi 60 giây), danh sách, đánh dấu đã đọc.
+- **A5 Bảng tin Đăng ký** (`/feed/subscribed`): video công khai mới nhất của các kênh đã đăng ký, cuộn vô hạn (`GET /api/feed/subscriptions`). Giao diện bong bóng kênh cũ (`VideoBubblePack`) vẫn còn trong code, không còn dùng ở trang này.
+
+**Đã kiểm tra:** biên dịch backend, kiểm tra kiểu + lint + `next build` client. **Chưa kiểm tra trên server / trình duyệt thật** cho tới khi deploy.
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
@@ -100,11 +109,11 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 ### A. Ưu tiên cao: người xem thấy ngay
 | # | Việc | Ở đâu | Cỡ | Hiện trạng / ghi chú |
 |---|---|---|---|---|
-| A1 | **Nhớ vị trí đang xem**: phát tiếp từ chỗ dừng, thanh đỏ trên thumbnail | BE+FE | M | Cột `historyDuration` có sẵn nhưng luôn 0; thanh đỏ đã viết trong `VideoCard` nhưng không bao giờ hiện. Ghi vị trí vào Redis, định kỳ ghi MySQL |
-| A2 | **Ghi lịch sử khi thực sự xem** (không phải lúc bấm thumbnail) | FE | S | Mở bằng link chia sẻ hiện không được ghi lịch sử. Làm cùng A1 |
-| A3 | **Màn hình hết video + tự phát video tiếp theo** (đếm ngược, nút huỷ, công tắc Tự phát) | FE | M | Hiện chỉ có nút xem lại |
-| A4 | **Thông báo (chuông)**: kênh đã đăng ký có video mới, có người trả lời / thích bình luận | BE+FE | L | Đã ẩn nút; cần bảng thông báo, API, đếm chưa đọc |
-| A5 | **Trang Đăng ký dạng bảng tin**: video mới của các kênh đã đăng ký | BE+FE | M | Hiện là giao diện bong bóng kênh |
+| A1 | ✅ **Nhớ vị trí đang xem**: phát tiếp từ chỗ dừng, thanh đỏ trên thumbnail | BE+FE | M | Cột `historyDuration` có sẵn nhưng luôn 0; thanh đỏ đã viết trong `VideoCard` nhưng không bao giờ hiện. Ghi vị trí vào Redis, định kỳ ghi MySQL |
+| A2 | ✅ **Ghi lịch sử khi thực sự xem** (không phải lúc bấm thumbnail) | FE | S | Mở bằng link chia sẻ hiện không được ghi lịch sử. Làm cùng A1 |
+| A3 | ✅ **Màn hình hết video + tự phát video tiếp theo** (đếm ngược, nút huỷ, công tắc Tự phát) | FE | M | Hiện chỉ có nút xem lại |
+| A4 | ✅ **Thông báo (chuông)**: kênh đã đăng ký có video mới, có người trả lời / thích bình luận | BE+FE | L | Đã ẩn nút; cần bảng thông báo, API, đếm chưa đọc |
+| A5 | ✅ **Trang Đăng ký dạng bảng tin**: video mới của các kênh đã đăng ký | BE+FE | M | Hiện là giao diện bong bóng kênh |
 | A6 | **Bình luận**: sắp xếp Nổi bật / Mới nhất, ghim, tim của chủ kênh, báo cáo bình luận | BE+FE | M | Chưa có |
 | A7 | **Báo lỗi khi bị giới hạn (429)** ở ô bình luận | FE | S | Hiện bình luận không gửi được mà không báo gì |
 | A8 | **Gắn tag cho video hiện có** để chip trang chủ có dữ liệu | dữ liệu | S | Hiện chỉ có chip "Tất cả" |
