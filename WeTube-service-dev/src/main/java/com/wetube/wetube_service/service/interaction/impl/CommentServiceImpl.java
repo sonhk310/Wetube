@@ -14,13 +14,18 @@ import com.wetube.wetube_service.repository.interaction.CommentRepository;
 import com.wetube.wetube_service.repository.post.PostRepository;
 import com.wetube.wetube_service.service.interaction.CommentService;
 import com.wetube.wetube_service.service.interaction.LikeService;
+import com.wetube.wetube_service.entity.notification.Notification;
+import com.wetube.wetube_service.repository.video.VideoRepository;
+import com.wetube.wetube_service.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -32,6 +37,8 @@ public class CommentServiceImpl implements CommentService {
     private final LikeService likeService;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final VideoRepository videoRepository;
+    private final NotificationService notificationService;
 
     @Override
     public List<CommentResponseDto> getCommentsByTargetId(UUID targetId, Comment.TargetType type) {
@@ -74,6 +81,7 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         comment.setUser(user);
         Comment saved = commentRepository.save(comment);
+        notifyAboutComment(saved, user.getId());
 
         if (saved.getTargetType() == Comment.TargetType.POST) {
             postRepository.findById(saved.getTargetId()).ifPresent(post -> {
@@ -84,6 +92,29 @@ public class CommentServiceImpl implements CommentService {
         }
 
         return toResponseWithReplies(saved);
+    }
+
+    /** Trả lời bình luận -> báo người viết bình luận gốc; bình luận mới trên video -> báo chủ video. */
+    private void notifyAboutComment(Comment saved, UUID authorId) {
+        if (saved.getTargetType() != Comment.TargetType.VIDEO) {
+            return;
+        }
+        try {
+            UUID videoId = saved.getTargetId();
+            if (saved.getParentCommentId() != null) {
+                UUID parentAuthor = commentRepository.findById(saved.getParentCommentId())
+                        .map(c -> c.getUser() != null ? c.getUser().getId() : null)
+                        .orElse(null);
+                notificationService.notifyComment(Notification.Type.COMMENT_REPLY, parentAuthor, authorId,
+                        videoId, saved.getId(), saved.getContent());
+            } else {
+                UUID owner = videoRepository.findById(videoId).map(v -> v.getUser().getId()).orElse(null);
+                notificationService.notifyComment(Notification.Type.VIDEO_COMMENT, owner, authorId,
+                        videoId, saved.getId(), saved.getContent());
+            }
+        } catch (Exception e) {
+            log.warn("Không tạo được thông báo cho bình luận {}: {}", saved.getId(), e.getMessage());
+        }
     }
 
     @Override

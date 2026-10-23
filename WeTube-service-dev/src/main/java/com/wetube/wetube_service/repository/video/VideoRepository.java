@@ -17,6 +17,15 @@ import com.wetube.wetube_service.entity.video.Video;
 import com.wetube.wetube_service.enumeration.ActiveStatus;
 
 public interface VideoRepository extends JpaRepository<Video, UUID> {
+
+    /** Bảng tin Đăng ký: video công khai mới nhất của các kênh. */
+    @Query("""
+            SELECT v FROM Video v
+            WHERE v.user.channel.id IN :channelIds AND v.videosStatus IN :statuses
+            ORDER BY v.createdAt DESC""")
+    Page<Video> findFeed(@Param("channelIds") Collection<UUID> channelIds,
+                         @Param("statuses") Collection<ActiveStatus> statuses,
+                         Pageable pageable);
     Video findByIdAndUser_Id(UUID videoId, UUID userId);
 
     List<Video> findByVideoTags_Tag_NameOrderByTotalViewDesc(String tagName);

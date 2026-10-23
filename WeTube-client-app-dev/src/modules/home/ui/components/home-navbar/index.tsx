@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import SearchInput from "./search-input";
 import { CreateButton } from "@/modules/home/ui/components/home-navbar/create-button";
+import NotificationBell from "@/modules/home/ui/components/home-navbar/notification-bell";
 import { Plus, RadioTower, SquarePen, Video } from "lucide-react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import React, { useEffect } from "react";
@@ -102,7 +103,7 @@ const HomeNavbar = () => {
                       </>
                     )}
                   </CreateButton>
-                  {/* Chuông thông báo: ẩn cho đến khi có tính năng thông báo */}
+                  <NotificationBell />
                 </>
               )}
               <AuthButton />

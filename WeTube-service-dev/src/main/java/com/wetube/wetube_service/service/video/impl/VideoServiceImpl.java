@@ -52,6 +52,7 @@ import com.wetube.wetube_service.service.interaction.LikeService;
 import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.video.VideoSubtitleService;
 import com.wetube.wetube_service.service.video.WatchProgressService;
+import com.wetube.wetube_service.service.notification.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -83,6 +84,7 @@ public class VideoServiceImpl implements VideoService {
     private final SubscriptionRepository subscriptionRepository;
     private final RedisService redisService;
     private final WatchProgressService watchProgressService;
+    private final NotificationService notificationService;
 
     private static final String ID_NOT_FOUND = "Video not found with id: ";
     private static final String VIDEO = "video";
@@ -160,6 +162,7 @@ public VideoDto createVideo(MultipartFile videoFile,
                 : videoMapper.toDto(savedVideo);
 
         indexToElasticsearch(savedVideo);
+        notifySubscribers(savedVideo);
         return resultDto;
 
     } catch (Exception e) {
@@ -482,6 +485,7 @@ public VideoDto createVideo(MultipartFile videoFile,
         if (video.getVideosStatus() == ActiveStatus.DELETED) {
             throw new ResourceNotFoundException(VIDEO, "id", videoId.toString());
         }
+        boolean wasListed = VideoAccess.isListed(video.getVideosStatus());
         // Video bị admin ẩn (INACTIVE): chủ video vẫn sửa được nội dung nhưng không tự bỏ ẩn được
         if (video.getVideosStatus() != ActiveStatus.INACTIVE) {
             video.setVideosStatus(parseVisibility(updateDto.getStatus()));
@@ -516,8 +520,26 @@ public VideoDto createVideo(MultipartFile videoFile,
 
         // update index
         indexToElasticsearch(dtoSource);
+        // Riêng tư / không công khai -> công khai: báo người đăng ký (mỗi video chỉ báo một lần)
+        if (!wasListed) {
+            notifySubscribers(dtoSource);
+        }
 
         return videoMapper.toDto(dtoSource);
+    }
+
+    /** Video công khai: báo cho người đăng ký kênh. Lỗi khi gửi thông báo không làm hỏng việc đang làm. */
+    private void notifySubscribers(Video video) {
+        if (!VideoAccess.isListed(video.getVideosStatus())) {
+            return;
+        }
+        try {
+            var channel = video.getUser().getChannel();
+            notificationService.notifyNewVideo(video.getId(), video.getUser().getId(),
+                    channel != null ? channel.getId() : null);
+        } catch (Exception e) {
+            log.warn("Không gửi được thông báo video mới {}: {}", video.getId(), e.getMessage());
+        }
     }
 
     @Override
