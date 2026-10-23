@@ -58,6 +58,8 @@ spring:
 logging:
   level:
     org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    com.wetube.wetube_service: INFO
     org.springframework.web.filter.CommonsRequestLoggingFilter: INFO
 
 management:
