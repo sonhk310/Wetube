@@ -73,31 +73,45 @@ public class SecurityConfig {
                         .jwt(jwt -> jwt.decoder(NimbusJwtDecoder
                                 .withPublicKey(keyLoader.loadPublicKey()).build())))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/users/**").permitAll()
-                        .requestMatchers("/api/playlists/**").permitAll()
-                        .requestMatchers("/api/posts/**").permitAll()
-                        .requestMatchers("/api/livekit/**").permitAll()
-                        .requestMatchers("/api/payment/**").permitAll()
-                        .requestMatchers("/api/subpacks/**").permitAll()
-                        .requestMatchers("/api/channels/**").permitAll()
-                        .requestMatchers("/api/tiers", "/api/tiers/**").permitAll()
-                        .requestMatchers("/api/subscriptions/**").permitAll()
+                        // Preflight CORS và các đường dẫn hạ tầng
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/health").permitAll()
-                        .requestMatchers("/api/videos","/api/videos/**").permitAll()
-                        .requestMatchers("/api/channel/**").permitAll()
-                        .requestMatchers("/api/recommend/**").permitAll()
-                        .requestMatchers("/api/transactions/**").permitAll()
-                        .requestMatchers("/api/interactions/**").permitAll()
                         .requestMatchers("/es/health/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/me").authenticated()
+
+                        // Đăng nhập
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // MoMo gọi về, không có cookie đăng nhập của người dùng
+                        .requestMatchers("/api/payment/momo/ipn", "/api/payment/momo/redirect",
+                                "/api/payment/momo/notify").permitAll()
+
+                        // Xem livestream không cần đăng nhập
+                        .requestMatchers(HttpMethod.POST, "/api/livekit/join-stream").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/livekit/**").permitAll()
+
+                        // Dữ liệu cần đăng nhập ngay cả khi đọc
+                        .requestMatchers("/api/me").authenticated()
                         .requestMatchers("/api/customers/**").authenticated()
-                        .requestMatchers("/api/uploads/**").permitAll()
-                        .requestMatchers("/api/likes/**").permitAll()
-                        .requestMatchers("/api/comments/**").permitAll()
-                        .requestMatchers("/api/ai/**").permitAll())
+
+                        // Đọc công khai (GET); mọi thao tác ghi bên dưới yêu cầu đăng nhập
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/users/**",
+                                "/api/playlists/**",
+                                "/api/posts/**",
+                                "/api/subpacks/**",
+                                "/api/channels/**",
+                                "/api/channel/**",
+                                "/api/tiers", "/api/tiers/**",
+                                "/api/subscriptions/**",
+                                "/api/videos", "/api/videos/**",
+                                "/api/recommend/**",
+                                "/api/likes/**",
+                                "/api/comments/**").permitAll()
+
+                        // Còn lại (POST/PUT/DELETE, upload, AI, thanh toán, tương tác...): phải đăng nhập
+                        .anyRequest().authenticated())
 
                 .build();
     }
