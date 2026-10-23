@@ -40,6 +40,22 @@ Cập nhật: 2026-10-23. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Đã kiểm tra trên server:** lỗi 400/404, endpoint mới trả 401 khi chưa đăng nhập, đếm lượt xem (7 → 9, gửi lại không tăng), gợi ý "vi", log không có ERROR, các trang client trả 200.
 
+### Gói 3: Redis (commit `4a68f5d`, deploy 2026-10-23 20:03, chỉ backend)
+- Bật Spring Data Redis, đọc `REDIS_URL`. Không có `REDIS_URL` thì không kết nối (chạy local vẫn được). Redis lỗi thì tạm bỏ qua Redis 30 giây và chạy theo cách cũ, không làm sập site (`service/impl/RedisServiceImpl.java`).
+- **Chống đếm trùng lượt xem** bằng `SET view:{video}:{người xem} NX EX 1800`: không còn mất khi deploy lại. Dự phòng: bộ nhớ trong như trước.
+- **Cache gợi ý trang chủ** 5 phút cho mỗi người (`rec:{userId}`), xoá khi người đó bấm Không thích. Bỏ `@Cacheable` cũ (chưa bao giờ chạy vì gọi nội bộ trong cùng class).
+- **Giới hạn tần suất** (`security/RateLimiter.java`, vượt thì trả 429 kèm thông báo tiếng Việt; Redis lỗi thì đếm tạm trong bộ nhớ):
+
+  | Việc | Giới hạn |
+  |---|---|
+  | AI viết mô tả / dịch transcript | 20 lần/giờ mỗi người |
+  | Tạo phụ đề AI | 5 lần/giờ mỗi người (lúc upload mà vượt thì vẫn upload, chỉ bỏ qua phụ đề) |
+  | Gửi lượt xem | 120 lần/10 phút mỗi IP |
+  | Bình luận | 10 lần/phút mỗi người |
+  | Báo cáo video | 20 lần/giờ mỗi người |
+
+**Đã kiểm tra trên server:** log có "Kết nối Redis OK (PONG)", không có ERROR; lượt xem tính 1 lần rồi gửi lại không tăng (video `be49c4b5…` lên 10 lượt do lần thử này); gửi 121 lần thì từ lần thứ 121 trả 429; gọi gợi ý 3 lần chỉ tính 1 lần (lần đầu 1,4 giây, sau đó khoảng 0,6 giây). Header `X-Forwarded-For` giả không lách được giới hạn theo IP (proxy của Vibe Host ghi đè).
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
@@ -52,24 +68,18 @@ Làm theo `TEST_CHECKLIST.md` mục **11–15**, dùng 2 tài khoản (A và B):
 
 Nếu có lỗi: ghi giờ + màn hình, em tra log (`get_runtime_logs`).
 
-### 2.2 Redis (anh đã tạo và gắn vào wetube-service)
-- Biến môi trường `REDIS_URL` (secret) đã có trong project backend. **Chưa có dòng code nào dùng Redis** — `RedisConfig`, `RedisService` và cấu hình prod vẫn đang bị comment.
-- Cấu hình đề xuất: 0,25 core (tối đa 0,5), RAM 64–128 MB, `maxmemory-policy allkeys-lru`, tắt lưu đĩa (chỉ dùng làm cache).
-- Kế hoạch code (một lượt, làm sau khi anh test xong gói 2):
-  1. Bật lại Spring Data Redis, đọc `REDIS_URL`. Mọi chỗ dùng đều có dự phòng: Redis lỗi thì chạy như cũ, không làm sập site.
-  2. Chống đếm trùng lượt xem bằng `SET key NX EX 1800` (hiện nằm trong RAM nên mất mỗi lần deploy).
-  3. Cache gợi ý trang chủ (TTL 5–10 phút), xoá cache của user khi họ bấm Không thích.
-  4. Giới hạn tần suất cho API gọi Gemini (tốn tiền) và cho `/view`, bình luận, báo cáo.
-  5. Sau này nếu cần: gộp lượt xem rồi ghi MySQL theo lô; lưu trạng thái phòng xem chung.
+### 2.2 Redis: phần còn lại
+- Code đã xong (xem gói 3 ở trên). Cấu hình Redis trên Vibe Host đề xuất: 0,25 core (tối đa 0,5), RAM 64–128 MB, `maxmemory-policy allkeys-lru`, tắt lưu đĩa (chỉ dùng làm cache). Em chưa kiểm tra Redis đang chạy với cấu hình nào.
+- Client chưa hiện thông báo khi bị 429 ở ô bình luận (bình luận không gửi được nhưng chữ vẫn còn trong ô, lỗi chỉ ghi ra console). Phụ đề AI và báo cáo thì đã hiện thông báo lỗi của backend.
+- Sau này nếu cần: gộp lượt xem rồi ghi MySQL theo lô; lưu trạng thái phòng xem chung vào Redis.
 
 ---
 
 ## 3. SẼ LÀM (xếp theo mức ưu tiên em đề xuất)
 
 ### A. Làm tiếp ngay sau khi test xong
-1. Redis (mục 2.2).
-2. Sửa các lỗi anh tìm thấy từ checklist.
-3. Thêm tag cho video hiện có để chip trang chủ có dữ liệu (hiện chỉ có "Tất cả").
+1. Sửa các lỗi anh tìm thấy từ checklist.
+2. Thêm tag cho video hiện có để chip trang chủ có dữ liệu (hiện chỉ có "Tất cả").
 
 ### B. Thiếu so với YouTube, nên làm
 | Việc | Ghi chú |
@@ -103,4 +113,4 @@ Nếu có lỗi: ghi giờ + màn hình, em tra log (`get_runtime_logs`).
 - **Schema DB:** production chạy `ddl-auto=none`, nên mọi thay đổi bảng phải làm bằng runner lúc khởi động (mẫu: `job/VideoSchemaInitializer.java`, `job/ReportTableInitializer.java`). Cột `videos_status` là ENUM, chỉ nối thêm giá trị vào cuối.
 - **Backup:** nên backup MySQL trước mỗi lần thay đổi schema.
 - **Cách nói chuyện:** tiếng Việt; nói rõ cái gì đã kiểm tra thật, cái gì chỉ đoán; sửa gộp rồi deploy một lần.
-- Mã nguồn cũ chưa commit: `.gitignore` (thêm `.mcp.json`) vẫn đang sửa dở, chưa nằm trong commit nào.
+- **Gradle wrapper trong máy đã bị đổi sang Gradle 9.7.1** (`gradle/wrapper/*`, `gradlew`, `gradlew.bat`, sửa lúc 19:23 ngày 23/10, không phải em đổi). Em chưa commit các file này. Docker build dùng Gradle 8.14 của image nên không bị ảnh hưởng. Biên dịch local cho giống production: dùng Gradle 8.14.3 trong `~/.gradle/wrapper/dists/gradle-8.14.3-bin/.../bin/gradle compileJava`.
