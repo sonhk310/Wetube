@@ -21,8 +21,12 @@ export default function WatchRoomLayout() {
   const addMessage = useChatStore((state) => state.addMessage);
   const clearMessages = useChatStore((state) => state.clearMessages);
 
+  const activeRoomId = room?.roomId;
+
   useEffect(() => {
-    const roomId = room!.roomId;
+    // Chưa vào phòng nào (mở thẳng /rooms): không có gì để đăng ký
+    if (!activeRoomId) return;
+    const roomId = activeRoomId;
 
     const subs = [
       subscribe(`/topic/rooms/addSong/${roomId}`, (msg) => {
@@ -66,20 +70,35 @@ export default function WatchRoomLayout() {
 
     return () => {
       publish(`/app/chat/${roomId}`, { type: "LEAVE", sender: myUsername });
-      publish(`/app/room/member/leave/${room?.roomId}`, {
+      publish(`/app/room/member/leave/${roomId}`, {
         username: myUsername,
       });
 
       subs.forEach(unsubscribe);
       clearMessages();
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRoomId]);
 
   const handleLeaveRoom = () => {
     publish(`/app/chat/${room?.roomId}`, { type: "LEAVE", sender: myUsername });
     publish(`/app/room/member/leave/${room?.roomId}`, { username: myUsername });
     router.push("/");
   };
+
+  if (!room) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 w-full h-full min-h-[60vh] text-gray-700">
+        <p className="text-lg">Bạn chưa ở trong phòng xem chung nào.</p>
+        <button
+          onClick={() => router.push("/")}
+          className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition-colors"
+        >
+          Về trang chủ
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col flex-1 w-full h-full bg-white text-black p-3 md:p-4 overflow-hidden">
