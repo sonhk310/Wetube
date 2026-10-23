@@ -4,7 +4,6 @@ import Shorts from "./components/shorts";
 import ActiveVideo from "./components/video";
 import VideoMetadata from "./components/video-metadata";
 import VideoTags from "./components/video-tags";
-import MiniPlayer from "./components/video/miniplayer";
 import VideosList from "./components/videos-list";
 import {useVideoStore } from "@/store/zustand/videoStore";
 import { useEffect } from "react";
@@ -34,7 +33,7 @@ export default function App({ videoId }: AppProps) {
     <section className="h-full w-full relative">
       <div className="py-6 px-6 xxl:px-20 grid grid-cols-1 md:grid-cols-6 xxl:grid-cols-8 gap-6 h-full overflow-y-scroll">
         <section className="col-span-1 md:col-span-4 xxl:col-span-6">
-          <ActiveVideo/>
+          <ActiveVideo key={videoId} videoId={videoId} />
           <VideoMetadata />
           <Comments />
         </section>
@@ -44,7 +43,6 @@ export default function App({ videoId }: AppProps) {
           <VideosList />
         </section>
       </div>
-      <MiniPlayer />
     </section>
   );
 }
