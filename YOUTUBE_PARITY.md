@@ -92,34 +92,74 @@ Nếu có lỗi: ghi giờ + màn hình, em tra log (`get_runtime_logs`).
 
 ---
 
-## 3. SẼ LÀM (xếp theo mức ưu tiên em đề xuất)
+## 3. SẼ LÀM: danh sách đầy đủ để giống YouTube
 
-### A. Làm tiếp ngay sau khi test xong
-1. Sửa các lỗi anh tìm thấy từ checklist.
-2. Thêm tag cho video hiện có để chip trang chủ có dữ liệu (hiện chỉ có "Tất cả").
+Cột "Ở đâu": BE = backend, FE = client. Cột "Cỡ": S = vài giờ, M = khoảng 1 ngày, L = vài ngày.
+Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện trạng có thể khác.
 
-### B. Thiếu so với YouTube, nên làm
-| Việc | Ghi chú |
-|---|---|
-| Thông báo (chuông) | Ví dụ: video mới của kênh đã đăng ký, có người trả lời bình luận. Đã ẩn nút, cần backend + bảng thông báo |
-| Trang Đăng ký dạng bảng tin video mới | Hiện là giao diện bong bóng kênh, chưa có danh sách video mới |
-| Thống kê trong Studio | Lượt xem theo ngày, thời gian xem, người đăng ký mới |
-| SEO / thẻ chia sẻ (og:title, og:image) | Để link WeTube hiện đẹp khi dán vào Facebook/Zalo |
-| Giao diện tối | Chưa làm, anh chọn để dành |
-| Trình phát: chọn chất lượng, tự phát video tiếp theo, màn hình gợi ý khi hết video | Đã có PiP, phím tắt, tốc độ, chọn phụ đề (gói 4). Chọn chất lượng cần Cloudinary tạo sẵn bản 360p/720p (hoặc HLS) |
-| Tìm kiếm: bộ lọc (thời lượng, ngày đăng, sắp xếp) | |
-| Bình luận: sắp xếp (mới nhất/nổi bật), ghim, báo cáo bình luận | |
-| Lịch sử xem: xoá từng mục / tạm dừng ghi lịch sử | |
-| Playlist: sắp xếp lại thứ tự video | |
-| Shorts: bình luận ngay trong Shorts | Hiện nút bình luận chỉ mở trang xem |
-| Creator duyệt/sửa phụ đề AI trước khi đăng | PRD có yêu cầu |
-| Gợi ý: dùng cả lịch sử xem, không chỉ điểm tag | Điểm không thích đã trừ điểm tag |
+### A. Ưu tiên cao: người xem thấy ngay
+| # | Việc | Ở đâu | Cỡ | Hiện trạng / ghi chú |
+|---|---|---|---|---|
+| A1 | **Nhớ vị trí đang xem**: phát tiếp từ chỗ dừng, thanh đỏ trên thumbnail | BE+FE | M | Cột `historyDuration` có sẵn nhưng luôn 0; thanh đỏ đã viết trong `VideoCard` nhưng không bao giờ hiện. Ghi vị trí vào Redis, định kỳ ghi MySQL |
+| A2 | **Ghi lịch sử khi thực sự xem** (không phải lúc bấm thumbnail) | FE | S | Mở bằng link chia sẻ hiện không được ghi lịch sử. Làm cùng A1 |
+| A3 | **Màn hình hết video + tự phát video tiếp theo** (đếm ngược, nút huỷ, công tắc Tự phát) | FE | M | Hiện chỉ có nút xem lại |
+| A4 | **Thông báo (chuông)**: kênh đã đăng ký có video mới, có người trả lời / thích bình luận | BE+FE | L | Đã ẩn nút; cần bảng thông báo, API, đếm chưa đọc |
+| A5 | **Trang Đăng ký dạng bảng tin**: video mới của các kênh đã đăng ký | BE+FE | M | Hiện là giao diện bong bóng kênh |
+| A6 | **Bình luận**: sắp xếp Nổi bật / Mới nhất, ghim, tim của chủ kênh, báo cáo bình luận | BE+FE | M | Chưa có |
+| A7 | **Báo lỗi khi bị giới hạn (429)** ở ô bình luận | FE | S | Hiện bình luận không gửi được mà không báo gì |
+| A8 | **Gắn tag cho video hiện có** để chip trang chủ có dữ liệu | dữ liệu | S | Hiện chỉ có chip "Tất cả" |
 
-### C. Dọn dẹp / kỹ thuật
+### B. Trình phát
+| # | Việc | Ở đâu | Cỡ | Ghi chú |
+|---|---|---|---|---|
+| B1 | Chọn chất lượng (360p/720p/1080p, Tự động) | BE+FE | L | Cần Cloudinary tạo sẵn các bản hoặc phát HLS; video dài cần xử lý nền (eager/async) |
+| B2 | Ảnh xem trước khi rê trên thanh tua | FE | M | Cloudinary cắt được khung hình theo giây (`so_`) |
+| B3 | Chương (chapters) lấy từ mốc thời gian trong mô tả | FE | M | Thanh tua chia đoạn, tên chương |
+| B4 | Mốc thời gian / link trong mô tả bấm được | FE | S | |
+| B5 | Miniplayer khi rời trang xem (video vẫn chạy ở góc) | FE | L | Hiện chỉ có PiP của trình duyệt |
+| B6 | Phát theo playlist (`?list=`): hàng chờ, tự sang video sau, lặp / trộn | FE | M | |
+| B7 | Lặp video, chuột phải ra menu (sao chép link tại thời điểm…) | FE | S | |
+
+### C. Khám phá & tìm kiếm
+| # | Việc | Ở đâu | Cỡ | Ghi chú |
+|---|---|---|---|---|
+| C1 | Bộ lọc tìm kiếm: thời lượng, ngày đăng, loại (video/Shorts/kênh), sắp xếp | BE+FE | M | |
+| C2 | Lịch sử tìm kiếm trong ô gợi ý (xoá từng mục) | BE+FE | S | |
+| C3 | Gợi ý dùng cả lịch sử xem, ẩn video đã xem hết, nút "Không quan tâm" | BE+FE | M | Hiện chỉ dựa vào điểm tag |
+| C4 | Trang Khám phá (Âm nhạc, Thể thao, Tin tức, Trò chơi) dùng dữ liệu thật | BE+FE | M | Chưa xem kỹ: các trang này có banner, có thể còn dữ liệu mẫu |
+| C5 | Cuộn vô hạn ở trang chủ / kênh / tìm kiếm | FE | S | Chưa xem kỹ |
+
+### D. Lịch sử, playlist, Shorts
+| # | Việc | Ở đâu | Cỡ | Ghi chú |
+|---|---|---|---|---|
+| D1 | Lịch sử xem: xoá từng mục, xoá hết, tạm dừng ghi, tìm trong lịch sử | BE+FE | M | |
+| D2 | Playlist: kéo thả sắp xếp, đặt ảnh bìa, sửa tên / mô tả | BE+FE | M | |
+| D3 | Shorts: bình luận ngay trong Shorts, vuốt lên/xuống, nhớ âm lượng | FE | M | Hiện nút bình luận mở trang xem |
+
+### E. Cho người làm video (Studio)
+| # | Việc | Ở đâu | Cỡ | Ghi chú |
+|---|---|---|---|---|
+| E1 | Thống kê: lượt xem theo ngày, thời gian xem, người đăng ký mới, video nổi bật | BE+FE | L | |
+| E2 | Duyệt / sửa phụ đề AI trước khi đăng | BE+FE | M | PRD có yêu cầu |
+| E3 | Thanh tiến trình upload + trạng thái "đang xử lý" | FE | S | Chưa xem kỹ |
+| E4 | Đặt lịch công khai video | BE+FE | M | |
+| E5 | Quản lý bình luận của kênh trong Studio | BE+FE | M | Chưa xem kỹ (đã có kiểm duyệt bình luận ở trang xem) |
+
+### F. Nền tảng
+| # | Việc | Ở đâu | Cỡ | Ghi chú |
+|---|---|---|---|---|
+| F1 | Thẻ chia sẻ og:title / og:image, sitemap | FE | S | Link dán vào Facebook/Zalo hiện ảnh + tiêu đề |
+| F2 | Trang nhúng `/embed/{id}` + mã nhúng trong hộp thoại Chia sẻ | FE | M | |
+| F3 | Giao diện tối | FE | M | Anh chọn để dành |
+| F4 | Kiểm tra giao diện điện thoại toàn site | FE | M | Trình phát mới / drawer / chế độ rạp chưa thử trên máy thật |
+
+### G. Dọn dẹp / kỹ thuật
 - Xoá project wetube-admin trên Vibe Host (không còn dùng; anh làm trong giao diện).
 - `JWT_PRIVATE_KEY` và `JWT_PUBLIC_KEY` đang **không** được đánh dấu secret trong Vibe Host. Khoá riêng nên đánh dấu secret.
 - Xác nhận chữ ký MoMo với giao dịch sandbox thật (chưa từng thử).
 - Số đếm video trong playlist vẫn tính cả video đã bị ẩn (danh sách thì đã lọc đúng).
+- Quyết định với Gradle wrapper 9.7.1 trong máy (xem mục 4).
+- Test hết `TEST_CHECKLIST.md` mục 1–15 (mục 2.1).
 
 ---
 
