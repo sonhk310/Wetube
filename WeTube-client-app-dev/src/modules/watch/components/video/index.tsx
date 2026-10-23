@@ -12,6 +12,7 @@ import SliderControls from "./slider-controls";
 import { useControls } from "@/hooks/use-controls";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import { useSubtitles } from "@/hooks/use-subtitles";
+import { useViewCounter } from "@/lib/viewTracking";
 
 export default function ActiveVideo() {
   const {
@@ -37,6 +38,7 @@ export default function ActiveVideo() {
   } = useControls();
 
   const reactPlayerRef = useRef<ReactPlayer | null>(null);
+  const startSeekDone = useRef<string | null>(null);
   const [isClient, setIsClient] = useState(false);
 
   // timeout để auto-hide controls
@@ -47,6 +49,9 @@ export default function ActiveVideo() {
   const videoDetail = videoDetailResponse?.detail;
   const videoUrl = videoDetail?.videoUrl;
   const subtitleUrl = videoDetail?.subtitles?.[0]?.subtitleUrl;
+
+  // Tính 1 lượt xem sau khi video đã chạy liên tục 5 giây
+  useViewCounter(videoDetail?.id, isPlaying, 5000);
 
   // hook xử lý phụ đề
   const cues = useSubtitles(subtitleUrl);
@@ -129,7 +134,18 @@ export default function ActiveVideo() {
               setCurrentSub(cue?.text ?? "");
             }}
             onSeek={(seconds: number) => setSeekSync(seconds)}
-            onReady={(player) => setTotalSeek(player.getDuration())}
+            onReady={(player) => {
+              setTotalSeek(player.getDuration());
+              // Liên kết chia sẻ dạng /watch/<id>?t=<giây>: tua tới đúng vị trí, một lần cho mỗi video
+              if (videoDetail?.id && startSeekDone.current !== videoDetail.id) {
+                startSeekDone.current = videoDetail.id;
+                const t = Number(new URLSearchParams(window.location.search).get("t"));
+                if (Number.isFinite(t) && t > 0) {
+                  player.seekTo(Math.min(t, player.getDuration() || t), "seconds");
+                  setSeekSync(t);
+                }
+              }
+            }}
             onEnded={() => pauseVideo()}
           />
         </div>

@@ -28,5 +28,8 @@ ChannelResponseDto {
     private int totalViews;
     private LocalDateTime createdAt;
 
+    /** Người xem hiện tại đã đăng ký kênh này chưa (false nếu chưa đăng nhập). */
+    private boolean subscribed;
+
     private List<MemberTierResponseDto> membershipTiers;
 }

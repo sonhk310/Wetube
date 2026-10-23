@@ -7,6 +7,8 @@ export interface LikeInfo {
     likeCount: number;
     likedUserIds: string[];
     liked: boolean | null;
+    /** Chỉ trạng thái của chính mình; backend không bao giờ trả số lượt không thích. */
+    disliked?: boolean | null;
 }
 
 export interface ToggleLikeRequest {

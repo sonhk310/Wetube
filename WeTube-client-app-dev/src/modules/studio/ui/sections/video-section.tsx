@@ -11,13 +11,34 @@ import {
 } from "@/components/ui/table";
 import { VideoThumbnail } from "@/modules/videos/ui/components/video-thumbnail";
 import Link from "next/link";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import {
   useGetPlaylistDetailsQuery,
   useGetPlaylistsByUserIdQuery,
 } from "@/app/api/playlistApi";
 import { VideoFromPlaylist } from "@/types/playlistSummary";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useDeleteVideoMutation } from "@/app/api/videoApi";
+import { playlistApi } from "@/app/api/playlistApi";
+import { useDispatch } from "react-redux";
+import toast from "react-hot-toast";
+
+const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  ACTIVE: { label: "Công khai", className: "bg-green-100 text-green-700" },
+  PUBLIC: { label: "Công khai", className: "bg-green-100 text-green-700" },
+  UNLISTED: { label: "Không công khai", className: "bg-yellow-100 text-yellow-700" },
+  PRIVATE: { label: "Riêng tư", className: "bg-gray-200 text-gray-700" },
+  INACTIVE: { label: "Bị ẩn", className: "bg-red-100 text-red-700" },
+};
 
 const formatDate = (dateString: string) => {
   if (!dateString) return "N/A";
@@ -26,6 +47,22 @@ const formatDate = (dateString: string) => {
 
 export default function VideosSection() {
   const { user } = useAuth();
+  const dispatch = useDispatch();
+  const [deleteVideo, { isLoading: isDeleting }] = useDeleteVideoMutation();
+  const [videoToDelete, setVideoToDelete] = useState<VideoFromPlaylist | null>(null);
+
+  const handleConfirmDelete = async () => {
+    if (!videoToDelete) return;
+    try {
+      await deleteVideo(videoToDelete.videoId).unwrap();
+      dispatch(playlistApi.util.invalidateTags(["Playlist"]));
+      toast.success("Đã xoá video");
+      setVideoToDelete(null);
+    } catch (err) {
+      console.error("Delete video failed:", err);
+      toast.error("Không xoá được video");
+    }
+  };
 
   const {
     data: allPlaylists,
@@ -95,9 +132,11 @@ export default function VideosSection() {
         <TableHeader>
           <TableRow>
             <TableHead className="pl-6">Video</TableHead>
-            <TableHead className="w-[150px] text-center">Ngày tạo</TableHead>
-            <TableHead className="w-[150px] text-center">Cập nhật</TableHead>
-            <TableHead className="w-[100px] text-center">Lượt xem</TableHead>
+            <TableHead className="w-[140px] text-center">Hiển thị</TableHead>
+            <TableHead className="w-[130px] text-center">Ngày tạo</TableHead>
+            <TableHead className="w-[130px] text-center">Cập nhật</TableHead>
+            <TableHead className="w-[90px] text-center">Lượt xem</TableHead>
+            <TableHead className="w-[90px] text-center" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -131,16 +170,57 @@ export default function VideosSection() {
                 </Link>
               </TableCell>
               <TableCell className="text-center">
+                {(() => {
+                  const badge = STATUS_LABELS[video.videoStatus ?? "ACTIVE"] ?? STATUS_LABELS.ACTIVE;
+                  return (
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
+                      {badge.label}
+                    </span>
+                  );
+                })()}
+              </TableCell>
+              <TableCell className="text-center">
                 {formatDate(video.createdAt)}
               </TableCell>
               <TableCell className="text-center">
                 {formatDate(video.updatedAt)}
               </TableCell>
               <TableCell className="text-center">{video.totalView}</TableCell>
+              <TableCell className="text-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700"
+                  onClick={() => setVideoToDelete(video)}
+                >
+                  Xoá
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      <Dialog open={!!videoToDelete} onOpenChange={(open) => !open && !isDeleting && setVideoToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xoá video này?</DialogTitle>
+            <DialogDescription>
+              &quot;{videoToDelete?.videoTitle}&quot; sẽ bị xoá vĩnh viễn khỏi WeTube, kể cả tệp video và ảnh thu nhỏ.
+              Thao tác này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setVideoToDelete(null)} disabled={isDeleting}>
+              Huỷ
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete} disabled={isDeleting}>
+              {isDeleting ? "Đang xoá..." : "Xoá"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

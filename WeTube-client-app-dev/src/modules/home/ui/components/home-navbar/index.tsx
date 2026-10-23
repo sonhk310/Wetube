@@ -4,9 +4,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import Image from "next/image";
 import Link from "next/link";
 import SearchInput from "./search-input";
-import { Button } from "@/components/ui/button";
 import { CreateButton } from "@/modules/home/ui/components/home-navbar/create-button";
-import { Bell, Plus, RadioTower, SquarePen, Video } from "lucide-react";
+import { Plus, RadioTower, SquarePen, Video } from "lucide-react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -103,23 +102,7 @@ const HomeNavbar = () => {
                       </>
                     )}
                   </CreateButton>
-                  {/* <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                  >
-                    <Bell className="h-6 w-6" />
-                  </Button> */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full px-4 py-2 flex items-center gap-2 text-black shadow-md transition-all duration-200"
-                    onClick={() => {
-                      console.log("Notification button clicked");
-                    }}
-                  >
-                    <Bell className="h-10 w-10" />
-                  </Button>
+                  {/* Chuông thông báo: ẩn cho đến khi có tính năng thông báo */}
                 </>
               )}
               <AuthButton />

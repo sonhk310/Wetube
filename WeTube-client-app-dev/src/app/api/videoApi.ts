@@ -2,6 +2,12 @@
 import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {Video as VideoListItem, VideoDetailResponseDto, VideoFormDetail, Video} from "@/types/video";
 import {API_PREFIX} from "@/constants/appConstant";
+import type {LikeInfo} from "@/app/api/likeApi";
+
+export interface PopularTag {
+    name: string;
+    count: number;
+}
 
 export type UpdateVideoPayload = Partial<
     Pick<VideoFormDetail, "title" | "description" | "status" | "tags">
@@ -43,6 +49,25 @@ export const videoApi = createApi({
             ],
         }),
 
+        deleteVideo: builder.mutation<void, string>({
+            query: (videoId) => ({
+                url: `/videos/${videoId}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["VideoList", "Playlist"],
+        }),
+
+        toggleDislike: builder.mutation<LikeInfo, string>({
+            query: (videoId) => ({
+                url: `/videos/${videoId}/dislike`,
+                method: "POST",
+            }),
+        }),
+
+        getPopularTags: builder.query<PopularTag[], void>({
+            query: () => `/tags/popular?limit=12`,
+        }),
+
         uploadVideo: builder.mutation<
             { message: string; videoId?: string },
             FormData
@@ -62,4 +87,7 @@ export const {
     useGetVideoFormDetailsQuery,
     useUpdateVideoDetailsMutation,
     useUploadVideoMutation,
+    useDeleteVideoMutation,
+    useToggleDislikeMutation,
+    useGetPopularTagsQuery,
 } = videoApi;

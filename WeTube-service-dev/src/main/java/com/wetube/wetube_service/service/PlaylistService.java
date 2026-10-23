@@ -23,9 +23,13 @@ public interface PlaylistService {
 
     List<UserPlaylistDto> getAllPlaylistByTypeUserId(UUID userId, PlaylistType playlistType);
 
-    PlaylistDetailDto getPlaylistDetailedById(UUID playlistVideoId);
+    /** Video không được phép xem (riêng tư, bị ẩn, đã xoá...) bị lọc khỏi kết quả theo người xem. */
+    PlaylistDetailDto getPlaylistDetailedById(UUID playlistId, UUID viewerId, boolean admin);
 
-    PlaylistDetailDto getPlaylistDetailedById(UUID channelId, String playlistName);
+    PlaylistDetailDto getPlaylistDetailedById(UUID channelId, String playlistName, UUID viewerId, boolean admin);
+
+    /** Id các playlist của user đang chứa video này (để hiện dấu tích ở hộp thoại Lưu). */
+    List<UUID> getPlaylistIdsContaining(UUID userId, UUID videoId);
 
     void initiatePlaylist(UUID userId);
 

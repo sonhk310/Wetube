@@ -1,35 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { FilterCarousel } from "@/components/filter-carousel";
+import { useGetPopularTagsQuery } from "@/app/api/videoApi";
 import VideoGrid from '../components/video/videoGrid';
+import TagVideoGrid from '../components/video/tagVideoGrid';
 
 type HomeViewProps = {
     categoryId : string;
 }
 
 export default function HomeView({categoryId }: HomeViewProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryId );
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryId || null);
 
-  const categories = [
-    { value: "music", label: "Âm nhạc" },
-    { value: "games", label: "Trò chơi" },
-    { value: "news", label: "Tin tức" },
-    { value: "sports", label: "Thể thao" },
-    { value: "education", label: "Giáo dục" },
-    { value: "entertainment", label: "Giải trí" },
-    { value: "technology", label: "Công nghệ" },
-    { value: "lifestyle", label: "Phong cách sống" },
-    { value: "travel", label: "Du lịch" },
-    { value: "food", label: "Ẩm thực" },
-    { value: "fashion", label: "Thời trang" },
-    { value: "finance", label: "Tài chính" },
-    { value: "health", label: "Sức khỏe" },
-    { value: "science", label: "Khoa học" },
-    { value: "automotive", label: "Ô tô" },
-    { value: "movies", label: "Phim" },
-    ];
-    
+  // Chip lấy từ các thẻ thật đang được dùng nhiều nhất trong video công khai
+  const { data: popularTags, isLoading } = useGetPopularTagsQuery();
+  const categories = useMemo(
+    () => (popularTags ?? []).map((tag) => ({ value: tag.name, label: `#${tag.name}` })),
+    [popularTags]
+  );
+
   return (
     <div>
       <div className="p-6">
@@ -37,10 +27,10 @@ export default function HomeView({categoryId }: HomeViewProps) {
           value={selectedCategory}
           onSelect={(value) => setSelectedCategory(value)}
           data={categories}
-          isLoading={false}
+          isLoading={isLoading}
         />
       </div>
-      <VideoGrid />
+      {selectedCategory ? <TagVideoGrid key={selectedCategory} tag={selectedCategory} /> : <VideoGrid />}
     </div>
   );
 }

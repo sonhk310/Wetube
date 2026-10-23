@@ -84,7 +84,7 @@ export interface VideoDetailDto {
   comments: ApiComment[];
   subscribed: boolean;
   channelId: string;
-  like?: { likeCount: number; liked: boolean | null };
+  like?: { likeCount: number; liked: boolean | null; disliked?: boolean | null };
   subtitles: VideoSubtitleDto[]; // ✅ subtitles
 }
 
@@ -184,7 +184,7 @@ export interface VideoFormDetail {
   description: string;
   videoUrl: string;
   thumbnailUrl: string;
-  status: "ACTIVE" | "PRIVATE" | "UNLISTED" | "PENDING" | "INACTIVE";
+  status: "ACTIVE" | "PUBLIC" | "PRIVATE" | "UNLISTED" | "PENDING" | "INACTIVE";
   createdAt: string;
   updatedAt: string;
   tags: Tag[];

@@ -128,8 +128,11 @@ public class CloudinaryService {
 
         public void deleteVideo(String videoUrl) {
         try {
-            // Tách publicId từ URL (Cloudinary lưu video dưới dạng <folder>/<publicId>)
-            String publicId = extractPublicId(videoUrl);
+            if (!isCloudinaryUrl(videoUrl)) {
+                return;
+            }
+            // publicId không gồm phần transformation (q_auto,vc_h264...), version và đuôi file
+            String publicId = publicIdFromDeliveryUrl(videoUrl);
 
             Map result = cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "video"));
             if ("ok".equals(result.get("result"))) {
@@ -184,8 +187,21 @@ public class CloudinaryService {
         return dot > 0 ? rest.substring(0, dot) : rest;
     }
 
-    private String extractPublicId(String url) {
-        String withoutExtension = url.substring(0, url.lastIndexOf('.'));
-        return withoutExtension.substring(withoutExtension.indexOf("/upload/") + 8);
+    /** Xoá ảnh (thumbnail) trên Cloudinary; URL không phải của Cloudinary hoặc rỗng thì bỏ qua. */
+    public void deleteImage(String imageUrl) {
+        try {
+            if (!isCloudinaryUrl(imageUrl)) {
+                return;
+            }
+            String publicId = publicIdFromDeliveryUrl(imageUrl);
+            Map result = cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "image"));
+            System.out.println("Xoá ảnh trên Cloudinary " + publicId + ": " + result);
+        } catch (Exception e) {
+            System.err.println("Lỗi khi xoá ảnh Cloudinary: " + e.getMessage());
+        }
+    }
+
+    private static boolean isCloudinaryUrl(String url) {
+        return url != null && url.contains("/upload/");
     }
 }

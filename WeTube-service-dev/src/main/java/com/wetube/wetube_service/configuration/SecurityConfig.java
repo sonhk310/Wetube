@@ -87,6 +87,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/payment/momo/ipn", "/api/payment/momo/redirect",
                                 "/api/payment/momo/notify").permitAll()
 
+                        // Ghi nhận lượt xem: khách chưa đăng nhập cũng được tính
+                        .requestMatchers(HttpMethod.POST, "/api/videos/*/view").permitAll()
+
                         // Xem livestream không cần đăng nhập
                         .requestMatchers(HttpMethod.POST, "/api/livekit/join-stream").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/livekit/**").permitAll()
@@ -106,6 +109,7 @@ public class SecurityConfig {
                                 "/api/tiers", "/api/tiers/**",
                                 "/api/subscriptions/**",
                                 "/api/videos", "/api/videos/**",
+                                "/api/tags/**",
                                 "/api/recommend/**",
                                 "/api/likes/**",
                                 "/api/comments/**").permitAll()

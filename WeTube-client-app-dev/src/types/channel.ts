@@ -9,6 +9,8 @@ export interface ChannelInfo {
   totalVideos: number;
   totalViews: number;
   createdAt: string;
+  /** Người xem hiện tại đã đăng ký kênh chưa (false nếu chưa đăng nhập). */
+  subscribed?: boolean;
 }
 
 export interface ChannelVideo {

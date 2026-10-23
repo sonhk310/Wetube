@@ -8,6 +8,12 @@ import com.wetube.wetube_service.dto.response.CustomPageResponse;
 import com.wetube.wetube_service.dto.response.SearchResponseDto;
 import com.wetube.wetube_service.dto.video.VideoFormDetailDto;
 import com.wetube.wetube_service.dto.video.VideoUpdateDto;
+import com.wetube.wetube_service.dto.LikeDto;
+import com.wetube.wetube_service.security.CurrentUser;
+import com.wetube.wetube_service.security.OwnershipGuard;
+import com.wetube.wetube_service.security.VideoAccess;
+import com.wetube.wetube_service.service.interaction.LikeService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.owasp.html.PolicyFactory;
 import org.owasp.html.Sanitizers;
 import org.springframework.data.domain.Page;
@@ -37,6 +43,9 @@ public class VideoController {
     private final VideoService videoService;
     private final VideoSearchService searchService;
     private final SubtitleAiService subtitleAiService;
+    private final OwnershipGuard ownershipGuard;
+    private final LikeService likeService;
+    private final VideoAccess videoAccess;
 
     private static final PolicyFactory SANITIZER_POLICY = Sanitizers.FORMATTING.and(Sanitizers.LINKS);
 
@@ -50,7 +59,8 @@ public class VideoController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "duration", required = false) Float duration,
             @RequestParam(value = "tags", required = false) String tags,
-            @RequestParam(value = "targetLang", required = false) String targetLang) {
+            @RequestParam(value = "targetLang", required = false) String targetLang,
+            @RequestParam(value = "visibility", required = false) String visibility) {
         try {
         // 🟢 Debug log toàn bộ dữ liệu FE gửi sang
         System.out.println("========== FE gửi lên ==========");
@@ -76,6 +86,7 @@ public class VideoController {
                     .description(sanitizedDescription)
                     .duration(duration)
                     .tagsAsString(sanitizedTags)
+                    .videosStatus(visibility)
                     .build();
 
             // Tạo video chính
@@ -100,13 +111,15 @@ public class VideoController {
     @GetMapping("/{id}/detail")
     public ResponseEntity<VideoDetailResponseDto> getDetail(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         UUID userId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;
-        return ResponseEntity.ok(videoService.getDetailWithRecommend(id, userId));
+        return ResponseEntity.ok(videoService.getDetailWithRecommend(id, userId, CurrentUser.isAdmin(jwt)));
     }
 
     @PostMapping(value = "/{id}/tags", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<VideoDto> addTagsToVideo(
             @PathVariable("id") UUID videoId,
-            @RequestParam("hashtags") String hashtags) {
+            @RequestParam("hashtags") String hashtags,
+            @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.videoOwner(videoId, jwt);
         if (hashtags == null || hashtags.isBlank()) {
             return ResponseEntity.badRequest().body(null);
         }
@@ -122,9 +135,12 @@ public class VideoController {
     public ResponseEntity<CustomPageResponse<VideoDto>> getVideosByUserId(
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        CustomPageResponse<VideoDto> videoPage = videoService.getVideosByUserId(userId, page, size);
+        UUID viewerId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;
+        CustomPageResponse<VideoDto> videoPage = videoService.getVideosByUserId(
+                userId, page, Math.min(size, 50), viewerId, CurrentUser.isAdmin(jwt));
         return ResponseEntity.ok(videoPage);
     }
 
@@ -136,8 +152,11 @@ public class VideoController {
     }
 
     @GetMapping("/by-tag")
-    public ResponseEntity<List<VideoDto>> getVideosByTag(@RequestParam String tag) {
-        return ResponseEntity.ok(videoService.getVideosByTag(tag));
+    public ResponseEntity<CustomPageResponse<VideoDto>> getVideosByTag(
+            @RequestParam String tag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ResponseEntity.ok(videoService.getVideosByTag(tag, page, Math.min(size, 50)));
     }
 
     // ===================== Elasticsearch Search =====================
@@ -175,7 +194,8 @@ public class VideoController {
 
     @GetMapping("/{id}/form-details")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<VideoFormDetailDto> getVideoDetail(@PathVariable UUID id) {
+    public ResponseEntity<VideoFormDetailDto> getVideoDetail(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.videoOwner(id, jwt);
         return ResponseEntity.ok(videoService.getVideoDetail(id));
     }
 
@@ -190,6 +210,7 @@ public class VideoController {
             @RequestParam(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
             @AuthenticationPrincipal Jwt jwt) {
 
+        ownershipGuard.videoOwner(id, jwt);
         UUID authenticatedUserId = UUID.fromString(jwt.getSubject());
 
         VideoUpdateDto updateDto = new VideoUpdateDto();
@@ -201,5 +222,53 @@ public class VideoController {
         VideoDto updatedVideo = videoService.updateVideo(id, updateDto, thumbnailFile, authenticatedUserId);
 
         return ResponseEntity.ok(updatedVideo);
+    }
+
+    /** Xoá mềm video (chủ video hoặc admin). */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> deleteVideo(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.videoOwner(id, jwt);
+        videoService.deleteVideo(id);
+        return ResponseEntity.ok(Map.of("message", "Đã xoá video"));
+    }
+
+    /**
+     * Ghi nhận một lượt xem, không cần đăng nhập. Mỗi người xem (tài khoản, hoặc anonId do trình duyệt tạo,
+     * hoặc IP nếu thiếu) chỉ được tính 1 lần cho mỗi video trong 30 phút.
+     */
+    @PostMapping("/{id}/view")
+    public ResponseEntity<Map<String, Object>> registerView(
+            @PathVariable UUID id,
+            @RequestBody(required = false) Map<String, String> body,
+            @AuthenticationPrincipal Jwt jwt,
+            HttpServletRequest request) {
+        UUID userId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;
+        String viewerKey;
+        if (userId != null) {
+            viewerKey = "u:" + userId;
+        } else {
+            String anonId = body == null ? null : body.get("anonId");
+            viewerKey = (anonId != null && !anonId.isBlank() && anonId.length() <= 64)
+                    ? "a:" + anonId.trim()
+                    : "ip:" + clientIp(request);
+        }
+        return ResponseEntity.ok(videoService.registerView(id, viewerKey, userId, CurrentUser.isAdmin(jwt)));
+    }
+
+    /** Bật/tắt "không thích" của chính người dùng; chỉ trả về trạng thái của họ, không có số lượng. */
+    @PostMapping("/{id}/dislike")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<LikeDto> toggleDislike(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        videoAccess.requireViewable(id, jwt);
+        return ResponseEntity.ok(likeService.toggleDislike(id, CurrentUser.id(jwt)));
+    }
+
+    private static String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }

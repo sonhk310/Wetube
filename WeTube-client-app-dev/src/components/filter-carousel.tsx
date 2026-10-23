@@ -53,7 +53,7 @@ export const FilterCarousel = ({
                             variant={!value ? "default" : "secondary"}
                             className="rpunded-lg px-3 py-1 cursor-pointer whitespace-nowrap text-sm"
                         >
-                            All
+                            Tất cả
                         </Badge>
                     </CarouselItem>}
                     {isLoading &&

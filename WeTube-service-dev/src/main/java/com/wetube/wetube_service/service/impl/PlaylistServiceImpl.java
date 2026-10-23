@@ -28,6 +28,7 @@ import com.wetube.wetube_service.repository.PlaylistVideoRepository;
 import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
+import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.PlaylistService;
 
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,13 @@ public class PlaylistServiceImpl implements PlaylistService {
     public UserPlaylistDto createPlaylist(CreatePlaylistRequest dto){
         AppUser user = userRepo.findById(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("user", "id", dto.getUserId().toString()));
+
+        if (dto.getTitle() == null || dto.getTitle().isBlank()) {
+            throw new IllegalArgumentException("Tên danh sách phát không được để trống");
+        }
+        if (playlistRepo.findByUser_IdAndTitle(dto.getUserId(), dto.getTitle()).isPresent()) {
+            throw new IllegalArgumentException("Bạn đã có danh sách phát tên \"" + dto.getTitle() + "\"");
+        }
 
         Playlist playlist = playlistMapper.toEntity(dto, user);
         Playlist saved = playlistRepo.save(playlist);
@@ -97,12 +105,12 @@ public class PlaylistServiceImpl implements PlaylistService {
     }
 
     @Override
-    public PlaylistDetailDto getPlaylistDetailedById(UUID playlistId) {
+    public PlaylistDetailDto getPlaylistDetailedById(UUID playlistId, UUID viewerId, boolean admin) {
         Playlist playlist = playlistRepo.findById(playlistId)
                 .orElseThrow(() -> new ResourceNotFoundException("Playlist", "id", playlistId.toString()));
 
 //        return playlistMapper.toPlaylistDetailDto(playlist);
-        List<PlaylistVideoDetailDto> videoDetails = playlist.getPlaylistVideos().stream()
+        List<PlaylistVideoDetailDto> videoDetails = visibleVideos(playlist, viewerId, admin).stream()
                 .map(playlistVideo -> {
                     Video video = playlistVideo.getVideo();
                     AppUser user = video.getUser();
@@ -115,6 +123,7 @@ public class PlaylistServiceImpl implements PlaylistService {
                             .thumbnailUrl(video.getThumbnailUrl())
                             .duration(video.getDuration())
                             .totalView(video.getTotalView())
+                            .videoStatus(video.getVideosStatus() != null ? video.getVideosStatus().name() : null)
                             .description(video.getDescription())
                             .createdAt(video.getCreatedAt() != null ? video.getCreatedAt().toLocalDate() : null)
                             .updatedAt(video.getUpdatedAt() != null ? video.getUpdatedAt().toLocalDate() : null)
@@ -133,7 +142,7 @@ public class PlaylistServiceImpl implements PlaylistService {
     }
 
     @Override
-    public PlaylistDetailDto getPlaylistDetailedById(UUID channelId, String playlistName) {
+    public PlaylistDetailDto getPlaylistDetailedById(UUID channelId, String playlistName, UUID viewerId, boolean admin) {
         Optional<Channel> opt = channelRepo.findById(channelId);
         opt.orElseThrow(() -> new ResourceNotFoundException("Channel", "id", channelId.toString()));
 
@@ -141,18 +150,48 @@ public class PlaylistServiceImpl implements PlaylistService {
 
         Playlist playlist = playlistRepo.findByUser_IdAndTitle(userID, playlistName)
                 .orElseThrow(() -> new ResourceNotFoundException("Playlist", "title", playlistName));
-        return playlistMapper.toPlaylistDetailDto(playlist);
+        List<PlaylistVideo> visible = visibleVideos(playlist, viewerId, admin);
+        PlaylistDetailDto dto = playlistMapper.toPlaylistDetailDto(playlist);
+        dto.setVideos(playlistMapper.toPlaylistVideoDetailDtoList(visible));
+        dto.setTotalVideos(visible.size());
+        return dto;
+    }
+
+    /**
+     * Video hiện trong playlist: công khai thì ai cũng thấy; không công khai chỉ chủ video / chủ playlist / admin
+     * thấy; riêng tư và bị ẩn chỉ chủ video / admin thấy; đã xoá thì không ai thấy.
+     */
+    private List<PlaylistVideo> visibleVideos(Playlist playlist, UUID viewerId, boolean admin) {
+        if (playlist.getPlaylistVideos() == null) {
+            return List.of();
+        }
+        boolean playlistOwner = viewerId != null && playlist.getUser() != null
+                && viewerId.equals(playlist.getUser().getId());
+        return playlist.getPlaylistVideos().stream()
+                .filter(pv -> VideoAccess.canSeeInList(pv.getVideo(), viewerId, admin)
+                        || (playlistOwner && VideoAccess.canView(pv.getVideo(), viewerId, admin)))
+                .toList();
+    }
+
+    @Override
+    public List<UUID> getPlaylistIdsContaining(UUID userId, UUID videoId) {
+        return playlistVideoRepo.findPlaylistIdsContaining(userId, videoId);
     }
 
 
     @Override
     public String getTopViewUserUploaded(UUID userId) {
         List<Playlist> playlists = playlistRepo.findByUser_IdAndPlaylistType(userId, PlaylistType.USER_UPLOADED);
+        if (playlists.isEmpty() || playlists.getFirst().getPlaylistVideos() == null) {
+            return null;
+        }
+        // Chỉ xét video đang công khai, không lộ video riêng tư / không công khai ra danh sách đăng ký
         Optional<Video> mostViewedVideo = playlists.
                 getFirst().getPlaylistVideos().
-                stream() .map(PlaylistVideo::getVideo).
-                max(Comparator.comparingInt(Video::getTotalView));
-        return mostViewedVideo.get().getVideoUrl();
+                stream().map(PlaylistVideo::getVideo)
+                .filter(v -> VideoAccess.isListed(v.getVideosStatus()))
+                .max(Comparator.comparingInt(Video::getTotalView));
+        return mostViewedVideo.map(Video::getVideoUrl).orElse(null);
     }
 
 
@@ -215,11 +254,11 @@ public List<PlaylistVideoDetailDto> getHistoryByUser(UUID userId) {
     }
     Playlist history = histories.get(0);
 
-    List<PlaylistVideo> playlistVideos = playlistVideoRepo.findByPlaylist_IdOrderByUpdatedAtDesc(history.getId());
+    List<PlaylistVideo> playlistVideos = playlistVideoRepo.findByPlaylist_IdOrderByUpdatedAtDesc(history.getId()).stream()
+            .filter(pv -> VideoAccess.canView(pv.getVideo(), userId, false))
+            .toList();
 
-    List<PlaylistVideoDetailDto> videos = playlistMapper.toPlaylistVideoDetailDtoList(playlistVideos);
-
-            return playlistMapper.toPlaylistVideoDetailDtoList(playlistVideos);
+    return playlistMapper.toPlaylistVideoDetailDtoList(playlistVideos);
 }
 
 @Override

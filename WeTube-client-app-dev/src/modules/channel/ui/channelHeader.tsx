@@ -3,7 +3,10 @@
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useGetChannelInfoQuery } from "@/app/api/channelApi";
-import { useSubscribeMutation } from "@/app/api/subscriptionsApi";
+import {
+  useSubscribeMutation,
+  useUnsubscribeMutation,
+} from "@/app/api/subscriptionsApi";
 import { useAuth } from "@/contexts/auth-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
@@ -13,9 +16,12 @@ const FALLBACK_AVATAR = "https://placehold.co/160x160?text=W";
 export default function ChannelHeader() {
   const { channelId } = useParams<{ channelId: string }>();
   const { user } = useAuth();
-  const { data: channel, isLoading, error } = useGetChannelInfoQuery(channelId);
+  const { data: channel, isLoading, error, refetch } = useGetChannelInfoQuery(channelId);
   const [subscribe, { isLoading: isSubscribing }] = useSubscribeMutation();
-  const [subscribed, setSubscribed] = useState(false);
+  const [unsubscribe, { isLoading: isUnsubscribing }] = useUnsubscribeMutation();
+  // Trạng thái sau khi bấm; chưa bấm thì lấy từ server (đã đăng ký hay chưa)
+  const [override, setOverride] = useState<boolean | null>(null);
+  const subscribed = override ?? channel?.subscribed ?? false;
 
   if (isLoading) {
     return (
@@ -35,10 +41,16 @@ export default function ChannelHeader() {
   const handleSubscribe = async () => {
     if (!user?.sub) return;
     try {
-      await subscribe({ subscriberId: user.sub, channelId: channel.id }).unwrap();
-      setSubscribed(true);
+      if (subscribed) {
+        await unsubscribe({ subscriberId: user.sub, channelId: channel.id }).unwrap();
+        setOverride(false);
+      } else {
+        await subscribe({ subscriberId: user.sub, channelId: channel.id }).unwrap();
+        setOverride(true);
+      }
+      void refetch();
     } catch (err) {
-      console.error("Subscribe failed:", err);
+      console.error("Subscription update failed:", err);
     }
   };
 
@@ -77,8 +89,10 @@ export default function ChannelHeader() {
         {!isOwner && user?.sub && (
           <button
             onClick={handleSubscribe}
-            disabled={isSubscribing || subscribed}
-            className="ml-auto px-4 py-2 bg-black text-white rounded-md disabled:opacity-60"
+            disabled={isSubscribing || isUnsubscribing}
+            className={`ml-auto px-4 py-2 rounded-md disabled:opacity-60 ${
+              subscribed ? "bg-gray-100 text-black hover:bg-gray-200" : "bg-black text-white"
+            }`}
           >
             {subscribed ? "Đã đăng ký" : "Đăng ký"}
           </button>

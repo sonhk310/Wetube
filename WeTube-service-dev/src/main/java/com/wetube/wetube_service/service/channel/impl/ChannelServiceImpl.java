@@ -12,6 +12,7 @@ import com.wetube.wetube_service.exception.ResourceNotFoundException;
 import com.wetube.wetube_service.mapper.channel.ChannelMapper;
 import com.wetube.wetube_service.repository.channel.ChannelCategoryRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
+import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
 import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.service.channel.ChannelService;
 import com.wetube.wetube_service.service.impl.GeoIPService;
@@ -35,13 +36,17 @@ public class ChannelServiceImpl implements ChannelService {
 
     private final ChannelCategoryRepository categoryRepository;
     private final GeoIPService geoIPService;
+    private final SubscriptionRepository subscriptionRepository;
 
     @Override
-    public ChannelResponseDto getChannelById(UUID channelId) {
+    public ChannelResponseDto getChannelById(UUID channelId, UUID viewerId) {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Channel", "id", channelId.toString()));
 
-        return channelMapper.toChannelResponseDto(channel);
+        ChannelResponseDto dto = channelMapper.toChannelResponseDto(channel);
+        dto.setSubscribed(viewerId != null
+                && subscriptionRepository.existsById_Subscriber_IdAndId_Tier_Channel_Id(viewerId, channelId));
+        return dto;
     }
 
     @Override

@@ -6,7 +6,7 @@ import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.exception.ResourceNotFoundException;
 import com.wetube.wetube_service.repository.report.ReportRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
-import com.wetube.wetube_service.repository.video.VideoSearchRepository;
+import com.wetube.wetube_service.service.VideoIndexer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,7 +35,7 @@ public class ReportService {
 
     private final ReportRepository reportRepository;
     private final VideoRepository videoRepository;
-    private final VideoSearchRepository videoSearchRepository;
+    private final VideoIndexer videoIndexer;
 
     public ReportView create(UUID reporterId, UUID videoId, String reason, String details) {
         if (!REASONS.contains(reason)) {
@@ -89,11 +89,7 @@ public class ReportService {
         Video video = videoRepository.findById(report.getVideoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Video", "id", report.getVideoId().toString()));
         video.setVideosStatus(ActiveStatus.INACTIVE);
-        try {
-            videoSearchRepository.deleteById(video.getId().toString());
-        } catch (Exception e) {
-            log.warn("Không gỡ được video {} khỏi Elasticsearch: {}", video.getId(), e.getMessage());
-        }
+        videoIndexer.remove(video.getId());
         for (Report open : reportRepository.findByVideoIdAndStatus(video.getId(), Report.Status.OPEN)) {
             open.setStatus(Report.Status.RESOLVED);
             open.setResolutionNote("Video đã bị ẩn");

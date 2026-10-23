@@ -96,6 +96,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
 
   // Dropdown chọn ngôn ngữ
   const [targetLang, setTargetLang] = useState(""); // mặc định English
+  const [visibility, setVisibility] = useState<"PUBLIC" | "UNLISTED" | "PRIVATE">("PUBLIC");
 
   const titleWithoutExt = file.name.replace(/\.[^/.]+$/, "");
   const defaultTitle = decodeURIComponent(titleWithoutExt);
@@ -247,6 +248,7 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
     formData.append("usersId", user.sub);
     formData.append("duration", duration.toString());
     formData.append("isShort", String(duration <= 60));
+    formData.append("visibility", visibility);
     if (targetLang && targetLang !== "") {
       formData.append("targetLang", targetLang);
     }
@@ -377,6 +379,26 @@ export const VideoDetailsModal: React.FC<VideoDetailsModalProps> = ({
                   "AI Generate Description"
                 )}
               </Button>
+            </div>
+
+            {/* Chế độ hiển thị */}
+            <div>
+              <label htmlFor="visibility" className="font-semibold mb-2 block">
+                Chế độ hiển thị
+              </label>
+              <select
+                id="visibility"
+                value={visibility}
+                onChange={(e) =>
+                  setVisibility(e.target.value as "PUBLIC" | "UNLISTED" | "PRIVATE")
+                }
+                className="border rounded px-3 py-2 w-full"
+                disabled={isUploading}
+              >
+                <option value="PUBLIC">Công khai — ai cũng có thể tìm và xem</option>
+                <option value="UNLISTED">Không công khai — chỉ người có liên kết xem được</option>
+                <option value="PRIVATE">Riêng tư — chỉ mình bạn xem được</option>
+              </select>
             </div>
 
             {/* Dropdown chọn ngôn ngữ */}

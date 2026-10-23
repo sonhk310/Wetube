@@ -1,5 +1,6 @@
 package com.wetube.wetube_service.service.interaction.impl;
 
+import com.wetube.wetube_service.exception.ResourceNotFoundException;
 import com.wetube.wetube_service.dto.CommentDto.CommentRequestDto;
 import com.wetube.wetube_service.dto.CommentDto.CommentResponseDto;
 import com.wetube.wetube_service.dto.UserDto;
@@ -45,7 +46,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public CommentResponseDto getCommentById(UUID id) {
         Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
         return toResponseWithReplies(comment);
     }
@@ -57,7 +58,7 @@ public class CommentServiceImpl implements CommentService {
 
         if (request.getParentCommentId() != null) {
             Comment parent = commentRepository.findById(request.getParentCommentId())
-                    .orElseThrow(() -> new RuntimeException("Parent comment not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent comment not found"));
             comment.setParentCommentId(parent.getId());
             comment.setTargetId(parent.getTargetId());
             comment.setTargetType(parent.getTargetType());
@@ -70,7 +71,7 @@ public class CommentServiceImpl implements CommentService {
         }
 
         AppUser user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         comment.setUser(user);
         Comment saved = commentRepository.save(comment);
 
@@ -89,7 +90,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public CommentResponseDto updateComment(UUID id, CommentRequestDto request) {
         Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
         if (request.getContent() != null) {
             comment.setContent(request.getContent());
@@ -103,7 +104,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public void deleteComment(UUID id) {
         Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
         deleteRecursively(comment.getId());
 

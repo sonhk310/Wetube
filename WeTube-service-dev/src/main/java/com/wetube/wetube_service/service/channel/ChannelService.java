@@ -6,7 +6,7 @@ import com.wetube.wetube_service.entity.channel.Channel;
 import java.util.UUID;
 
 public interface ChannelService {
-    ChannelResponseDto getChannelById(UUID channelId);
+    ChannelResponseDto getChannelById(UUID channelId, UUID viewerId);
 //    void updateChannel(UUID channelId, ChannelUpdateDto dto);
 //    List<UserDto> getSubscribers(UUID channelId);
 //    List<UserDto> getPremiumSubscribers(UUID channelId);

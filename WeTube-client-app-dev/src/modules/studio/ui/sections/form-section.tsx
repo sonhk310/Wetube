@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { Globe2Icon, Clock, Film, Loader2 } from "lucide-react";
+import { Globe2Icon, Clock, Film, Loader2, LockIcon, LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
@@ -49,7 +49,7 @@ const formSchema = z.object({
     .string()
     .max(5000, { message: "Mô tả tối đa 5000 ký tự." })
     .optional(),
-  status: z.enum(["ACTIVE", "PRIVATE", "UNLISTED", "PENDING", "INACTIVE"]),
+  status: z.enum(["ACTIVE", "PUBLIC", "PRIVATE", "UNLISTED", "PENDING", "INACTIVE"]),
   tags: z
     .string()
     .max(200, { message: "Thẻ tối đa 200 ký tự." })
@@ -131,7 +131,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
         const titleChanged = value.title !== video.title;
         const descriptionChanged =
           value.description !== (video.description || "");
-        const statusChanged = value.status !== video.status;
+        const statusChanged = value.status !== (video.status === "PUBLIC" ? "ACTIVE" : video.status);
         const tagsChanged =
           value.tags !== video.tags.map((t) => `#${t.name}`).join(" ");
         const thumbnailChanged = !!value.thumbnailFile;
@@ -153,7 +153,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
       form.reset({
         title: video.title,
         description: video.description || "",
-        status: video.status,
+        status: video.status === "PUBLIC" ? "ACTIVE" : video.status,
         tags: video.tags.map((t) => `#${t.name}`).join(" "),
       });
 
@@ -442,11 +442,11 @@ export default function FormSection({ videoId }: FormSectionProps) {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-semibold">Trạng thái</FormLabel>
+                    <FormLabel className="font-semibold">Chế độ hiển thị</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
-                      disabled={isUpdating}
+                      disabled={isUpdating || field.value === "INACTIVE"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -456,16 +456,28 @@ export default function FormSection({ videoId }: FormSectionProps) {
                       <SelectContent>
                         <SelectItem value="ACTIVE">
                           <div className="flex items-center gap-2">
-                            <Globe2Icon className="size-4" /> Active
+                            <Globe2Icon className="size-4" /> Công khai
                           </div>
                         </SelectItem>
-                        {/* <SelectItem value="PRIVATE">
+                        <SelectItem value="UNLISTED">
                           <div className="flex items-center gap-2">
-                            <LockIcon className="size-4" /> Private
+                            <LinkIcon className="size-4" /> Không công khai
                           </div>
-                        </SelectItem> */}
+                        </SelectItem>
+                        <SelectItem value="PRIVATE">
+                          <div className="flex items-center gap-2">
+                            <LockIcon className="size-4" /> Riêng tư
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="INACTIVE">Bị quản trị viên ẩn</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {field.value === "ACTIVE" && "Ai cũng có thể tìm thấy và xem video này."}
+                      {field.value === "UNLISTED" && "Chỉ người có liên kết mới xem được; video không hiện trong tìm kiếm hay gợi ý."}
+                      {field.value === "PRIVATE" && "Chỉ bạn xem được video này."}
+                      {field.value === "INACTIVE" && "Video đã bị quản trị viên ẩn do vi phạm, bạn không thể tự công khai lại."}
+                    </p>
                   </FormItem>
                 )}
               />

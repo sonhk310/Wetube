@@ -14,6 +14,7 @@
     import org.springframework.stereotype.Service;
     import org.springframework.web.client.RestTemplate;
 
+import com.wetube.wetube_service.exception.ResourceNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wetube.wetube_service.configuration.MomoConfiguration;
     import com.wetube.wetube_service.dto.request.PaymentRequestDto;
@@ -94,9 +95,9 @@ import jakarta.transaction.Transactional;
                     String requestId = UUID.randomUUID().toString();
 
                     SubPack subPack = subPackRepo.findById(dto.getSubPackId())
-                            .orElseThrow(() -> new RuntimeException("SubPack not found"));
+                            .orElseThrow(() -> new ResourceNotFoundException("SubPack not found"));
                     AppUser user = userRepo.findById(dto.getUserId())
-                            .orElseThrow(() -> new RuntimeException("User not found"));
+                            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
                     Long amountLong = subPack.getPrice().longValue(); 
                     String amountStr = amountLong.toString();
@@ -190,7 +191,7 @@ import jakarta.transaction.Transactional;
                 }
 
                 PaymentMomo payment = paymentRepo.findByOrderId(orderId)
-                        .orElseThrow(() -> new RuntimeException("Payment not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 
                 // /redirect và /ipn cùng gọi vào đây: đã xử lý thành công thì không cộng gói lần nữa
                 if (payment.getStatus() == PaymentStatus.SUCCESS) {

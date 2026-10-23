@@ -1,5 +1,6 @@
 package com.wetube.wetube_service.service.post.impl;
 
+import com.wetube.wetube_service.exception.ResourceNotFoundException;
 import com.wetube.wetube_service.dto.post.PollSummaryDto;
 import com.wetube.wetube_service.dto.post.VoteRequestDto;
 import com.wetube.wetube_service.entity.AppUser;
@@ -27,10 +28,10 @@ public class PollVoteServiceImpl implements PollVoteService {
     @Transactional
     public PollSummaryDto vote(VoteRequestDto request) {
         PollOption option = pollOptionRepository.findById(request.getOptionId())
-                .orElseThrow(() -> new RuntimeException("Option not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Option not found"));
 
         AppUser user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!option.getPost().getId().equals(request.getPostId())) {
             throw new RuntimeException("Option does not belong to the given post");

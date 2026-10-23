@@ -15,6 +15,8 @@ public class PlaylistVideoDetailDto {
     private String description;
     private float duration;
     private int totalView;
+    /** Chế độ hiển thị của video (ACTIVE, UNLISTED, PRIVATE, INACTIVE...), để Studio hiện nhãn. */
+    private String videoStatus;
     private LocalDate createdAt;
     private LocalDate updatedAt;
 }

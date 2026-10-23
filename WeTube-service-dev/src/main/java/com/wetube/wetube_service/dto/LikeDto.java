@@ -17,5 +17,7 @@ public class LikeDto {
     private List<UUID> likedUserIds;
     private Integer likeCount;
     private Boolean liked;
+    /** Chỉ trạng thái của chính người xem (null nếu chưa đăng nhập hoặc không phải video); không bao giờ có tổng số. */
+    private Boolean disliked;
 }
 

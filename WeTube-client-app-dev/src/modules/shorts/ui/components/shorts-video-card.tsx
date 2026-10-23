@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useGetLikeInfoQuery, useToggleLikeMutation } from "@/app/api/likeApi";
 import { formatViews } from "@/lib/utils";
 import type { ShortVideo } from "@/modules/shorts/hooks/useShortsFeed";
+import { useViewCounter } from "@/lib/viewTracking";
 
 interface ShortsVideoCardProps extends ShortVideo {
   onReachEnd?: () => void;
@@ -36,6 +37,10 @@ export default function ShortsVideoCard({
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  // Short hiện trong khung nhìn đủ 3 giây thì tính 1 lượt xem
+  useViewCounter(id, visible, 3000);
 
   const { data: likeInfo } = useGetLikeInfoQuery(
     { targetId: id, targetType: "VIDEO", userId: user?.sub ?? "" },
@@ -89,10 +94,12 @@ export default function ShortsVideoCard({
         if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
           v.play().catch(() => setPaused(true));
           setPaused(false);
+          setVisible(true);
           onReachEnd?.();
         } else {
           v.pause();
           setPaused(true);
+          setVisible(false);
         }
       },
       { threshold: 0.6 }

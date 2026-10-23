@@ -35,7 +35,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wetube.wetube_service.repository.video.TagRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
-import com.wetube.wetube_service.repository.video.VideoSearchRepository;
 import com.wetube.wetube_service.repository.video.VideoTagRepository;
 import com.wetube.wetube_service.dto.LikeDto;
 import com.wetube.wetube_service.dto.CommentDto.CommentResponseDto;
@@ -44,7 +43,9 @@ import com.wetube.wetube_service.entity.video.VideoTag;
 import com.wetube.wetube_service.mapper.interaction.CommentMapper;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.entity.video.Tag;
-import com.wetube.wetube_service.search.VideoDocument;
+import com.wetube.wetube_service.repository.channel.CategoryVideoRepository;
+import com.wetube.wetube_service.security.VideoAccess;
+import com.wetube.wetube_service.service.VideoIndexer;
 import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.interaction.LikeService;
 import com.wetube.wetube_service.service.video.VideoService;
@@ -66,7 +67,8 @@ public class VideoServiceImpl implements VideoService {
     private final VideoMapper videoMapper;
     private final CommentMapper commentMapper;
     private final CloudinaryService cloudinaryService;
-    private final VideoSearchRepository videoSearchRepository;
+    private final VideoIndexer videoIndexer;
+    private final CategoryVideoRepository categoryVideoRepository;
     private final VideoSubtitleService videoSubtitleService;
 
     private final PlaylistRepository playlistRepository;
@@ -81,6 +83,24 @@ public class VideoServiceImpl implements VideoService {
     private static final String ID_NOT_FOUND = "Video not found with id: ";
     private static final String VIDEO = "video";
 
+    /** Một người xem chỉ được tính thêm 1 lượt xem cho mỗi video trong khoảng này. */
+    private static final long VIEW_DEDUPE_MILLIS = 30L * 60 * 1000;
+    private static final int VIEW_CACHE_PURGE_THRESHOLD = 5000;
+    private final java.util.concurrent.ConcurrentHashMap<String, Long> recentViews = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Chế độ hiển thị người dùng được chọn: công khai (ACTIVE/PUBLIC), không công khai, riêng tư. */
+    private static ActiveStatus parseVisibility(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return ActiveStatus.ACTIVE;
+        }
+        return switch (raw.trim().toUpperCase(Locale.ROOT)) {
+            case "ACTIVE", "PUBLIC" -> ActiveStatus.ACTIVE;
+            case "PRIVATE" -> ActiveStatus.PRIVATE;
+            case "UNLISTED" -> ActiveStatus.UNLISTED;
+            default -> throw new IllegalArgumentException("Chế độ hiển thị không hợp lệ: " + raw);
+        };
+    }
+
 @Override
 @Transactional(rollbackFor = Exception.class)
 public VideoDto createVideo(MultipartFile videoFile,
@@ -90,6 +110,7 @@ public VideoDto createVideo(MultipartFile videoFile,
     if (videoFile == null || videoFile.isEmpty()) {
         throw new IllegalArgumentException("Video file is required");
     }
+    ActiveStatus visibility = parseVisibility(videoDto.getVideosStatus());
 
     AppUser user = userRepository.findById(authenticatedUserId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + authenticatedUserId));
@@ -116,7 +137,7 @@ public VideoDto createVideo(MultipartFile videoFile,
     entity.setUser(user);
     entity.setVideoUrl(videoUrl);
     entity.setThumbnailUrl(thumbnailUrl);
-    entity.setVideosStatus(ActiveStatus.ACTIVE);
+    entity.setVideosStatus(visibility);
     entity.setShort(entity.getDuration() > 0 && entity.getDuration() <= SHORT_MAX_SECONDS);
 
     LocalDateTime now = LocalDateTime.now();
@@ -153,29 +174,7 @@ public VideoDto createVideo(MultipartFile videoFile,
 }
 
     private void indexToElasticsearch(Video video) {
-        try {
-            VideoDocument doc = new VideoDocument();
-            doc.setId(video.getId().toString());
-            doc.setTitle(video.getTitle());
-            doc.setDescription(video.getDescription());
-            doc.setUserId(video.getUser().getId().toString());
-            doc.setTags(video.getVideoTags().stream()
-                    .map(vt -> vt.getTag().getName())
-                    .toList());
-            doc.setCategories(List.of());
-            doc.setCreatedAt(video.getCreatedAt().atZone(ZoneOffset.UTC).toInstant());
-            doc.setThumbnailUrl(video.getThumbnailUrl());
-            doc.setVideoUrl(video.getVideoUrl());
-            doc.setTotalView(video.getTotalView());
-            doc.setDuration(video.getDuration());
-            doc.setName(video.getUser().getName());
-            doc.setPicture(video.getUser().getPicture());
-
-            videoSearchRepository.save(doc);
-            log.info("Indexed video {} to Elasticsearch", video.getId());
-        } catch (Exception e) {
-            log.error("Failed to index video {} to Elasticsearch: {}", video.getId(), e.getMessage());
-        }
+        videoIndexer.index(video);
     }
 
     private void addVideoToUserUploadedPlaylist(Video video) {
@@ -216,7 +215,7 @@ public VideoDto createVideo(MultipartFile videoFile,
     @Transactional(rollbackFor = Exception.class)
     public VideoDto addTags(UUID videoId, String hashtagText) {
         Video video = videoRepository.findById(videoId)
-                .orElseThrow(() -> new IllegalArgumentException(ID_NOT_FOUND + videoId));
+                .orElseThrow(() -> new ResourceNotFoundException(ID_NOT_FOUND + videoId));
 
         Set<String> names = parseHashtagText(hashtagText);
 
@@ -244,7 +243,7 @@ public VideoDto createVideo(MultipartFile videoFile,
         }
 
         Video dtoSource = videoRepository.findByIdWithTags(videoId)
-                .orElseThrow(() -> new IllegalArgumentException(ID_NOT_FOUND + videoId));
+                .orElseThrow(() -> new ResourceNotFoundException(ID_NOT_FOUND + videoId));
 
         // update index sau khi add tag
         indexToElasticsearch(dtoSource);
@@ -254,10 +253,13 @@ public VideoDto createVideo(MultipartFile videoFile,
 
     @Override
     @Transactional(readOnly = true)
-    public CustomPageResponse<VideoDto> getVideosByUserId(UUID userId, int page, int size) {
+    public CustomPageResponse<VideoDto> getVideosByUserId(UUID userId, int page, int size, UUID viewerId, boolean admin) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        Page<Video> videoPage = videoRepository.findByUserId(userId, pageable);
+        boolean seesAll = admin || userId.equals(viewerId);
+        Page<Video> videoPage = seesAll
+                ? videoRepository.findByUserIdAndVideosStatusNot(userId, ActiveStatus.DELETED, pageable)
+                : videoRepository.findByUserIdAndVideosStatusIn(userId, VideoAccess.LISTED, pageable);
         Page<VideoDto> videoDtoPage = videoPage.map(videoMapper::toDto);
         return new CustomPageResponse<>(videoDtoPage);
     }
@@ -273,7 +275,7 @@ public VideoDto createVideo(MultipartFile videoFile,
     @Override
     @Transactional(readOnly = true)
     public List<VideoDto> getAllVideo() {
-        List<Video> videos = videoRepository.findAll();
+        List<Video> videos = videoRepository.findByVideosStatusIn(VideoAccess.LISTED);
         return videoMapper.toDtoList(videos);
     }
 
@@ -312,12 +314,11 @@ public VideoDto createVideo(MultipartFile videoFile,
     }
 
     @Override
-    public VideoDetailResponseDto getDetailWithRecommend(UUID videoId, UUID userId) {
+    public VideoDetailResponseDto getDetailWithRecommend(UUID videoId, UUID userId, boolean admin) {
         var video = videoRepository.findById(videoId)
-                .orElseThrow(() -> new RuntimeException(ID_NOT_FOUND + videoId));
-        // Video bị admin ẩn (INACTIVE) chỉ chủ video còn xem được
-        if (video.getVideosStatus() == ActiveStatus.INACTIVE
-                && (userId == null || !userId.equals(video.getUser().getId()))) {
+                .orElseThrow(() -> new ResourceNotFoundException(ID_NOT_FOUND + videoId));
+        // Riêng tư / bị admin ẩn: chỉ chủ video và admin xem được; đã xoá: không ai xem được
+        if (!VideoAccess.canView(video, userId, admin)) {
             throw new ResourceNotFoundException("Video", "id", videoId.toString());
         }
 
@@ -356,14 +357,26 @@ public VideoDto createVideo(MultipartFile videoFile,
                 .like(likeInfo)
                 .totalSubscribers(totalSubscribers)
                 .subscribed(subscribed)
+                .channelId(channelId)
                 .comments(comments)
                 .subtitles(subtitles)
                 .build();
 
-        var relatedVideos = videoRepository.findDistinctByVideoTags_Tag_NameInAndIdNot(
-                tags.stream().map(TagDto::getName).toList(),
-                videoId)
-                .stream()
+        List<String> tagNames = tags.stream().map(TagDto::getName).toList();
+        List<Video> related = tagNames.isEmpty()
+                ? List.of()
+                : videoRepository.findDistinctByVideoTags_Tag_NameInAndIdNotAndVideosStatusIn(
+                        tagNames, videoId, VideoAccess.LISTED);
+        if (related.isEmpty()) {
+            // Video chưa có tag chung: gợi ý các video mới nhất đang công khai
+            related = videoRepository.findByVideosStatusIn(VideoAccess.LISTED,
+                            PageRequest.of(0, 13, Sort.by("createdAt").descending()))
+                    .getContent().stream()
+                    .filter(v -> !v.getId().equals(videoId))
+                    .toList();
+        }
+        var relatedVideos = related.stream()
+                .limit(30)
                 .map(v -> new RecommendVideoDto(
                         v.getId(),
                         v.getTitle(),
@@ -385,10 +398,19 @@ public VideoDto createVideo(MultipartFile videoFile,
     }
 
     @Override
-    public List<VideoDto> getVideosByTag(String tagName) {
-        return videoRepository.findByVideoTags_Tag_NameOrderByTotalViewDesc(tagName)
-                .stream()
-                .map(videoMapper::toDto)
+    @Transactional(readOnly = true)
+    public CustomPageResponse<VideoDto> getVideosByTag(String tagName, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("totalView").descending());
+        Page<Video> videos = videoRepository.findDistinctByVideoTags_Tag_NameIgnoreCaseAndVideosStatusIn(
+                tagName.trim().replaceFirst("^#", ""), VideoAccess.LISTED, pageable);
+        return new CustomPageResponse<>(videos.map(videoMapper::toDto));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getPopularTags(int limit) {
+        return tagRepository.findPopularTagNames(VideoAccess.LISTED, PageRequest.of(0, Math.max(1, limit))).stream()
+                .map(row -> Map.<String, Object>of("name", row[0], "count", row[1]))
                 .toList();
     }
 
@@ -452,7 +474,13 @@ public VideoDto createVideo(MultipartFile videoFile,
 
         video.setTitle(updateDto.getTitle());
         video.setDescription(updateDto.getDescription());
-        video.setVideosStatus(ActiveStatus.valueOf(updateDto.getStatus().toUpperCase()));
+        if (video.getVideosStatus() == ActiveStatus.DELETED) {
+            throw new ResourceNotFoundException(VIDEO, "id", videoId.toString());
+        }
+        // Video bị admin ẩn (INACTIVE): chủ video vẫn sửa được nội dung nhưng không tự bỏ ẩn được
+        if (video.getVideosStatus() != ActiveStatus.INACTIVE) {
+            video.setVideosStatus(parseVisibility(updateDto.getStatus()));
+        }
 
         if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
             try {
@@ -485,5 +513,76 @@ public VideoDto createVideo(MultipartFile videoFile,
         indexToElasticsearch(dtoSource);
 
         return videoMapper.toDto(dtoSource);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteVideo(UUID videoId) {
+        Video video = videoRepository.findById(videoId)
+                .orElseThrow(() -> new ResourceNotFoundException(VIDEO, "id", videoId.toString()));
+        if (video.getVideosStatus() == ActiveStatus.DELETED) {
+            throw new ResourceNotFoundException(VIDEO, "id", videoId.toString());
+        }
+
+        String videoUrl = video.getVideoUrl();
+        String thumbnailUrl = video.getThumbnailUrl();
+
+        video.setVideosStatus(ActiveStatus.DELETED);
+        videoRepository.save(video);
+        videoRepository.flush();
+        playlistVideoRepository.deleteByVideoId(videoId);
+        categoryVideoRepository.deleteByVideoId(videoId);
+        videoIndexer.remove(videoId);
+        recentViews.keySet().removeIf(k -> k.startsWith(videoId + ":"));
+
+        // Chỉ xoá file trên Cloudinary sau khi DB đã commit thành công
+        Runnable cleanup = () -> {
+            cloudinaryService.deleteVideo(videoUrl);
+            cloudinaryService.deleteImage(thumbnailUrl);
+        };
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            cleanup.run();
+                        }
+                    });
+        } else {
+            cleanup.run();
+        }
+        log.info("Đã xoá (mềm) video {}", videoId);
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> registerView(UUID videoId, String viewerKey, UUID userId, boolean admin) {
+        Video video = videoRepository.findById(videoId)
+                .orElseThrow(() -> new ResourceNotFoundException(VIDEO, "id", videoId.toString()));
+        if (!VideoAccess.canView(video, userId, admin)) {
+            throw new ResourceNotFoundException(VIDEO, "id", videoId.toString());
+        }
+
+        long now = System.currentTimeMillis();
+        if (recentViews.size() > VIEW_CACHE_PURGE_THRESHOLD) {
+            recentViews.values().removeIf(t -> now - t > VIEW_DEDUPE_MILLIS);
+        }
+        String key = videoId + ":" + viewerKey;
+        boolean[] counted = {false};
+        recentViews.compute(key, (k, last) -> {
+            if (last == null || now - last > VIEW_DEDUPE_MILLIS) {
+                counted[0] = true;
+                return now;
+            }
+            return last;
+        });
+
+        int total = video.getTotalView();
+        if (counted[0]) {
+            videoRepository.incrementTotalView(videoId);
+            total = videoRepository.findTotalViewById(videoId).orElse(total + 1);
+            videoIndexer.updateTotalView(videoId, total);
+        }
+        return Map.of("counted", counted[0], "totalView", total);
     }
 }

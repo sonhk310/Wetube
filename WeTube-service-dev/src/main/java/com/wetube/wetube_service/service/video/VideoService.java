@@ -1,6 +1,7 @@
 package com.wetube.wetube_service.service.video;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import com.wetube.wetube_service.dto.response.CustomPageResponse;
@@ -30,13 +31,23 @@ public interface VideoService {
 
     List<VideoDto> getVideoResult(String query);
 
-    VideoDetailResponseDto getDetailWithRecommend(UUID videoId, UUID userId);
+    VideoDetailResponseDto getDetailWithRecommend(UUID videoId, UUID userId, boolean admin);
 
-    CustomPageResponse<VideoDto> getVideosByUserId(UUID userId, int page, int size);
+    /** Chủ kênh (và admin) thấy mọi video trừ đã xoá; người khác chỉ thấy video công khai. */
+    CustomPageResponse<VideoDto> getVideosByUserId(UUID userId, int page, int size, UUID viewerId, boolean admin);
 
     CustomPageResponse<VideoDto> getShorts(int page, int size);
 
-    List<VideoDto> getVideosByTag(String tagName);
+    CustomPageResponse<VideoDto> getVideosByTag(String tagName, int page, int size);
+
+    /** Tag dùng nhiều nhất trong các video đang công khai: [{name, count}]. */
+    List<Map<String, Object>> getPopularTags(int limit);
+
+    /** Xoá mềm: đặt DELETED, gỡ khỏi playlist/tìm kiếm và xoá file trên Cloudinary. */
+    void deleteVideo(UUID videoId);
+
+    /** Ghi nhận một lượt xem (chống đếm trùng). Trả về tổng lượt xem hiện tại và có được tính hay không. */
+    Map<String, Object> registerView(UUID videoId, String viewerKey, UUID userId, boolean admin);
 
     VideoFormDetailDto getVideoDetail(UUID videoId);
 

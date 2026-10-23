@@ -83,6 +83,17 @@ export const playlistService = {
     return res.json();
   },
 
+  // GET /containing/{videoId}: id các playlist của mình đang chứa video này
+  getContaining: async (videoId: string): Promise<string[]> => {
+    if (!videoId) throw new Error("Thiếu videoId");
+
+    const res = await apiFetch(`${API_BASE}/containing/${videoId}`, {
+      headers: jsonHeaders(),
+    });
+    if (!res.ok) throw new Error("Không tải được các danh sách phát chứa video");
+    return res.json();
+  },
+
   // POST /add
   addVideo: async (playlistId: string, videoId: string) => {
     if (!playlistId || !videoId) throw new Error("Thiếu playlistId hoặc videoId");

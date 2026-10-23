@@ -29,4 +29,8 @@ public interface CategoryVideoRepository extends JpaRepository<CategoryVideo, UU
     boolean existsByVideoIdAndCategoryId(UUID videoId, UUID categoryId);
 
     Optional<CategoryVideo> findByVideoIdAndCategoryId(UUID videoId, UUID categoryId);
+
+    @Modifying
+    @Query("DELETE FROM CategoryVideo cv WHERE cv.video.id = :videoId")
+    int deleteByVideoId(@Param("videoId") UUID videoId);
 }

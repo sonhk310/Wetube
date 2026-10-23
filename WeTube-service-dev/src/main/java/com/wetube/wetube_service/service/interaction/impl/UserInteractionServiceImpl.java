@@ -39,9 +39,7 @@ public class UserInteractionServiceImpl {
         };
 
         if (type == InteractionType.VIEW) {
-            video.setTotalView(video.getTotalView() + 1);
-            videoRepo.save(video);
-
+            // Lượt xem (totalView) giờ được đếm bởi POST /api/videos/{id}/view; ở đây chỉ cập nhật điểm tag.
         for (VideoTag vt : videoTagRepo.findByVideo_Id(videoId)) {
             UUID tagId = vt.getTag().getId();
             var pk = new UserTag.UserTagId(userId, tagId);

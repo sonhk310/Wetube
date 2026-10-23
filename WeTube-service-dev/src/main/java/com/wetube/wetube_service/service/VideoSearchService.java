@@ -23,6 +23,7 @@ import com.wetube.wetube_service.dto.video.VideoDto;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.search.VideoDocument;
+import com.wetube.wetube_service.security.VideoAccess;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,11 +74,15 @@ public class VideoSearchService {
         }
 
         public List<String> suggestTitles(String prefix, int size) {
+                // Khớp tiền tố tiêu đề ("vi" -> "view") được ưu tiên, vẫn giữ khớp gần đúng để chịu lỗi gõ
                 NativeQuery query = new NativeQueryBuilder()
-                                .withQuery(multiMatch(m -> m
-                                                .fields("title", "description", "tags", "name")
-                                                .query(prefix)
-                                                .fuzziness("AUTO")))
+                                .withQuery(bool(b -> b
+                                                .should(matchPhrasePrefix(m -> m.field("title").query(prefix).boost(3f)))
+                                                .should(multiMatch(m -> m
+                                                                .fields("title", "description", "tags", "name")
+                                                                .query(prefix)
+                                                                .fuzziness("AUTO")))
+                                                .minimumShouldMatch("1")))
                                 .withSourceFilter(new FetchSourceFilter(true, new String[]{"title"}, new String[]{}))
                                 .withMaxResults(size)
                                 .build();
@@ -113,6 +118,7 @@ public class VideoSearchService {
                 List<VideoDto> videos = hits.getSearchHits().stream()
                                 .map(SearchHit::getContent)
                                 .map(doc -> videoRepository.findById(UUID.fromString(doc.getId()))
+                                                .filter(v -> VideoAccess.isListed(v.getVideosStatus()))
                                                 .map(videoMapper::toDto)
                                                 .orElse(null))
                                 .filter(Objects::nonNull)

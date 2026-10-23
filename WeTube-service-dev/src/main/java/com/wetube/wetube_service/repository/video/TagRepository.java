@@ -22,5 +22,14 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
     int incrementCount(@Param("id") UUID id);
     List<Tag> findByVideoTags_Video_Id(UUID videoId);
 
-    
+    /** Tag được dùng nhiều nhất trong các video đang được liệt kê: [tên, số video]. */
+    @Query("""
+            SELECT t.name, COUNT(DISTINCT v.id) FROM Tag t
+            JOIN t.videoTags vt JOIN vt.video v
+            WHERE v.videosStatus IN :statuses
+            GROUP BY t.name
+            ORDER BY COUNT(DISTINCT v.id) DESC, t.name ASC
+            """)
+    List<Object[]> findPopularTagNames(@Param("statuses") java.util.Collection<com.wetube.wetube_service.enumeration.ActiveStatus> statuses,
+                                       org.springframework.data.domain.Pageable pageable);
 }

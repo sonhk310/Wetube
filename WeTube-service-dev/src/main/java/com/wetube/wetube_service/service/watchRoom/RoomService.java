@@ -101,6 +101,11 @@ public class RoomService {
             UUID uuid = UUID.fromString(videoId);
             video = videoRepo.findByIdWithTags(uuid)
                     .orElseThrow(() -> new ResourceNotFoundException("video", "id", videoId));
+            // Phòng xem chung có nhiều người: không đưa video riêng tư / bị ẩn / đã xoá vào danh sách phát
+            if (!com.wetube.wetube_service.security.VideoAccess.isListed(video.getVideosStatus())
+                    && video.getVideosStatus() != com.wetube.wetube_service.enumeration.ActiveStatus.UNLISTED) {
+                throw new ResourceNotFoundException("video", "id", videoId);
+            }
             System.out.println("Valid UUID: " + uuid);
         } catch (IllegalArgumentException e) {
             System.out.println("Invalid UUID format: " + videoId);

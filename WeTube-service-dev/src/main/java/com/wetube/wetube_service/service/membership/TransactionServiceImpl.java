@@ -1,5 +1,6 @@
 package com.wetube.wetube_service.service.membership;
 
+import com.wetube.wetube_service.exception.ResourceNotFoundException;
 import com.wetube.wetube_service.dto.MembershipPurchaseResponse;
 import com.wetube.wetube_service.entity.AppUser;
 import com.wetube.wetube_service.entity.Transaction;
@@ -34,9 +35,9 @@ public class TransactionServiceImpl implements TransactionService {
     @Transactional
     public MembershipPurchaseResponse purchaseMembership(UUID userId, UUID membershipId) {
         AppUser user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         MembershipTier membership = membershipTierRepository.findById(membershipId)
-                .orElseThrow(() -> new RuntimeException("Membership not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Membership not found"));
         Channel channel = membership.getChannel();
 
         BigDecimal amount = BigDecimal.valueOf(membership.getPrice());

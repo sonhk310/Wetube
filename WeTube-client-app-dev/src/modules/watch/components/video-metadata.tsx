@@ -6,9 +6,11 @@ import {
   ChevronDownIcon,
   HandThumbDownIcon,
   HandThumbUpIcon,
-  HeartIcon,
 } from "@heroicons/react/24/outline";
-import { HandThumbUpIcon as HandThumbUpSolid } from "@heroicons/react/24/solid";
+import {
+  HandThumbDownIcon as HandThumbDownSolid,
+  HandThumbUpIcon as HandThumbUpSolid,
+} from "@heroicons/react/24/solid";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import { timeAgo } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -19,19 +21,28 @@ import {
 import { useGetLikeInfoQuery, useToggleLikeMutation } from "@/app/api/likeApi";
 import { useAuth } from "@/contexts/auth-context";
 import VideoMoreMenu from "./video-more-menu";
+import ShareDialog from "./share-dialog";
+import SaveToPlaylistDialog from "./save-to-playlist-dialog";
+import { useToggleDislikeMutation } from "@/app/api/videoApi";
+import { useControls } from "@/hooks/use-controls";
+import toast from "react-hot-toast";
 import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
 
 export default function VideoMetadata() {
   const videoDetail = useVideoStore((state) => state.videoDetail);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [savedLater, setSavedLater] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const { seek } = useControls();
   const { user } = useAuth();
   const videoId = videoDetail?.detail?.id;
-  const { data: likeInfo } = useGetLikeInfoQuery(
+  const { data: likeInfo, refetch: refetchLike } = useGetLikeInfoQuery(
     { targetId: videoId ?? "", targetType: "VIDEO", userId: user?.sub ?? "" },
     { skip: !videoId || !user?.sub }
   );
   const [toggleLike] = useToggleLikeMutation();
+  const [toggleDislike] = useToggleDislikeMutation();
 
   useEffect(() => {
     if (videoDetail?.detail?.subscribed !== undefined) {
@@ -57,12 +68,45 @@ export default function VideoMetadata() {
   } = videoDetail.detail;
 
   const handleToggleLike = async () => {
-    if (!user?.sub) return;
+    if (!user?.sub) {
+      toast.error("Hãy đăng nhập để thích video");
+      return;
+    }
     try {
       await toggleLike({ targetId: videoDetail.detail.id, targetType: "VIDEO", userId: user.sub }).unwrap();
     } catch (err) {
       console.error("Failed to toggle like:", err);
     }
+  };
+
+  const handleToggleDislike = async () => {
+    if (!user?.sub) {
+      toast.error("Hãy đăng nhập để đánh giá video");
+      return;
+    }
+    try {
+      await toggleDislike(videoDetail.detail.id).unwrap();
+      await refetchLike();
+    } catch (err) {
+      console.error("Failed to toggle dislike:", err);
+    }
+  };
+
+  const handleShare = async () => {
+    const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+    if (isMobile && typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share({
+          title,
+          url: `${window.location.origin}/watch/${videoDetail.detail.id}`,
+        });
+        return;
+      } catch (err) {
+        // Người dùng đóng bảng chia sẻ của hệ thống: không mở thêm hộp thoại
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      }
+    }
+    setShareOpen(true);
   };
 
   const handleWatchLater = async () => {
@@ -153,8 +197,16 @@ export default function VideoMetadata() {
               <p className="text-sm font-bold">{likeInfo?.likeCount ?? videoDetail.detail.like?.likeCount ?? 0}</p>
             </button>
             <div className="border-l-[1px] border-gray-300 my-2" />
-            <button className="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-r-full cursor-pointer">
-              <HandThumbDownIcon className="size-5" />
+            <button
+              onClick={handleToggleDislike}
+              aria-label="Không thích"
+              className="py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-r-full cursor-pointer"
+            >
+              {likeInfo?.disliked ? (
+                <HandThumbDownSolid className="size-5" />
+              ) : (
+                <HandThumbDownIcon className="size-5" />
+              )}
             </button>
           </div>
           <button
@@ -163,19 +215,35 @@ export default function VideoMetadata() {
           >
             <p className="text-sm font-bold">{savedLater ? "Đã lưu xem sau" : "Xem sau"}</p>
           </button>
-          <button className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5">
+          <button
+            onClick={() => setSaveOpen(true)}
+            className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5"
+          >
+            <p className="text-sm font-bold">Lưu</p>
+          </button>
+          <button
+            onClick={handleShare}
+            className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5"
+          >
             <p className="text-sm font-bold">Chia sẻ</p>
           </button>
-          <div className="hidden md:block">
-            <button className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5">
-              <HeartIcon className="size-5" />
-              <p className="text-sm font-bold">Cảm ơn</p>
-            </button>
-          </div>
           <VideoMoreMenu videoId={videoDetail.detail.id} channelId={channelId} />
             {/*<TranscriptModal videoId={videoDetail.detail.id} />*/}
         </section>
       </div>
+
+      <ShareDialog
+        videoId={videoDetail.detail.id}
+        title={title}
+        currentTime={seek}
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+      />
+      <SaveToPlaylistDialog
+        videoId={videoDetail.detail.id}
+        open={saveOpen}
+        onOpenChange={setSaveOpen}
+      />
 
       {/* Description */}
       <div className="bg-gray-100 p-3 mt-2 w-full rounded-xl text-sm">

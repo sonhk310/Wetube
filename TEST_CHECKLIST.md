@@ -111,13 +111,72 @@ Ghi kết quả vào cột cuối. Nếu có lỗi, ghi lại màn hình + giờ
 | 10.1 | Đăng xuất rồi thử thích/bình luận/đăng ký | Bị yêu cầu đăng nhập | |
 | 10.2 | B xem hồ sơ công khai của A (`/api/users/{id}`) | Không lộ email | |
 
+## 11. Chế độ hiển thị video (A đăng, B kiểm tra)
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 11.1 | A upload video, ô "Chế độ hiển thị" mặc định | Mặc định "Công khai" | |
+| 11.2 | A upload video với "Riêng tư" | Upload được. Trong Studio có nhãn "Riêng tư" | |
+| 11.3 | B mở link video riêng tư của A | Không xem được (trang báo lỗi / 404) | |
+| 11.4 | B tìm tên video riêng tư; xem kênh A, trang chủ | Không thấy video này ở đâu cả | |
+| 11.5 | A mở lại video riêng tư của mình | Xem được | |
+| 11.6 | A đổi video sang "Không công khai" trong Studio → Lưu | Nhãn "Không công khai" | |
+| 11.7 | B mở link video không công khai | Xem được. Nhưng không có trong tìm kiếm, kênh A, gợi ý | |
+| 11.8 | A đổi lại "Công khai" | Video xuất hiện lại ở tìm kiếm (có thể chậm vài giây) | |
+| 11.9 | Admin ẩn một video (mục 6.7), rồi chờ backend khởi động lại | Video vẫn **không** quay lại tìm kiếm / gợi ý | |
+| 11.10 | A mở Studio với video bị admin ẩn | Ô hiển thị khoá, ghi "Bị quản trị viên ẩn" | |
+
+## 12. Xoá video (Studio)
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 12.1 | A bấm "Xoá" ở một video trong Studio | Hiện hộp thoại xác nhận | |
+| 12.2 | Xác nhận xoá | Video biến mất khỏi Studio, tìm kiếm, kênh, playlist (kể cả "Xem sau"/"Đã thích") | |
+| 12.3 | Mở link video đã xoá | Không xem được (404) | |
+| 12.4 | B không phải chủ video thử xoá bằng API | Bị từ chối (403) | |
+| 12.5 | Admin xoá video của người khác | Xoá được | |
+
+## 13. Lượt xem
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 13.1 | Mở thẳng link video (không bấm từ trang chủ), phát đủ 5 giây | Tải lại trang: lượt xem tăng đúng 1 | |
+| 13.2 | Tải lại và xem tiếp trong 30 phút | Lượt xem **không** tăng thêm | |
+| 13.3 | Mở video bằng trình duyệt ẩn danh (chưa đăng nhập), xem 5 giây | Lượt xem tăng 1 | |
+| 13.4 | Mở trang Shorts, để một video hiện 3 giây | Lượt xem của short đó tăng 1 | |
+| 13.5 | Mở video nhưng tạm dừng trước 5 giây | Không tăng | |
+
+## 14. Tương tác ở trang xem (YouTube parity)
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 14.1 | B bấm "Không thích" | Biểu tượng đậm lên, **không** hiện số lượt không thích | |
+| 14.2 | B bấm "Thích" khi đang không thích | Bỏ không thích, chuyển sang thích (và ngược lại) | |
+| 14.3 | Tải lại trang | Trạng thái thích / không thích giữ nguyên | |
+| 14.4 | Bấm "Trả lời" dưới bình luận của A | Hiện ô nhập; gửi xong phản hồi xuất hiện, số phản hồi tăng | |
+| 14.5 | Bấm "Trả lời" dưới một phản hồi | Ô nhập có sẵn "@tên"; phản hồi nằm trong cùng nhóm với bình luận gốc | |
+| 14.6 | Bấm "Sửa" ở bình luận / phản hồi của chính mình | Sửa được, nội dung đổi ngay. Bình luận người khác không có nút "Sửa" | |
+| 14.7 | Bấm "Chia sẻ" | Hộp thoại có link, "Sao chép", Facebook, X. Tích "Bắt đầu tại m:ss" thì link có `?t=` | |
+| 14.8 | Mở link có `?t=30` | Video nhảy tới giây 30 | |
+| 14.9 | Trên điện thoại bấm "Chia sẻ" | Hiện bảng chia sẻ của hệ điều hành | |
+| 14.10 | Bấm "Lưu" | Hộp thoại liệt kê playlist của B kèm dấu tích (playlist đã chứa video có tích sẵn) | |
+| 14.11 | Tích / bỏ tích một playlist; tạo playlist mới ngay trong hộp thoại | Video vào / ra playlist; playlist mới có video | |
+| 14.12 | Không thấy nút "Cảm ơn" và chuông thông báo | Đã ẩn | |
+
+## 15. Trang chủ, tìm kiếm, kênh
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 15.1 | Mở trang chủ; sau đó thêm thẻ cho một video công khai (Studio → Thẻ) rồi tải lại | Ban đầu hàng chip chỉ có "Tất cả"; sau khi có thẻ thì chip `#tag` xuất hiện | |
+| 15.2 | Bấm chip `#tag` | Chỉ hiện video công khai có thẻ đó, cuộn xuống tải thêm; "Tất cả" quay lại gợi ý | |
+| 15.3 | Gõ "vi" vào ô tìm kiếm khi có video tên "view..." | Gợi ý có "view...", vẫn gợi ý được khi gõ sai nhẹ | |
+| 15.4 | Mở kênh của A (B đã đăng ký ở 3.4), tải lại trang | Nút vẫn là "Đã đăng ký" | |
+| 15.5 | Bấm "Đã đăng ký" | Huỷ đăng ký, nút về "Đăng ký", số người đăng ký giảm | |
+
 ## Lỗi đã biết, chưa sửa
 
-- Trang xem **chưa có nút "Trả lời"** cho bình luận (chỉ xem được các phản hồi có sẵn, không tạo mới được). Cũng chưa sửa được bình luận.
-- Các ô chọn thể loại ở đầu trang chủ (Âm nhạc, Trò chơi...) **chưa lọc gì cả**.
-- Nút Chia sẻ, Cảm ơn, Không thích, chuông thông báo **chưa làm gì**.
-- Video bị admin ẩn có thể **hiện lại sau khi backend khởi động lại** (đang đồng bộ lại toàn bộ video vào Elasticsearch).
-- Mở trang xem của video **không tồn tại** thì backend trả lỗi 500 thay vì 404.
-- Nút "Đăng ký" ở trang kênh chỉ nhớ trạng thái trong phiên (tải lại trang thì hiện lại "Đăng ký").
+- Chưa có: thông báo (chuông), nút "Cảm ơn", giao diện tối, chất lượng video / tự phát tiếp, trang Đăng ký dạng bảng tin video mới, thống kê trong Studio.
+- Video chưa gắn thẻ (#tag) thì chip ở trang chủ chỉ có "Tất cả".
+- Số lượt xem hiển thị ở trang xem là số lúc tải trang; lượt xem của chính phiên này chỉ cập nhật khi tải lại.
 - Creator chưa duyệt/sửa được phụ đề AI trước khi đăng (PRD có yêu cầu).
 - Shorts: nút bình luận chỉ mở trang xem, chưa có bình luận ngay trong Shorts.

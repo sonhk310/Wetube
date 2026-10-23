@@ -8,5 +8,8 @@ import java.util.UUID;
 public interface LikeService {
     LikeDto getLikeInfo(UUID targetId, Like.TargetType targetType, UUID userId);
     void toggleLike(UUID targetId, Like.TargetType targetType, UUID userId);
+
+    /** Bật/tắt "không thích" video; thích video sẽ bỏ không thích và ngược lại. Trả về trạng thái mới của người dùng. */
+    LikeDto toggleDislike(UUID videoId, UUID userId);
 }
 

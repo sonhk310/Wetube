@@ -1,5 +1,6 @@
 package com.wetube.wetube_service.service.post.impl;
 
+import com.wetube.wetube_service.exception.ResourceNotFoundException;
 import com.wetube.wetube_service.dto.post.PollSummaryDto;
 import com.wetube.wetube_service.dto.post.PostDto;
 import com.wetube.wetube_service.entity.AppUser;
@@ -55,7 +56,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostDto getPostById(UUID id) {
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
 
         PostDto dto = postMapper.toDto(post);
         dto.setLikeCount(
@@ -116,7 +117,7 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public PostDto updatePost(UUID id, PostDto postDto) {
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
 
         if (postDto.getContent() != null) post.setContent(postDto.getContent());
         if (postDto.getImageUrl() != null) post.setImageUrl(postDto.getImageUrl());
@@ -136,7 +137,7 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public void deletePost(UUID id) {
         if (!postRepository.existsById(id)) {
-            throw new RuntimeException("Post not found");
+            throw new ResourceNotFoundException("Post not found");
         }
 
         pollOptionRepository.deleteByPostId(id);

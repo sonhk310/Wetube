@@ -4,6 +4,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.security.OwnershipGuard;
+import com.wetube.wetube_service.security.VideoAccess;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ import lombok.RequiredArgsConstructor;
 public class PlaylistController {
     private final PlaylistService playlistService;
     private final OwnershipGuard ownershipGuard;
+    private final VideoAccess videoAccess;
 
     // @PostMapping("/init/{userId}")
     // public ResponseEntity<Void> createPlaylist(@PathVariable UUID userId) {
@@ -62,7 +64,8 @@ public class PlaylistController {
     @GetMapping("/detail/{playlistId}")
     public ResponseEntity<PlaylistDetailDto> getPlaylistVideoById(@PathVariable UUID playlistId, @AuthenticationPrincipal Jwt jwt) {
         ownershipGuard.playlistReadable(playlistId, jwt);
-        return ResponseEntity.ok(playlistService.getPlaylistDetailedById(playlistId));
+        return ResponseEntity.ok(playlistService.getPlaylistDetailedById(
+                playlistId, jwt != null ? CurrentUser.id(jwt) : null, CurrentUser.isAdmin(jwt)));
     }
 
     @GetMapping("/{userId}/playlistType")
@@ -80,10 +83,18 @@ public class PlaylistController {
     @GetMapping("/detail")
     public ResponseEntity<PlaylistDetailDto> getPlaylistDetail(
             @RequestParam UUID channelId,
-            @RequestParam String playlistName) {
+            @RequestParam String playlistName,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        PlaylistDetailDto result = playlistService.getPlaylistDetailedById(channelId, playlistName);
+        PlaylistDetailDto result = playlistService.getPlaylistDetailedById(
+                channelId, playlistName, jwt != null ? CurrentUser.id(jwt) : null, CurrentUser.isAdmin(jwt));
         return ResponseEntity.ok(result);
+    }
+
+    /** Id các playlist của người dùng đang chứa video này (đăng nhập). */
+    @GetMapping("/containing/{videoId}")
+    public ResponseEntity<List<UUID>> getPlaylistsContaining(@PathVariable UUID videoId, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(playlistService.getPlaylistIdsContaining(CurrentUser.id(jwt), videoId));
     }
 
     @PostMapping("/create")
@@ -95,6 +106,7 @@ public class PlaylistController {
     @PostMapping("/add")
     public ResponseEntity<PlaylistVideoDto> addVideoToPlaylist(@RequestBody PlaylistaddRequest request, @AuthenticationPrincipal Jwt jwt) {
         ownershipGuard.playlistOwner(request.getPlaylistId(), jwt);
+        videoAccess.requireViewable(request.getVideoId(), jwt);
         return ResponseEntity.ok(playlistService.addVideoToPlaylist(request));
     }
 
