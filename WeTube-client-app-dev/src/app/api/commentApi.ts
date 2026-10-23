@@ -39,7 +39,7 @@ export interface UpdateCommentRequest {
 
 export const commentApi = createApi({
     reducerPath: "commentApi",
-    baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/comments` }),
+    baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/comments`, credentials: "include" }),
     tagTypes: ["Comment"],
     endpoints: (builder) => ({
         getCommentsByTarget: builder.query<Comment[], { targetId: string; targetType: TargetType }>({

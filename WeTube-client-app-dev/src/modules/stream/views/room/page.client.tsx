@@ -20,6 +20,7 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import { useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 export default function WatchPage({
   roomName,
@@ -37,7 +38,7 @@ export default function WatchPage({
 
   const onJoin = async () => {
     setLoading(true);
-    const res = await fetch(`${API_BASE}/api/livekit/join-stream`, {
+    const res = await apiFetch(`${API_BASE}/api/livekit/join-stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

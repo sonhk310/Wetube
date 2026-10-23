@@ -17,7 +17,7 @@ export interface ToggleLikeRequest {
 
 export const likesApi = createApi({
     reducerPath: "likesApi",
-    baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/likes` }),
+    baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/likes`, credentials: "include" }),
     tagTypes: ["Like"],
     endpoints: (builder) => ({
         getLikeInfo: builder.query<

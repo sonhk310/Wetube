@@ -28,7 +28,7 @@ export interface UploadResponse {
 
 export const postsApi = createApi({
   reducerPath: "postsApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}` }),
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}`, credentials: "include" }),
   tagTypes: ["Post"],
   endpoints: (builder) => ({
     getPostsByUser: builder.query<Post[], string>({

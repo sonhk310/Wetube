@@ -2,6 +2,7 @@
 import { useAuth } from "@/contexts/auth-context";
 import { API_PREFIX } from "@/constants/appConstant";
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/apiFetch";
 
 type SubPack = {
   id: string;
@@ -21,7 +22,7 @@ export default function PremiumFeatures() {
   useEffect(() => {
     const fetchSubPacks = async () => {
       try {
-        const res = await fetch(`${API_PREFIX}/subpacks`);
+        const res = await apiFetch(`${API_PREFIX}/subpacks`);
         const data: SubPack[] = await res.json();
 
         const updatedData = data
@@ -47,7 +48,7 @@ export default function PremiumFeatures() {
   const handlePayment = async (subPackId: string) => {
     setPayLoading(subPackId);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_PREFIX}/payment/momo/create`,
         {
           method: "POST",

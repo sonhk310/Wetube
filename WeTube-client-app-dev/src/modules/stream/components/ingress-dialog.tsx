@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AllowParticipationInfo } from "./allow-participation-info";
 import { Spinner } from "./spinner";
+import { apiFetch } from "@/lib/apiFetch";
 
 export function IngressDialog({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -34,7 +35,7 @@ export function IngressDialog({ children }: { children: React.ReactNode }) {
   const onCreateIngress = async () => {
     setLoading(true);
 
-    const res = await fetch(`${API_BASE}/api/livekit/create-ingress`, {
+    const res = await apiFetch(`${API_BASE}/api/livekit/create-ingress`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

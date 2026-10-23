@@ -5,7 +5,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const playlistApi = createApi({
   reducerPath: "playlistApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/playlists` }),
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/playlists`, credentials: "include" }),
   tagTypes: ["Playlist"],
   endpoints: (builder) => ({
     // 🔹 Lấy tất cả playlist theo user

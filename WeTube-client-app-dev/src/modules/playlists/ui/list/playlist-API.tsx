@@ -1,4 +1,5 @@
 import { API_PREFIX } from "@/constants/appConstant";
+import { apiFetch } from "@/lib/apiFetch";
 
 const API_BASE = `${API_PREFIX}/playlists`;
 
@@ -17,7 +18,7 @@ export const playlistService = {
   }) => {
     if (!data.userId) throw new Error("UserId is required");
 
-    const res = await fetch(`${API_BASE}/create`, {
+    const res = await apiFetch(`${API_BASE}/create`, {
       method: "POST",
       headers: jsonHeaders(),
       body: JSON.stringify(data),
@@ -30,7 +31,7 @@ export const playlistService = {
   getByUser: async (userId: string) => {
     if (!userId) throw new Error("UserId is required");
 
-    const res = await fetch(`${API_BASE}/all/${userId}`, {
+    const res = await apiFetch(`${API_BASE}/all/${userId}`, {
       headers: jsonHeaders(),
     });
     if (!res.ok) throw new Error("Failed to fetch user playlists");
@@ -41,7 +42,7 @@ export const playlistService = {
   getCreated: async (userId: string) => {
     if (!userId) throw new Error("UserId is required");
 
-    const res = await fetch(`${API_BASE}/created/${userId}`, {
+    const res = await apiFetch(`${API_BASE}/created/${userId}`, {
       headers: jsonHeaders(),
     });
     if (!res.ok) throw new Error("Failed to fetch created playlists");
@@ -51,7 +52,7 @@ export const playlistService = {
   getDetail: async (playlistId: string) => {
     if (!playlistId) throw new Error("PlaylistId is required");
 
-    const res = await fetch(`${API_BASE}/detail/${playlistId}`, {
+    const res = await apiFetch(`${API_BASE}/detail/${playlistId}`, {
       headers: jsonHeaders(),
     });
     if (!res.ok) throw new Error("Failed to fetch playlist detail");
@@ -60,7 +61,7 @@ export const playlistService = {
   getByUserAndType: async (userId: string, playlistType: string) => {
     if (!userId || !playlistType) throw new Error("UserId and playlistType are required");
 
-    const res = await fetch(
+    const res = await apiFetch(
       `${API_BASE}/${userId}/playlistType?playlistType=${playlistType}`,
       { headers: jsonHeaders() }
     );
@@ -72,7 +73,7 @@ export const playlistService = {
     if (!channelId || !playlistName)
       throw new Error("channelId and playlistName are required");
 
-    const res = await fetch(
+    const res = await apiFetch(
       `${API_BASE}/detail?channelId=${channelId}&playlistName=${encodeURIComponent(
         playlistName
       )}`,
@@ -86,7 +87,7 @@ export const playlistService = {
   addVideo: async (playlistId: string, videoId: string) => {
     if (!playlistId || !videoId) throw new Error("PlaylistId and VideoId required");
 
-    const res = await fetch(`${API_BASE}/add`, {
+    const res = await apiFetch(`${API_BASE}/add`, {
       method: "POST",
       headers: jsonHeaders(),
       body: JSON.stringify({ playlistId, videoId }),
@@ -99,7 +100,7 @@ export const playlistService = {
   removeVideo: async (playlistId: string, videoId: string) => {
     if (!playlistId || !videoId) throw new Error("PlaylistId and VideoId required");
 
-    const res = await fetch(`${API_BASE}/${playlistId}/${videoId}`, {
+    const res = await apiFetch(`${API_BASE}/${playlistId}/${videoId}`, {
       method: "DELETE",
       headers: jsonHeaders(),
     });
@@ -111,7 +112,7 @@ export const playlistService = {
   removePlaylist: async (playlistId: string) => {
     if (!playlistId) throw new Error("PlaylistId is required");
 
-    const res = await fetch(`${API_BASE}/${playlistId}`, {
+    const res = await apiFetch(`${API_BASE}/${playlistId}`, {
       method: "DELETE",
       headers: jsonHeaders(),
     });
@@ -122,7 +123,7 @@ export const playlistService = {
   addToHistory: async (userId: string, videoId: string) => {
     if (!userId || !videoId) throw new Error("   and VideoId are required");
 
-    const res = await fetch(`${API_BASE}/${userId}/history/add/${videoId}`, {
+    const res = await apiFetch(`${API_BASE}/${userId}/history/add/${videoId}`, {
       method: "POST",
       headers: jsonHeaders(),
     });
@@ -133,7 +134,7 @@ export const playlistService = {
   getHistory: async (userId: string) => {
   if (!userId) throw new Error("UserId is required");
 
-  const res = await fetch(`${API_BASE}/${userId}/history`, {
+  const res = await apiFetch(`${API_BASE}/${userId}/history`, {
     method: "GET",
     headers: jsonHeaders(),
   });

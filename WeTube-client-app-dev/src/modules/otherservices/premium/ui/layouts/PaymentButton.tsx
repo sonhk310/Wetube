@@ -3,6 +3,7 @@
 import { useAuth } from '@/contexts/auth-context';
 import { API_PREFIX } from '@/constants/appConstant';
 import React, { useState } from 'react'
+import { apiFetch } from "@/lib/apiFetch";
 
 export default function PaymentButton() {
   const [loading, setLoading] = useState(false);
@@ -11,7 +12,7 @@ export default function PaymentButton() {
   const handlePayment = async () => {
     setLoading(true);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_PREFIX}/payment/momo/create`,
         {
           method: "POST",

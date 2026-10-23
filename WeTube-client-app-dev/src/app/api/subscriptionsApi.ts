@@ -23,7 +23,7 @@ export interface UnsubscribeRequest {
 
 export const subscriptionsApi = createApi({
     reducerPath: "subscriptionsApi",
-    baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/subscriptions` }),
+    baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/subscriptions`, credentials: "include" }),
     endpoints: (builder) => ({
         getSubscribedChannels: builder.query<Channel[], string>({
             query: (userId) => `/${userId}`,
