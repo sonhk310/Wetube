@@ -11,4 +11,6 @@ public interface RecService {
 //    List<RecommendVideoDto> recommendVideos (UUID userId, int limit);
     Page<RecommendVideoDto> recommendVideos(UUID userId, Pageable pageable);
     List<RecommendVideoDto> findTopRankedVideos(UUID userId, int poolSize, int topN);
+    /** Xoá danh sách gợi ý đã lưu của người dùng, lần tải trang chủ sau sẽ tính lại. */
+    void evictRecommendations(UUID userId);
 }

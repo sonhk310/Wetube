@@ -2,6 +2,7 @@ package com.wetube.wetube_service.controller;
 
 import com.wetube.wetube_service.entity.report.Report;
 import com.wetube.wetube_service.security.CurrentUser;
+import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.service.report.ReportService;
 import com.wetube.wetube_service.service.report.ReportService.ReportView;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class ReportController {
     public record CreateReportRequest(UUID videoId, String reason, String details) {}
 
     private final ReportService reportService;
+    private final RateLimiter rateLimiter;
 
     /** Người xem báo cáo một video. */
     @PostMapping
@@ -29,7 +31,9 @@ public class ReportController {
         if (request.videoId() == null || request.reason() == null) {
             throw new IllegalArgumentException("Thiếu videoId hoặc lý do báo cáo");
         }
-        ReportView view = reportService.create(CurrentUser.id(jwt), request.videoId(), request.reason(), request.details());
+        UUID userId = CurrentUser.id(jwt);
+        rateLimiter.check(RateLimiter.Limit.REPORT, userId);
+        ReportView view = reportService.create(userId, request.videoId(), request.reason(), request.details());
         return ResponseEntity.status(HttpStatus.CREATED).body(view);
     }
 

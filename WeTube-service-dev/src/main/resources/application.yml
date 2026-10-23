@@ -29,6 +29,20 @@ spring:
     connection-timeout: 5s
     socket-timeout: 10s
 
+  # Redis chỉ dùng làm cache/bộ đếm. Thiếu REDIS_URL thì không kết nối; Redis lỗi thì app vẫn chạy (xem RedisServiceImpl).
+  # Mặc định localhost chỉ để Spring Boot không lỗi khi đọc URL rỗng, không được dùng tới.
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+      timeout: 1s
+      connect-timeout: 2s
+      repositories:
+        enabled: false
+
+  # Giữ cache Spring trong bộ nhớ, không tự chuyển sang Redis khi có thư viện Redis
+  cache:
+    type: simple
+
   servlet:
     multipart:
       enabled: true

@@ -11,6 +11,7 @@ import com.wetube.wetube_service.dto.video.VideoUpdateDto;
 import com.wetube.wetube_service.dto.LikeDto;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.security.OwnershipGuard;
+import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.interaction.LikeService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,7 +35,9 @@ import com.wetube.wetube_service.service.AI.SubtitleAiService;
 import com.wetube.wetube_service.service.video.VideoService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/videos")
@@ -46,6 +49,7 @@ public class VideoController {
     private final OwnershipGuard ownershipGuard;
     private final LikeService likeService;
     private final VideoAccess videoAccess;
+    private final RateLimiter rateLimiter;
 
     private static final PolicyFactory SANITIZER_POLICY = Sanitizers.FORMATTING.and(Sanitizers.LINKS);
 
@@ -92,9 +96,13 @@ public class VideoController {
             // Tạo video chính
             VideoDto createdVideo = videoService.createVideo(videoFile, thumbnailFile, meta, authenticatedUserId);
 
-            // Có chọn ngôn ngữ thì tạo phụ đề AI (Gemini) chạy nền, không chặn upload
+            // Có chọn ngôn ngữ thì tạo phụ đề AI (Gemini) chạy nền, không chặn upload; quá giới hạn thì bỏ qua phụ đề
             if (SubtitleAiService.isSupported(targetLang)) {
-                subtitleAiService.generateAsync(createdVideo.getId(), createdVideo.getVideoUrl(), targetLang);
+                if (rateLimiter.tryAcquire(RateLimiter.Limit.AI_SUBTITLE, authenticatedUserId)) {
+                    subtitleAiService.generateAsync(createdVideo.getId(), createdVideo.getVideoUrl(), targetLang);
+                } else {
+                    log.warn("Bỏ qua phụ đề AI cho video {}: người dùng {} đã vượt giới hạn", createdVideo.getId(), authenticatedUserId);
+                }
             }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdVideo);
@@ -243,6 +251,7 @@ public class VideoController {
             @RequestBody(required = false) Map<String, String> body,
             @AuthenticationPrincipal Jwt jwt,
             HttpServletRequest request) {
+        rateLimiter.check(RateLimiter.Limit.VIEW, clientIp(request));
         UUID userId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;
         String viewerKey;
         if (userId != null) {

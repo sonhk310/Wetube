@@ -4,6 +4,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.security.OwnershipGuard;
+import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.dto.CommentDto.CommentRequestDto;
 import com.wetube.wetube_service.dto.CommentDto.CommentResponseDto;
 import com.wetube.wetube_service.entity.interaction.Comment;
@@ -22,6 +23,7 @@ public class CommentController {
 
     private final CommentService commentService;
     private final OwnershipGuard ownershipGuard;
+    private final RateLimiter rateLimiter;
 
     @GetMapping("/{targetType}/{targetId}")
     public ResponseEntity<List<CommentResponseDto>> getCommentsByTarget(
@@ -44,6 +46,7 @@ public class CommentController {
     @PostMapping
     public ResponseEntity<CommentResponseDto> createComment(@RequestBody CommentRequestDto request, @AuthenticationPrincipal Jwt jwt) {
         request.setUserId(CurrentUser.id(jwt));
+        rateLimiter.check(RateLimiter.Limit.COMMENT, request.getUserId());
         return ResponseEntity.ok(commentService.createComment(request));
     }
 

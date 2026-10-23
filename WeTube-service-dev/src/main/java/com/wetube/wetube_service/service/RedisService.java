@@ -1,19 +1,25 @@
-// package com.wetube.wetube_service.service;
+package com.wetube.wetube_service.service;
 
-// import java.time.Duration;
-// import java.util.Set;
+import java.time.Duration;
 
-// public interface RedisService {
-//    void save(String key, Object value, Duration expiration);
-//    void save(String key, Object value);
-//    <T> T get(String key, Class<T> type);
-//    boolean exists(String key);
-//    void delete(String key);
-//    void expire(String key, Duration expiration);
-//    Set<String> getKeys(String pattern);
-//    Long increment(String key);
-//    Long decrement(String key);
-//    void hashSet(String key, String hashKey, Object value);
-//    <T> T hashGet(String key, String hashKey, Class<T> type);
-//    void hashDelete(String key, String hashKey);
-// }
+/**
+ * Truy cập Redis có dự phòng: chưa cấu hình REDIS_URL hoặc Redis lỗi thì các hàm trả null / không làm gì,
+ * để nơi gọi tự chạy theo cách cũ. Không bao giờ ném lỗi ra ngoài.
+ */
+public interface RedisService {
+
+    /** Đã cấu hình và không trong thời gian tạm ngắt sau lỗi. */
+    boolean isAvailable();
+
+    /** SET key NX EX ttl: true nếu vừa đặt, false nếu key đã có, null nếu Redis không dùng được. */
+    Boolean setIfAbsent(String key, Duration ttl);
+
+    /** INCR key, đặt hạn ttl ở lần tăng đầu tiên (nguyên tử). null nếu Redis không dùng được. */
+    Long incrementWithin(String key, Duration ttl);
+
+    String get(String key);
+
+    void set(String key, String value, Duration ttl);
+
+    void delete(String key);
+}

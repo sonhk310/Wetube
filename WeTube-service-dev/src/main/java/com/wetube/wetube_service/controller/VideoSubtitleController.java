@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wetube.wetube_service.dto.request.CreateSubtitleRequest;
 import com.wetube.wetube_service.dto.video.VideoSubtitleDto;
 import com.wetube.wetube_service.repository.video.VideoRepository;
+import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.security.OwnershipGuard;
+import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.service.AI.SubtitleAiService;
 import com.wetube.wetube_service.service.video.VideoSubtitleService;
 
@@ -32,6 +34,7 @@ public class VideoSubtitleController {
     private final SubtitleAiService subtitleAiService;
     private final VideoRepository videoRepository;
     private final OwnershipGuard ownershipGuard;
+    private final RateLimiter rateLimiter;
 
     @PostMapping("/{videoId}/subtitles")
     public ResponseEntity<VideoSubtitleDto> addSubtitle(
@@ -53,6 +56,7 @@ public class VideoSubtitleController {
         if (!SubtitleAiService.isSupported(targetLang)) {
             throw new IllegalArgumentException("Ngôn ngữ chưa hỗ trợ: " + targetLang);
         }
+        rateLimiter.check(RateLimiter.Limit.AI_SUBTITLE, CurrentUser.id(jwt));
         String videoUrl = videoRepository.findById(videoId).orElseThrow().getVideoUrl();
         subtitleAiService.generateAsync(videoId, videoUrl, targetLang);
         return ResponseEntity.status(HttpStatus.ACCEPTED)

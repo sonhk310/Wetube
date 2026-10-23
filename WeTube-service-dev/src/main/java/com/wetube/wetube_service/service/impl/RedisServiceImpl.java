@@ -1,147 +1,102 @@
-//package com.wetube.wetube_service.service.impl;
-//
-//import static com.wetube.wetube_service.constants.LogConstants.*;
-//
-//import com.wetube.wetube_service.service.RedisService;
-//import lombok.RequiredArgsConstructor;
-//import lombok.extern.slf4j.Slf4j;
-//import org.springframework.data.redis.core.RedisTemplate;
-//import org.springframework.stereotype.Service;
-//
-//import java.time.Duration;
-//import java.util.Set;
-//
-//@Slf4j
-//@Service
-//@RequiredArgsConstructor
-//public class RedisServiceImpl implements RedisService {
-//    private final RedisTemplate<String, Object> redisTemplate;
-//
-//    @Override
-//    public void save(String key, Object value, Duration expiration) {
-//        try {
-//            redisTemplate.opsForValue().set(key, value, expiration);
-//            log.debug(SAVE_SUCCESS_LOG, key);
-//        } catch (Exception e) {
-//            log.error(SAVE_ERROR_LOG, key, e);
-//        }
-//    }
-//
-//    @Override
-//    public void save(String key, Object value) {
-//        try {
-//            redisTemplate.opsForValue().set(key, value);
-//            log.debug(SAVE_SUCCESS_LOG, key);
-//        } catch (Exception e) {
-//            log.error(SAVE_ERROR_LOG, key, e);
-//        }
-//    }
-//
-//    @Override
-//    public <T> T get(String key, Class<T> type) {
-//        try {
-//            Object value = redisTemplate.opsForValue().get(key);
-//            if (value != null && type.isAssignableFrom(value.getClass())) {
-//                return type.cast(value);
-//            }
-//            return null;
-//        } catch (Exception e) {
-//            log.error(GET_ERROR_LOG, key, e);
-//            return null;
-//        }
-//    }
-//
-//    @Override
-//    public boolean exists(String key) {
-//        try {
-//            return redisTemplate.hasKey(key);
-//        } catch (Exception e) {
-//            log.error(EXIST_ERROR_LOG, key, e);
-//            return false;
-//        }
-//    }
-//
-//    @Override
-//    public void delete(String key) {
-//        try {
-//            redisTemplate.delete(key);
-//            log.debug(DELETE_SUCCESS_LOG, key);
-//        } catch (Exception e) {
-//            log.error(DELETE_ERROR_LOG, key, e);
-//        }
-//    }
-//
-//    @Override
-//    public void expire(String key, Duration expiration) {
-//        try {
-//            redisTemplate.expire(key, expiration);
-//            log.debug(EXPIRE_SUCCESS_LOG, key, expiration);
-//        } catch (Exception e) {
-//            log.error(EXPIRE_ERROR_LOG, key, e);
-//        }
-//    }
-//
-//    @Override
-//    public Set<String> getKeys(String pattern) {
-//        try {
-//            return redisTemplate.keys(pattern);
-//        } catch (Exception e) {
-//            log.error(GET_KEYS_ERROR_LOG, pattern, e);
-//            return Set.of();
-//        }
-//    }
-//
-//    @Override
-//    public Long increment(String key) {
-//        try {
-//            return redisTemplate.opsForValue().increment(key);
-//        } catch (Exception e) {
-//            log.error(INCREMENT_ERROR_LOG, key, e);
-//            return null;
-//        }
-//    }
-//
-//    @Override
-//    public Long decrement(String key) {
-//        try {
-//            return redisTemplate.opsForValue().decrement(key);
-//        } catch (Exception e) {
-//            log.error(DECREMENT_ERROR_LOG, key, e);
-//            return null;
-//        }
-//    }
-//
-//    @Override
-//    public void hashSet(String key, String hashKey, Object value) {
-//        try {
-//            redisTemplate.opsForHash().put(key, hashKey, value);
-//            log.debug(HASH_SET_SUCCESS_LOG, key, hashKey);
-//        } catch (Exception e) {
-//            log.error(HASH_SET_ERROR_LOG, key, hashKey, e);
-//        }
-//    }
-//
-//    @Override
-//    public <T> T hashGet(String key, String hashKey, Class<T> type) {
-//        try {
-//            Object value = redisTemplate.opsForHash().get(key, hashKey);
-//            if (value != null && type.isAssignableFrom(value.getClass())) {
-//                return type.cast(value);
-//            }
-//            return null;
-//        } catch (Exception e) {
-//            log.error(HASH_GET_ERROR_LOG, key, hashKey, e);
-//            return null;
-//        }
-//    }
-//
-//    @Override
-//    public void hashDelete(String key, String hashKey) {
-//        try {
-//            redisTemplate.opsForHash().delete(key, hashKey);
-//            log.debug(HASH_DELETE_SUCCESS_LOG, key, hashKey);
-//        } catch (Exception e) {
-//            log.error(HASH_DELETE_ERROR_LOG, key, hashKey, e);
-//        }
-//    }
-//}
+package com.wetube.wetube_service.service.impl;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.function.Supplier;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
+import org.springframework.stereotype.Service;
+
+import com.wetube.wetube_service.service.RedisService;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
+public class RedisServiceImpl implements RedisService {
+
+    /** Sau một lỗi, bỏ qua Redis trong khoảng này để request không phải chờ timeout liên tục. */
+    private static final long PAUSE_AFTER_ERROR_MILLIS = 30_000;
+
+    private static final RedisScript<Long> INCREMENT_WITH_TTL = new DefaultRedisScript<>(
+            "local c = redis.call('INCR', KEYS[1]) "
+                    + "if c == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end "
+                    + "return c",
+            Long.class);
+
+    private final StringRedisTemplate redis;
+    private final boolean configured;
+    private volatile long pausedUntil = 0;
+
+    public RedisServiceImpl(StringRedisTemplate redis, @Value("${REDIS_URL:}") String url) {
+        this.redis = redis;
+        this.configured = url != null && !url.isBlank();
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void checkConnection() {
+        if (!configured) {
+            log.warn("Chưa cấu hình REDIS_URL: chạy không có Redis (lượt xem, giới hạn tần suất dùng bộ nhớ trong)");
+            return;
+        }
+        String pong = call("PING", "-", () -> redis.execute((RedisCallback<String>) RedisConnection::ping));
+        if (pong != null) {
+            log.info("Kết nối Redis OK ({})", pong);
+        }
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return configured && System.currentTimeMillis() >= pausedUntil;
+    }
+
+    @Override
+    public Boolean setIfAbsent(String key, Duration ttl) {
+        return call("SETNX", key, () -> redis.opsForValue().setIfAbsent(key, "1", ttl));
+    }
+
+    @Override
+    public Long incrementWithin(String key, Duration ttl) {
+        return call("INCR", key,
+                () -> redis.execute(INCREMENT_WITH_TTL, List.of(key), String.valueOf(ttl.toMillis())));
+    }
+
+    @Override
+    public String get(String key) {
+        return call("GET", key, () -> redis.opsForValue().get(key));
+    }
+
+    @Override
+    public void set(String key, String value, Duration ttl) {
+        call("SET", key, () -> {
+            redis.opsForValue().set(key, value, ttl);
+            return null;
+        });
+    }
+
+    @Override
+    public void delete(String key) {
+        call("DEL", key, () -> redis.delete(key));
+    }
+
+    private <T> T call(String op, String key, Supplier<T> action) {
+        if (!isAvailable()) {
+            return null;
+        }
+        try {
+            return action.get();
+        } catch (RuntimeException e) {
+            pausedUntil = System.currentTimeMillis() + PAUSE_AFTER_ERROR_MILLIS;
+            log.warn("Redis lỗi khi {} {}: {}. Tạm chạy không có Redis trong {} giây",
+                    op, key, e.getMessage(), PAUSE_AFTER_ERROR_MILLIS / 1000);
+            return null;
+        }
+    }
+}

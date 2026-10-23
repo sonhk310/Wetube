@@ -7,11 +7,11 @@ import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.repository.video.TagRepository;
 import com.wetube.wetube_service.repository.video.UserTagRepository;
 import com.wetube.wetube_service.search.VideoDocument;
+import com.wetube.wetube_service.service.RedisService;
 import com.wetube.wetube_service.service.video.RecService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -38,13 +38,17 @@ public class RecServiceImpl implements RecService {
     private final TagRepository tagRepo;
     private final ElasticsearchOperations elasticOps;
     private final VideoMapper videoMapper;
+    private final RedisService redisService;
+
+    /** Danh sách gợi ý của mỗi người được giữ trong Redis trong khoảng này (phân trang ổn định, đỡ tải Elasticsearch). */
+    private static final Duration CACHE_TTL = Duration.ofMinutes(5);
 
     @Value("${myapp.recommendation.pool-size}")
     private int poolSize;
 
     @Override
     public Page<RecommendVideoDto> recommendVideos(UUID userId, Pageable pageable) {
-        List<String> sortedVideoIds = getSortedRecommendedIdsForUser(userId);
+        List<String> sortedVideoIds = cachedRecommendedIds(userId);
 
         long startOffset = pageable.getOffset();
         if (startOffset >= sortedVideoIds.size()) {
@@ -60,8 +64,27 @@ public class RecServiceImpl implements RecService {
         return new PageImpl<>(dtoList, pageable, sortedVideoIds.size());
     }
 
-    @Cacheable(value = "recommendations", key = "#userId")
-    public List<String> getSortedRecommendedIdsForUser(UUID userId) {
+    @Override
+    public void evictRecommendations(UUID userId) {
+        redisService.delete(cacheKey(userId));
+    }
+
+    private static String cacheKey(UUID userId) {
+        return "rec:" + userId;
+    }
+
+    private List<String> cachedRecommendedIds(UUID userId) {
+        String key = cacheKey(userId);
+        String cached = redisService.get(key);
+        if (cached != null) {
+            return cached.isEmpty() ? List.of() : List.of(cached.split(","));
+        }
+        List<String> ids = getSortedRecommendedIdsForUser(userId);
+        redisService.set(key, String.join(",", ids), CACHE_TTL);
+        return ids;
+    }
+
+    private List<String> getSortedRecommendedIdsForUser(UUID userId) {
         log.info("CACHE MISS! Generating new recommendation list for user {} with pool size {}.", userId, poolSize);
 
         List<String> userTags = getUserFavoriteTags(userId);

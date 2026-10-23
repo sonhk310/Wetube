@@ -47,6 +47,7 @@ import com.wetube.wetube_service.repository.channel.CategoryVideoRepository;
 import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.VideoIndexer;
 import com.wetube.wetube_service.service.CloudinaryService;
+import com.wetube.wetube_service.service.RedisService;
 import com.wetube.wetube_service.service.interaction.LikeService;
 import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.video.VideoSubtitleService;
@@ -79,6 +80,7 @@ public class VideoServiceImpl implements VideoService {
     private final LikeService likeService;
 
     private final SubscriptionRepository subscriptionRepository;
+    private final RedisService redisService;
 
     private static final String ID_NOT_FOUND = "Video not found with id: ";
     private static final String VIDEO = "video";
@@ -563,11 +565,25 @@ public VideoDto createVideo(MultipartFile videoFile,
             throw new ResourceNotFoundException(VIDEO, "id", videoId.toString());
         }
 
+        String key = videoId + ":" + viewerKey;
+        Boolean first = redisService.setIfAbsent("view:" + key, java.time.Duration.ofMillis(VIEW_DEDUPE_MILLIS));
+        boolean counted = (first != null) ? first : firstViewInMemory(key);
+
+        int total = video.getTotalView();
+        if (counted) {
+            videoRepository.incrementTotalView(videoId);
+            total = videoRepository.findTotalViewById(videoId).orElse(total + 1);
+            videoIndexer.updateTotalView(videoId, total);
+        }
+        return Map.of("counted", counted, "totalView", total);
+    }
+
+    /** Dự phòng khi không có Redis: nhớ lượt xem trong bộ nhớ (mất khi deploy lại). */
+    private boolean firstViewInMemory(String key) {
         long now = System.currentTimeMillis();
         if (recentViews.size() > VIEW_CACHE_PURGE_THRESHOLD) {
             recentViews.values().removeIf(t -> now - t > VIEW_DEDUPE_MILLIS);
         }
-        String key = videoId + ":" + viewerKey;
         boolean[] counted = {false};
         recentViews.compute(key, (k, last) -> {
             if (last == null || now - last > VIEW_DEDUPE_MILLIS) {
@@ -576,13 +592,6 @@ public VideoDto createVideo(MultipartFile videoFile,
             }
             return last;
         });
-
-        int total = video.getTotalView();
-        if (counted[0]) {
-            videoRepository.incrementTotalView(videoId);
-            total = videoRepository.findTotalViewById(videoId).orElse(total + 1);
-            videoIndexer.updateTotalView(videoId, total);
-        }
-        return Map.of("counted", counted[0], "totalView", total);
+        return counted[0];
     }
 }
