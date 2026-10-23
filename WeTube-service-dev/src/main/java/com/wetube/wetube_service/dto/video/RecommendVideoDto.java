@@ -20,4 +20,6 @@ public class RecommendVideoDto {
     private Long duration;
     private String picture;
     private String videoUrl;
+    /** Kênh của người đăng (thẻ video bấm vào avatar / tên kênh). */
+    private UUID channelId;
 }

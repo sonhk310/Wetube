@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { useControls, useTheater } from "@/hooks/use-controls";
 import { useSubtitles } from "@/hooks/use-subtitles";
 import { useViewCounter } from "@/lib/viewTracking";
-import { saveWatchProgress } from "@/lib/watchProgress";
+import { saveWatchProgress, useWatchProgressStore } from "@/lib/watchProgress";
 import { useAuth } from "@/contexts/auth-context";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import ProgressBar from "./progress-bar";
@@ -388,7 +388,9 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
 
     // Liên kết chia sẻ dạng /watch/<id>?t=<giây>; không có thì phát tiếp từ chỗ đã dừng lần trước
     const t = Number(new URLSearchParams(window.location.search).get("t"));
-    const start = Number.isFinite(t) && t > 0 && t < v.duration ? t : resumePosition(video?.resumeAt, v.duration);
+    // Vị trí vừa lưu trên trình duyệt mới hơn resumeAt của server (server có thể chưa kịp ghi)
+    const lastPosition = useWatchProgressStore.getState().progress[videoId] ?? video?.resumeAt;
+    const start = Number.isFinite(t) && t > 0 && t < v.duration ? t : resumePosition(lastPosition, v.duration);
     if (start > 0) {
       v.currentTime = start;
       setCurrentTime(start);

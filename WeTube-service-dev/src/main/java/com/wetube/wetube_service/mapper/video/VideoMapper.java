@@ -38,6 +38,7 @@ public interface VideoMapper {
         dto.setVideoUrl(doc.getVideoUrl());
         dto.setName(doc.getName());
         dto.setPicture(doc.getPicture());
+        dto.setChannelId(doc.getChannelId() != null ? UUID.fromString(doc.getChannelId()) : null);
         return dto;
     }
 
@@ -78,6 +79,7 @@ public interface VideoMapper {
     @Mapping(target = "name", source = "user.name")
     @Mapping(target = "picture", source = "user.picture")
     @Mapping(target = "duration", source = "duration")
+    @Mapping(target = "channelId", source = "user.channel.id")
     RecommendVideoDto toRecommendDto(Video entity);
 
     default Instant map(LocalDateTime value) {

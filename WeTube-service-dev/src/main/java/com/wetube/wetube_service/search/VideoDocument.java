@@ -30,6 +30,9 @@ public class VideoDocument {
     private String userId;
 
     @Field(type = FieldType.Keyword)
+    private String channelId;
+
+    @Field(type = FieldType.Keyword)
     private List<String> tags;
 
     @Field(type = FieldType.Keyword)

@@ -26,6 +26,8 @@ export const videoApi = createApi({
             { videoId: string }
         >({
             query: ({videoId}) => `/videos/${videoId}/detail`,
+            // Không giữ cache: mỗi lần mở trang xem phải có vị trí đang xem (resumeAt), lượt xem, bình luận mới nhất
+            keepUnusedDataFor: 0,
         }),
 
         getVideoFormDetails: builder.query<VideoFormDetail, string>({

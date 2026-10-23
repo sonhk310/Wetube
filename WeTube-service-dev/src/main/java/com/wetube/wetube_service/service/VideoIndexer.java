@@ -40,6 +40,7 @@ public class VideoIndexer {
         doc.setTitle(v.getTitle());
         doc.setDescription(v.getDescription());
         doc.setUserId(v.getUser().getId().toString());
+        doc.setChannelId(v.getUser().getChannel() != null ? v.getUser().getChannel().getId().toString() : null);
         doc.setTags(v.getVideoTags().stream().map(vt -> vt.getTag().getName()).toList());
         doc.setCategories(List.of());
         doc.setCreatedAt(v.getCreatedAt().atZone(ZoneOffset.UTC).toInstant());

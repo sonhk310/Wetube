@@ -32,6 +32,7 @@ export interface RecommendedVideoItem {
   picture: string; // Avatar
   uploadedAgo?: string;
   historyDuration?: number;
+  channelId?: string;
 }
 
 export interface RecommendVideoDto {
@@ -43,6 +44,8 @@ export interface RecommendVideoDto {
   name: string;
   duration: number;
   picture: string;
+  videoUrl?: string;
+  channelId?: string;
 }
 
 export interface TagDto {

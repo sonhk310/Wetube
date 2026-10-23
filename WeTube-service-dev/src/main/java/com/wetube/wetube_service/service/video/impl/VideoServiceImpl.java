@@ -394,7 +394,8 @@ public VideoDto createVideo(MultipartFile videoFile,
                         v.getUser().getName(),
                         (long) v.getDuration(),
                         v.getUser().getPicture(),
-                        v.getVideoUrl()))
+                        v.getVideoUrl(),
+                        v.getUser().getChannel() != null ? v.getUser().getChannel().getId() : null))
                 .toList();
 
         var recommend = RecommendResponseDto.builder()
