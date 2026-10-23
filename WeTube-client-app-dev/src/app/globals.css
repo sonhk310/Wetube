@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Lớp animate-in / slide-in-from-* cho Sheet, Dialog, Dropdown (shadcn) trên Tailwind v4 */
+@import "tw-animate-css";
 @import "@radix-ui/themes/styles.css";
 @import "react-toastify/dist/ReactToastify.css";
 
@@ -137,7 +139,8 @@
     }
 }
 
-html, body {
+/* Chỉ html giữ thanh cuộn; đặt cả body thì body chừa thêm một rãnh cuộn trống ở mép phải */
+html {
     overflow-y: scroll;
 }
 
