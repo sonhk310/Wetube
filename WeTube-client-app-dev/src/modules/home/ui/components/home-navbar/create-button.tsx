@@ -34,10 +34,10 @@ export const CreateButton: React.FC<CreateButtonProps> = ({triggerIcon: TriggerI
             <DropdownMenuTrigger asChild>
                 <Button
                     variant="ghost"
-                    className="h-10 w-30 px-8 flex items-center gap-3
-             text-black text-base md:text-md rounded-full shadow-md transition-all duration-200"
+                    className="h-9 w-9 md:w-auto has-[>svg]:px-0 md:has-[>svg]:pl-2.5 md:has-[>svg]:pr-4 flex items-center justify-center gap-1.5
+             rounded-full bg-gray-100 hover:bg-gray-200 text-black text-sm font-medium transition-colors"
                 >
-                    <TriggerIcon className="w-7 h-7"/>
+                    <TriggerIcon className="size-6"/>
                     <span className="hidden md:block">Tạo</span>
                 </Button>
             </DropdownMenuTrigger>

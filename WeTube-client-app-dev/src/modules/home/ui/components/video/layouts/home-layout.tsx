@@ -4,11 +4,13 @@ import HomeSidebar from "@/modules/home/ui/components/home-sidebar";
 
 interface HomeLayoutProps {
   children: React.ReactNode;
+  /** Trang xem video: thanh bên đóng sẵn, mở ra dạng drawer (giống YouTube). */
+  drawerSidebar?: boolean;
 }
 
-export default function HomeLayout({ children }: HomeLayoutProps) {
+export default function HomeLayout({ children, drawerSidebar = false }: HomeLayoutProps) {
   return (
-    <SidebarProvider>
+    <SidebarProvider drawer={drawerSidebar}>
       <div className="w-full">
         <HomeNavbar />
         <div className="flex min-h-screen pt-[4rem]">

@@ -10,6 +10,7 @@ import {
   Pause,
   PictureInPicture2,
   Play,
+  RectangleHorizontal,
   RotateCcw,
   Rewind,
   Subtitles,
@@ -18,7 +19,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useControls } from "@/hooks/use-controls";
+import { useControls, useTheater } from "@/hooks/use-controls";
 import { useSubtitles } from "@/hooks/use-subtitles";
 import { useViewCounter } from "@/lib/viewTracking";
 import { useVideoStore } from "@/store/zustand/videoStore";
@@ -107,6 +108,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   const video = detail?.id === videoId ? detail : undefined;
   const subtitles = video?.subtitles ?? [];
   const { setSeek } = useControls();
+  const { theater, toggleTheater } = useTheater();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -422,6 +424,11 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
         case "C":
           toggleCaptions();
           break;
+        case "t":
+        case "T":
+          if (document.fullscreenElement) return;
+          toggleTheater();
+          break;
         case "Home":
         case "0":
           e.preventDefault();
@@ -448,7 +455,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [togglePlay, seekBy, seekTo, changeVolume, toggleMute, toggleFullscreen, toggleCaptions, stepRate, poke]);
+  }, [togglePlay, seekBy, seekTo, changeVolume, toggleMute, toggleFullscreen, toggleCaptions, toggleTheater, stepRate, poke]);
 
   // Chạm (điện thoại): lần chạm đầu chỉ hiện điều khiển; chuột: bấm là phát/dừng
   const handleSurfacePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -465,9 +472,12 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     poke();
   };
 
+  // Chế độ rạp: rộng hết trang, cao tối đa vừa màn hình (chừa chỗ cho tiêu đề), như YouTube
+  const frameClass = theater ? "h-[min(56.25vw,calc(100vh-10rem))]" : "aspect-video rounded-xl";
+
   if (!video?.videoUrl) {
     return (
-      <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-black">
+      <div className={cn("flex w-full items-center justify-center bg-black", frameClass)}>
         <Loader2 className="animate-spin text-white/80" size={48} />
       </div>
     );
@@ -483,7 +493,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
       data-player
       className={cn(
         "group relative w-full overflow-hidden bg-black outline-none select-none",
-        fullscreen ? "h-full" : "aspect-video rounded-xl",
+        fullscreen ? "h-full" : frameClass,
         !controlsVisible && "cursor-none"
       )}
       onPointerMove={(e) => {
@@ -696,6 +706,16 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
           {pipSupported && (
             <IconButton label="Trình phát thu nhỏ" onClick={togglePip} className="hidden sm:flex">
               <PictureInPicture2 size={22} />
+            </IconButton>
+          )}
+
+          {!fullscreen && (
+            <IconButton
+              label={theater ? "Chế độ mặc định (t)" : "Chế độ rạp (t)"}
+              onClick={toggleTheater}
+              className="hidden md:flex"
+            >
+              <RectangleHorizontal size={theater ? 18 : 22} />
             </IconButton>
           )}
 

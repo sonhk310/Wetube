@@ -71,7 +71,7 @@ export default function SettingsMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 bottom-12 w-64 overflow-y-auto rounded-xl bg-black/90 py-2 text-sm text-white shadow-lg"
+          className="absolute right-0 bottom-12 w-64 overflow-y-auto rounded-xl bg-neutral-900/45 py-2 text-sm text-white shadow-lg ring-1 ring-white/15 backdrop-blur-xl backdrop-saturate-150"
           style={{ maxHeight }}
         >
           {page === "main" && (

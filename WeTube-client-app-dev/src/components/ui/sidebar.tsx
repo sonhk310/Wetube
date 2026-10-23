@@ -55,6 +55,7 @@ function useSidebar() {
 
 function SidebarProvider({
   defaultOpen = true,
+  drawer = false,
   open: openProp,
   onOpenChange: setOpenProp,
   className,
@@ -63,10 +64,12 @@ function SidebarProvider({
   ...props
 }: React.ComponentProps<"div"> & {
   defaultOpen?: boolean
+  /** Luôn dùng dạng drawer (đóng sẵn, mở thì đè lên nội dung) như trên điện thoại, kể cả màn hình lớn. */
+  drawer?: boolean
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }) {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile() || drawer
   const [openMobile, setOpenMobile] = React.useState(false)
 
   // This is the internal state of the sidebar.
