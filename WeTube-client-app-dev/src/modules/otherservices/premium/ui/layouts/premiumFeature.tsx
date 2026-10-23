@@ -1,5 +1,6 @@
 "use client";
 import { useAuth } from "@/contexts/auth-context";
+import { API_PREFIX } from "@/constants/appConstant";
 import { useEffect, useState } from "react";
 
 type SubPack = {
@@ -20,7 +21,7 @@ export default function PremiumFeatures() {
   useEffect(() => {
     const fetchSubPacks = async () => {
       try {
-        const res = await fetch("https://wetube.name.vn/api/subpacks");
+        const res = await fetch(`${API_PREFIX}/subpacks`);
         const data: SubPack[] = await res.json();
 
         const updatedData = data
@@ -47,7 +48,7 @@ export default function PremiumFeatures() {
     setPayLoading(subPackId);
     try {
       const res = await fetch(
-        "https://wetube.name.vn/api/payment/momo/create",
+        `${API_PREFIX}/payment/momo/create`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

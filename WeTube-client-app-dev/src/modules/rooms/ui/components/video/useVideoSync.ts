@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import SockJS from "sockjs-client";
+import { WS_PREFIX } from "@/constants/appConstant";
 import { CompatClient, Stomp } from "@stomp/stompjs";
 
 interface SyncMessage {
@@ -21,7 +22,7 @@ export function useVideoSync(
 
   useEffect(() => {
     if (!roomId) return;
-    const socket = new SockJS("https://wetube.name.vn/ws");
+    const socket = new SockJS(WS_PREFIX);
     const client = Stomp.over(socket);
     client.debug = () => {};
     client.connect({}, () => {

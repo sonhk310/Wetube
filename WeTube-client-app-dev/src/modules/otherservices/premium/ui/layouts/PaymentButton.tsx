@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from '@/contexts/auth-context';
+import { API_PREFIX } from '@/constants/appConstant';
 import React, { useState } from 'react'
 
 export default function PaymentButton() {
@@ -11,7 +12,7 @@ export default function PaymentButton() {
     setLoading(true);
     try {
       const res = await fetch(
-        "https://wetube.name.vn/api/payment/momo/create",
+        `${API_PREFIX}/payment/momo/create`,
         {
           method: "POST",
           headers: {

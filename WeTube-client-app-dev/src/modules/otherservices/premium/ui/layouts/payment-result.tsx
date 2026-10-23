@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { API_PREFIX } from "@/constants/appConstant";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type PaymentStatus = {
@@ -23,7 +24,7 @@ export default function PaymentResult() {
     if (resultCode === "0") {
       // Thanh toán thành công
       fetch(
-        `https://wetube.name.vn/api/payment/confirm?orderId=${orderId}`,
+        `${API_PREFIX}/payment/confirm?orderId=${orderId}`,
         {
           method: "POST",
         }

@@ -1,4 +1,6 @@
-const API_BASE = "https://wetube.name.vn/api/playlists";
+import { API_PREFIX } from "@/constants/appConstant";
+
+const API_BASE = `${API_PREFIX}/playlists`;
 
 function jsonHeaders() {
   return {
