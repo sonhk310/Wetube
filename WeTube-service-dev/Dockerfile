@@ -18,6 +18,6 @@ WORKDIR /app
 ARG JAR_PATH=/app/build/libs
 COPY --from=builder ${JAR_PATH}/*.jar app.jar
 
-EXPOSE 8081
+EXPOSE 8080
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
