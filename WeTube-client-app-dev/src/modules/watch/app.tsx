@@ -38,7 +38,7 @@ export default function App({ videoId }: AppProps) {
         Trình phát luôn là phần tử đầu của lưới (không đổi chỗ trong cây DOM), nên bật/tắt chế độ rạp
         không làm video tải lại. Hàng 2 dùng 1fr để cột phải dài không đẩy giãn hàng của trình phát.
       */}
-      <div className="py-6 px-6 xxl:px-20 grid grid-cols-1 md:grid-cols-6 xxl:grid-cols-8 md:grid-rows-[auto_1fr] gap-x-6 h-full overflow-y-scroll">
+      <div className="py-6 px-6 xxl:px-20 grid grid-cols-1 md:grid-cols-6 xxl:grid-cols-8 md:grid-rows-[auto_1fr] gap-x-6">
         <div
           className={cn(
             theater
