@@ -1,5 +1,9 @@
 package com.wetube.wetube_service.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.wetube.wetube_service.security.CurrentUser;
+import com.wetube.wetube_service.security.OwnershipGuard;
 import com.wetube.wetube_service.dto.channel.ChannelStructureResponse;
 import com.wetube.wetube_service.dto.channel.UpdateCategoryOrderRequest;
 import com.wetube.wetube_service.dto.channel.UpdateVideoOrderRequest;
@@ -23,6 +27,7 @@ import java.util.UUID;
 public class ChannelManagementController {
 
     private final ChannelManagementService channelManagementService;
+    private final OwnershipGuard ownershipGuard;
 
     // Lấy cấu trúc channel (categories + videos)
     @GetMapping("/{channelId}/structure")
@@ -41,7 +46,8 @@ public class ChannelManagementController {
     public ResponseEntity<Map<String, Object>> updateCategoryOrder(
             @PathVariable UUID channelId,
             @RequestBody @Valid UpdateCategoryOrderRequest request,
-            Authentication authentication) {
+            @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.channelOwner(channelId, jwt);
 
         channelManagementService.updateCategoryOrder(channelId, request.getCategories());
         return ResponseEntity.ok(Map.of(
@@ -55,7 +61,8 @@ public class ChannelManagementController {
     public ResponseEntity<Map<String, Object>> updateVideoOrder(
             @PathVariable UUID channelId,
             @RequestBody @Valid UpdateVideoOrderRequest request,
-            Authentication authentication) {
+            @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.channelOwner(channelId, jwt);
 
         channelManagementService.updateVideoOrderInCategory(
                 channelId,
@@ -73,7 +80,8 @@ public class ChannelManagementController {
             @PathVariable UUID channelId,
             @PathVariable UUID categoryId,
             @RequestBody Map<String, UUID> requestBody,
-            Authentication authentication) {
+            @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.channelOwner(channelId, jwt);
 
         UUID videoId = requestBody.get("videoId");
         if (videoId == null) {
@@ -90,7 +98,8 @@ public class ChannelManagementController {
             @PathVariable UUID channelId,
             @PathVariable UUID categoryId,
             @PathVariable UUID videoId,
-            Authentication authentication) {
+            @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.channelOwner(channelId, jwt);
 
         channelManagementService.removeVideoFromCategory(channelId, categoryId, videoId);
 

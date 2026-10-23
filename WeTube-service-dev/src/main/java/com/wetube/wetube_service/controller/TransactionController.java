@@ -1,5 +1,8 @@
 package com.wetube.wetube_service.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.dto.MembershipPurchaseResponse;
 import com.wetube.wetube_service.service.membership.TransactionService;
 
@@ -18,8 +21,8 @@ public class TransactionController {
 
     @PostMapping("/purchase")
     public ResponseEntity<MembershipPurchaseResponse> purchaseMembership(
-            @RequestParam UUID userId,
-            @RequestParam UUID membershipId) {
-        return ResponseEntity.ok(transactionService.purchaseMembership(userId, membershipId));
+            @RequestParam UUID membershipId,
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(transactionService.purchaseMembership(CurrentUser.id(jwt), membershipId));
     }
 }

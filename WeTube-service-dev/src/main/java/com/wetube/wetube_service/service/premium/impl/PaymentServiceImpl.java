@@ -44,6 +44,49 @@ import jakarta.transaction.Transactional;
         private final SubPackRepository subPackRepo;
         private final UserRepository userRepo;
 
+        private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PaymentServiceImpl.class);
+
+        /** Đặt MOMO_VERIFY_SIGNATURE=false để tạm tắt kiểm tra chữ ký nếu cần gỡ lỗi. */
+        @org.springframework.beans.factory.annotation.Value("${MOMO_VERIFY_SIGNATURE:true}")
+        private boolean verifySignature;
+
+        /**
+         * MoMo ký các tham số callback bằng secretKey (HMAC-SHA256). Không có chữ ký hợp lệ thì
+         * ai cũng giả được kết quả thanh toán bằng cách tự gọi /redirect hoặc /ipn.
+         */
+        private boolean isValidMomoSignature(Map<String, String> p) {
+            try {
+                String signature = p.get("signature");
+                if (signature == null || signature.isBlank()) {
+                    return false;
+                }
+                String raw = "accessKey=" + momoConfiguration.getAccessKey()
+                        + "&amount=" + nz(p.get("amount"))
+                        + "&extraData=" + nz(p.get("extraData"))
+                        + "&message=" + nz(p.get("message"))
+                        + "&orderId=" + nz(p.get("orderId"))
+                        + "&orderInfo=" + nz(p.get("orderInfo"))
+                        + "&orderType=" + nz(p.get("orderType"))
+                        + "&partnerCode=" + nz(p.get("partnerCode"))
+                        + "&payType=" + nz(p.get("payType"))
+                        + "&requestId=" + nz(p.get("requestId"))
+                        + "&responseTime=" + nz(p.get("responseTime"))
+                        + "&resultCode=" + nz(p.get("resultCode"))
+                        + "&transId=" + nz(p.get("transId"));
+                String expected = HmacSHA256Util.sign(raw, momoConfiguration.getSecretKey());
+                return java.security.MessageDigest.isEqual(
+                        expected.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                        signature.trim().toLowerCase().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                log.error("Không kiểm tra được chữ ký MoMo", e);
+                return false;
+            }
+        }
+
+        private static String nz(String v) {
+            return v == null ? "" : v;
+        }
+
         @Override
         public PaymentResponseDto createPayment(PaymentRequestDto dto) {
             try {
@@ -140,6 +183,11 @@ import jakarta.transaction.Transactional;
             try {
                 String orderId = params.get("orderId");
                 String resultCode = params.get("resultCode");
+
+                if (verifySignature && !isValidMomoSignature(params)) {
+                    log.warn("Bỏ qua callback MoMo có chữ ký không hợp lệ, orderId={}", orderId);
+                    return "{ \"resultCode\": 1, \"message\": \"Invalid signature\" }";
+                }
 
                 PaymentMomo payment = paymentRepo.findByOrderId(orderId)
                         .orElseThrow(() -> new RuntimeException("Payment not found"));

@@ -1,5 +1,9 @@
 package com.wetube.wetube_service.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.wetube.wetube_service.security.CurrentUser;
+import com.wetube.wetube_service.security.OwnershipGuard;
 import com.wetube.wetube_service.dto.CommentDto.CommentRequestDto;
 import com.wetube.wetube_service.dto.CommentDto.CommentResponseDto;
 import com.wetube.wetube_service.entity.interaction.Comment;
@@ -17,6 +21,7 @@ import java.util.UUID;
 public class CommentController {
 
     private final CommentService commentService;
+    private final OwnershipGuard ownershipGuard;
 
     @GetMapping("/{targetType}/{targetId}")
     public ResponseEntity<List<CommentResponseDto>> getCommentsByTarget(
@@ -37,17 +42,21 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<CommentResponseDto> createComment(@RequestBody CommentRequestDto request) {
+    public ResponseEntity<CommentResponseDto> createComment(@RequestBody CommentRequestDto request, @AuthenticationPrincipal Jwt jwt) {
+        request.setUserId(CurrentUser.id(jwt));
         return ResponseEntity.ok(commentService.createComment(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CommentResponseDto> updateComment(@PathVariable UUID id, @RequestBody CommentRequestDto request) {
+    public ResponseEntity<CommentResponseDto> updateComment(@PathVariable UUID id, @RequestBody CommentRequestDto request, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.commentOwner(id, jwt);
+        request.setUserId(CurrentUser.id(jwt));
         return ResponseEntity.ok(commentService.updateComment(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteComment(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteComment(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.commentOwner(id, jwt);
         commentService.deleteComment(id);
         return ResponseEntity.noContent().build();
     }

@@ -1,5 +1,9 @@
 package com.wetube.wetube_service.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.wetube.wetube_service.security.CurrentUser;
+import com.wetube.wetube_service.security.OwnershipGuard;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +35,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PlaylistController {
     private final PlaylistService playlistService;
+    private final OwnershipGuard ownershipGuard;
 
     // @PostMapping("/init/{userId}")
     // public ResponseEntity<Void> createPlaylist(@PathVariable UUID userId) {
@@ -62,7 +67,11 @@ public class PlaylistController {
     @GetMapping("/{userId}/playlistType")
     public ResponseEntity<List<UserPlaylistDto>> getAllPlaylistsByTagUser(
             @PathVariable UUID userId,
-            @RequestParam PlaylistType playlistType) {
+            @RequestParam PlaylistType playlistType,
+            @AuthenticationPrincipal Jwt jwt) {
+        if (playlistType == PlaylistType.HISTORY || playlistType == PlaylistType.LIKED) {
+            requireSelf(userId, jwt);
+        }
 
         return ResponseEntity.ok(playlistService.getAllPlaylistByTypeUserId(userId, playlistType));
     }
@@ -77,19 +86,23 @@ public class PlaylistController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<UserPlaylistDto> createPlaylist(@RequestBody CreatePlaylistRequest request) {
+    public ResponseEntity<UserPlaylistDto> createPlaylist(@RequestBody CreatePlaylistRequest request, @AuthenticationPrincipal Jwt jwt) {
+        request.setUserId(CurrentUser.id(jwt));
         return ResponseEntity.ok(playlistService.createPlaylist(request));
     }
 
     @PostMapping("/add")
-    public ResponseEntity<PlaylistVideoDto> addVideoToPlaylist(@RequestBody PlaylistaddRequest request) {
+    public ResponseEntity<PlaylistVideoDto> addVideoToPlaylist(@RequestBody PlaylistaddRequest request, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.playlistOwner(request.getPlaylistId(), jwt);
         return ResponseEntity.ok(playlistService.addVideoToPlaylist(request));
     }
 
     @DeleteMapping("/{playlistId}/{videoId}")
     public ResponseEntity<Map<String, String>> removeVideoFromPlaylist(
             @PathVariable UUID playlistId,
-            @PathVariable UUID videoId) {
+            @PathVariable UUID videoId,
+            @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.playlistOwner(playlistId, jwt);
 
         playlistService.removeVideoFromPlaylist(playlistId, videoId);
 
@@ -99,21 +112,33 @@ public class PlaylistController {
     }
 
     @DeleteMapping("/{playlistId}")
-    public ResponseEntity<Map<String, String>> removePlaylist(@PathVariable UUID playlistId) {
+    public ResponseEntity<Map<String, String>> removePlaylist(@PathVariable UUID playlistId, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.playlistOwner(playlistId, jwt);
         playlistService.removePlaylist(playlistId);
         return ResponseEntity.ok(Map.of("message", "Playlist deleted successfully"));
     }
 
     @GetMapping("/{userId}/history")
-    public ResponseEntity<List<PlaylistVideoDetailDto>> getUserHistory(@PathVariable UUID userId) {
+    public ResponseEntity<List<PlaylistVideoDetailDto>> getUserHistory(@PathVariable UUID userId, @AuthenticationPrincipal Jwt jwt) {
+        requireSelf(userId, jwt);
         return ResponseEntity.ok(playlistService.getHistoryByUser(userId));
     }
 
     @PostMapping("/{userId}/history/add/{videoId}")
     public ResponseEntity<List<PlaylistVideoDetailDto>> addToHistory(
             @PathVariable UUID userId,
-            @PathVariable UUID videoId) {
+            @PathVariable UUID videoId,
+            @AuthenticationPrincipal Jwt jwt) {
+        requireSelf(userId, jwt);
         return ResponseEntity.ok(playlistService.addVideoToHistory(userId, videoId));
     }
 
+
+    /** Dữ liệu riêng tư (lịch sử, đã thích): chỉ chủ tài khoản được xem hoặc ghi. */
+    private static void requireSelf(UUID userId, Jwt jwt) {
+        if (!CurrentUser.id(jwt).equals(userId)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "Bạn không có quyền với dữ liệu này");
+        }
+    }
 }

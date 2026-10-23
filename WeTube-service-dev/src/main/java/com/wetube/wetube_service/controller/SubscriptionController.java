@@ -1,5 +1,8 @@
 package com.wetube.wetube_service.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.wetube.wetube_service.security.CurrentUser;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,13 +27,15 @@ private final  SubscriptionService subscriptionService;
     }
 
     @PostMapping("/subscribe")
-    public ResponseEntity<String> subscribe(@RequestBody SubscriptionRequest request) {
+    public ResponseEntity<String> subscribe(@RequestBody SubscriptionRequest request, @AuthenticationPrincipal Jwt jwt) {
+        request.setSubscriberId(CurrentUser.id(jwt));
         subscriptionService.subscribe(request);
         return ResponseEntity.ok("Subscribed successfully");
     }
 
     @PostMapping("/unsubscribe")
-    public ResponseEntity<String> unsubscribe(@RequestBody UnsubscribeRequest request) {
+    public ResponseEntity<String> unsubscribe(@RequestBody UnsubscribeRequest request, @AuthenticationPrincipal Jwt jwt) {
+        request.setSubscriberId(CurrentUser.id(jwt));
         subscriptionService.unsubscribe(request);
         return ResponseEntity.ok("Unsubscribed successfully");
     }

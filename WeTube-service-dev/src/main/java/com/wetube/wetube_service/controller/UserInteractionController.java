@@ -1,5 +1,8 @@
 package com.wetube.wetube_service.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.wetube.wetube_service.security.CurrentUser;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +19,9 @@ public class UserInteractionController {
     private final UserInteractionServiceImpl interactionService;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> saveInteraction(@RequestBody InteractionRequest request) {
-        if (request.getUserId() == null || request.getVideoId() == null || request.getType() == null) {
+    public ResponseEntity<String> saveInteraction(@RequestBody InteractionRequest request, @AuthenticationPrincipal Jwt jwt) {
+        request.setUserId(CurrentUser.id(jwt));
+        if (request.getVideoId() == null || request.getType() == null) {
             return ResponseEntity.badRequest().body("Missing parameters!");
         }
         interactionService.saveInteraction(request.getUserId(), request.getVideoId(), request.getType());

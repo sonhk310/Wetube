@@ -1,5 +1,8 @@
 package com.wetube.wetube_service.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.dto.LikeDto;
 import com.wetube.wetube_service.entity.interaction.Like;
 import com.wetube.wetube_service.service.interaction.LikeService;
@@ -29,9 +32,9 @@ public class LikeController {
     public ResponseEntity<Void> toggleLike(
             @RequestParam UUID targetId,
             @RequestParam Like.TargetType targetType,
-            @RequestParam UUID userId
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        likeService.toggleLike(targetId, targetType, userId);
+        likeService.toggleLike(targetId, targetType, CurrentUser.id(jwt));
         return ResponseEntity.ok().build();
     }
 }

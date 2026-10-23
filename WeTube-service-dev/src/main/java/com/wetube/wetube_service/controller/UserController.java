@@ -1,5 +1,7 @@
 package com.wetube.wetube_service.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.dto.PremiumUserDto;
 import com.wetube.wetube_service.dto.response.UserResponseDto;
 import com.wetube.wetube_service.service.premium.PremiumUserService;
@@ -28,7 +30,8 @@ public class UserController {
     }
 
     @GetMapping("/premium")
-    public ResponseEntity<List<PremiumUserDto>> getAllPremiumUsers() {
+    public ResponseEntity<List<PremiumUserDto>> getAllPremiumUsers(@AuthenticationPrincipal Jwt jwt) {
+        CurrentUser.requireAdmin(jwt);
         List<PremiumUserDto> list = premiumUserService.getAllPremiumUsers();
         return ResponseEntity.ok(list);
     }

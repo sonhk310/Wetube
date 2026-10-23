@@ -1,5 +1,8 @@
 package com.wetube.wetube_service.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.wetube.wetube_service.security.CurrentUser;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,7 +35,8 @@ public class SubPackController {
     }
 
     @PostMapping
-    public ResponseEntity<SubPacksDto> createSubPack(@RequestBody SubPackRequestDto request) {
+    public ResponseEntity<SubPacksDto> createSubPack(@RequestBody SubPackRequestDto request, @AuthenticationPrincipal Jwt jwt) {
+        CurrentUser.requireAdmin(jwt);
         SubPacksDto created = subPackService.createSubPack(request);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
@@ -40,13 +44,16 @@ public class SubPackController {
     @PutMapping("/{id}")
     public ResponseEntity<SubPacksDto> updateSubPack(
             @PathVariable UUID id,
-            @RequestBody SubPackRequestDto request) {
+            @RequestBody SubPackRequestDto request,
+            @AuthenticationPrincipal Jwt jwt) {
+        CurrentUser.requireAdmin(jwt);
         SubPacksDto updated = subPackService.updateSubPack(id, request);
         return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSubPack(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteSubPack(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        CurrentUser.requireAdmin(jwt);
         subPackService.deleteSubPack(id);
         return ResponseEntity.noContent().build();
     }

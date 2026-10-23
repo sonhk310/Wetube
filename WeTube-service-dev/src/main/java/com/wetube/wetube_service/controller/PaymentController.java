@@ -1,5 +1,8 @@
 package com.wetube.wetube_service.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.wetube.wetube_service.security.CurrentUser;
 import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,7 +35,8 @@ public class PaymentController {
     private String clientUrl;
 
     @PostMapping("/create")
-    public ResponseEntity<PaymentResponseDto> createPayment(@RequestBody PaymentRequestDto dto) {
+    public ResponseEntity<PaymentResponseDto> createPayment(@RequestBody PaymentRequestDto dto, @AuthenticationPrincipal Jwt jwt) {
+        dto.setUserId(CurrentUser.id(jwt));
         return ResponseEntity.ok(paymentService.createPayment(dto));
     }
 
@@ -54,18 +58,21 @@ public class PaymentController {
         public void handleRedirect(
                 @RequestParam Map<String, String> queryParams,
                 HttpServletResponse response) throws IOException {  
-            String resultCode = queryParams.get("resultCode");
             String orderId = queryParams.get("orderId");
 
-            if ("0".equals(resultCode)) {
-                paymentService.handleMoMoIpn(
-                    queryParams.entrySet().stream()
-                        .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            Map.Entry::getValue
-                        ))
-                );
-            }
+            // Ghi nhận kết quả (có kiểm tra chữ ký MoMo), rồi hiển thị theo trạng thái thật trong DB
+            // chứ không tin tham số resultCode trên URL.
+            paymentService.handleMoMoIpn(
+                queryParams.entrySet().stream()
+                    .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                    ))
+            );
+            String resultCode = orderId == null ? "1"
+                    : paymentRepo.findByOrderId(orderId)
+                        .map(p -> p.getStatus() == com.wetube.wetube_service.enumeration.PaymentStatus.SUCCESS ? "0" : "1")
+                        .orElse("1");
 
 //            String redirectUrl = "http://localhost:3000/?paymentStatus=" + resultCode + "&orderId=" + orderId;
             String redirectUrl = clientUrl.replaceAll("/+$", "") + "/otherservices/payment-result?paymentStatus=" + resultCode + "&orderId=" + orderId;
