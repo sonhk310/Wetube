@@ -24,8 +24,8 @@ spring:
 
   elasticsearch:
     uris: ${ELASTICSEARCH_URL}
-    username: ${ELASTIC_USERNAME}
-    password: ${ELASTIC_PASSWORD}
+    username: ${ELASTIC_USERNAME:}
+    password: ${ELASTIC_PASSWORD:}
     connection-timeout: 5s
     socket-timeout: 10s
 
