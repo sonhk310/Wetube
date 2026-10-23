@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,9 @@ import lombok.RequiredArgsConstructor;
 public class PaymentController {
     private final PaymentService paymentService;
     private final PaymentMomoRepository paymentRepo;
+
+    @Value("${CLIENT_URL}")
+    private String clientUrl;
 
     @PostMapping("/create")
     public ResponseEntity<PaymentResponseDto> createPayment(@RequestBody PaymentRequestDto dto) {
@@ -64,7 +68,7 @@ public class PaymentController {
             }
 
 //            String redirectUrl = "http://localhost:3000/?paymentStatus=" + resultCode + "&orderId=" + orderId;
-         String redirectUrl = "https://wetube.name.vn/?paymentStatus=" + resultCode + "&orderId=" + orderId;
+            String redirectUrl = clientUrl.replaceAll("/+$", "") + "/otherservices/payment-result?paymentStatus=" + resultCode + "&orderId=" + orderId;
             response.sendRedirect(redirectUrl); 
         }
 

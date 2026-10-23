@@ -3,7 +3,7 @@
 import { useScroll, motion, useMotionValueEvent, Variants } from "motion/react";
 import { useRef, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
-import { useVideo } from "@/hooks/use-video";
+import { useVideoStore } from "@/store/zustand/videoStore";
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -24,8 +24,10 @@ const item = {
 };
 
 export default function VideoTags() {
-  const { video, selectedTag, handleTagSelection } = useVideo();
-  const { tags } = video;
+  const tags = useVideoStore((s) => s.videoDetail?.recommend?.tags) ?? [];
+  const [selectedTag, setSelectedTag] = useState<string>("");
+  const handleTagSelection = (id: string) =>
+    setSelectedTag((prev) => (prev === id ? "" : id));
   const ref = useRef<HTMLElement | null>(null);
   const { scrollXProgress } = useScroll({ container: ref });
   const [scrollOptions, setScrollOptions] = useState({
@@ -58,7 +60,7 @@ export default function VideoTags() {
         {tags.map((tag, index) => (
           <motion.div
             variants={item}
-            key={index}
+            key={tag.id ?? index}
             onClick={() => handleTagSelection(tag.id)}
             className={`rounded-lg py-1.5 px-3 text-sm w-fit whitespace-nowrap font-semibold text-center cursor-pointer ${
               tag.id === selectedTag
@@ -66,7 +68,7 @@ export default function VideoTags() {
                 : "bg-gray-100 text-gray-900 hover:bg-gray-200"
             }`}
           >
-            {tag.displayName}
+            {tag.name}
           </motion.div>
         ))}
       </motion.section>

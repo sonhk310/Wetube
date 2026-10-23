@@ -1,5 +1,6 @@
 package com.wetube.wetube_service.configuration;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.ProtobufMessageConverter;
@@ -13,6 +14,9 @@ import java.util.List;
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketStompConfig implements WebSocketMessageBrokerConfigurer {
+
+    @Value("${management.endpoints.web.cors.allowed-origins}")
+    private List<String> allowedOrigins;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -31,8 +35,7 @@ public class WebSocketStompConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-//                .setAllowedOrigins("http://localhost:3000")
-                .setAllowedOrigins("https://wetube.name.vn")
+                .setAllowedOrigins(allowedOrigins.toArray(new String[0]))
                 .withSockJS();
     }
 }

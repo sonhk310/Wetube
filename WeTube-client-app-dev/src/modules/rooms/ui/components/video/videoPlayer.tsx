@@ -18,7 +18,7 @@ export default function VideoPlayer({ onChangeVideo }: VideoPlayerProps) {
   const videos = room?.playlist ?? [];
   const currentVideo = room?.playerState.currentSongId || "";
   const mediaState = room?.playerState;
-  const currentTimeInSeconds = mediaState!.currentTimeMillis / 1000 || 0;
+  const currentTimeInSeconds = (mediaState?.currentTimeMillis ?? 0) / 1000;
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {

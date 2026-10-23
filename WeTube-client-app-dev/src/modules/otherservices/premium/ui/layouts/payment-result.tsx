@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API_PREFIX } from "@/constants/appConstant";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type PaymentStatus = {
@@ -16,32 +15,19 @@ export default function PaymentResult() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const resultCode = params.get("resultCode");
+    // Backend xác nhận thanh toán ở bước chuyển hướng rồi mới đưa người dùng về đây.
+    const resultCode = params.get("paymentStatus") ?? params.get("resultCode");
     const orderId = params.get("orderId");
 
-    if (!orderId || !resultCode) return;
-
-    if (resultCode === "0") {
-      // Thanh toán thành công
-      fetch(
-        `${API_PREFIX}/payment/confirm?orderId=${orderId}`,
-        {
-          method: "POST",
-        }
-      )
-        .then(() => setStatus({ success: true, orderId }))
-        .catch(() => setStatus({ success: false, orderId }))
-        .finally(() => {
-          setLoading(false);
-
-          setTimeout(() => router.replace("/"), 2000);
-        });
-    } else {
-  
-      setStatus({ success: false, orderId });
-      setLoading(false);
-      setTimeout(() => router.replace("/"), 2000);
+    if (!orderId || resultCode === null) {
+      router.replace("/");
+      return;
     }
+
+    setStatus({ success: resultCode === "0", orderId });
+    setLoading(false);
+    const timer = setTimeout(() => router.replace("/"), 3000);
+    return () => clearTimeout(timer);
   }, [params, router]);
 
   if (loading) {
