@@ -11,6 +11,7 @@ export const pageUrls = {
     SHORTS:"/shorts",
     YOURVIDEO: "/studio",
     CUSTOMIZATION: "/studio/customization",
+    ANALYTICS: "/studio/analytics",
     WATCHLATER:"/playlists/watchlater",
     ROOMS:"/rooms",
     LIVESTREAM:"/livestream",

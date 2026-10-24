@@ -10,6 +10,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { channelApi } from '@/app/api/channelApi';
 import { interactionApi } from "@/app/api/interactionApi";
+import { analyticsApi } from "@/app/api/analyticsApi";
 
 export const store = configureStore({
   reducer: {
@@ -23,6 +24,7 @@ export const store = configureStore({
     [subscriptionsApi.reducerPath]: subscriptionsApi.reducer,
     [channelApi.reducerPath]: channelApi.reducer,
     [interactionApi.reducerPath] : interactionApi.reducer,
+    [analyticsApi.reducerPath]: analyticsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -35,7 +37,8 @@ export const store = configureStore({
       playlistApi.middleware,
       channelApi.middleware,
       subscriptionsApi.middleware,
-      interactionApi.middleware
+      interactionApi.middleware,
+      analyticsApi.middleware
     ),
 });
 

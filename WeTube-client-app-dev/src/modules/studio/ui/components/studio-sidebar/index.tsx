@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { StudioSidebarHeader } from "./studio-sidebar-header";
 import { pageUrls } from "@/lib/enums/page-urls";
 
-import { LogOutIcon, VideoIcon, SlidersHorizontal } from "lucide-react";
+import { LogOutIcon, VideoIcon, SlidersHorizontal, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -40,6 +40,21 @@ export default function StudioSidebar() {
                 >
                   <VideoIcon className="size-5" />
                   <span className="text-sm">Nội dung</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={pathname === pageUrls.ANALYTICS}
+                tooltip="Số liệu phân tích"
+                asChild
+              >
+                <Link
+                  prefetch
+                  href={pageUrls.ANALYTICS}
+                >
+                  <BarChart3 className="size-5" />
+                  <span className="text-sm">Số liệu phân tích</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
