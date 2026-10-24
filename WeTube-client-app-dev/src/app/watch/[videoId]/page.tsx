@@ -15,6 +15,16 @@ interface ShareInfo {
   duration?: number;
 }
 
+/**
+ * Thumbnail lưu trên Cloudinary là webp 300x200; Facebook cần ảnh lớn (>= 600x315) mới hiện khung
+ * lớn và Zalo không chắc đọc được webp, nên xin Cloudinary bản JPG 1200x630.
+ */
+function shareImage(thumbnailUrl: string): string {
+  const match = thumbnailUrl.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(?:[a-z]{1,3}_[^/]*\/)?(.+?)(?:\.\w+)?$/);
+  if (!match) return thumbnailUrl;
+  return `${match[1]}c_fill,w_1200,h_630,q_auto/${match[2]}.jpg`;
+}
+
 /** Thông tin video cho thẻ chia sẻ; null nếu video không tồn tại / không công khai với khách. */
 async function fetchShareInfo(videoId: string): Promise<ShareInfo | null> {
   try {
@@ -41,7 +51,8 @@ export async function generateMetadata({
   const raw = video.description?.trim() || `Video của ${video.name ?? "WeTube"} trên WeTube`;
   const description = raw.length > DESCRIPTION_MAX ? `${raw.slice(0, DESCRIPTION_MAX - 1)}…` : raw;
   const url = `/watch/${videoId}`;
-  const images = video.thumbnailUrl ? [{ url: video.thumbnailUrl, alt: video.title }] : undefined;
+  const image = video.thumbnailUrl ? shareImage(video.thumbnailUrl) : undefined;
+  const images = image ? [{ url: image, width: 1200, height: 630, alt: video.title }] : undefined;
 
   return {
     title: `${video.title} - WeTube`,
@@ -59,10 +70,10 @@ export async function generateMetadata({
       ...(video.duration ? { duration: Math.round(video.duration) } : {}),
     },
     twitter: {
-      card: video.thumbnailUrl ? "summary_large_image" : "summary",
+      card: image ? "summary_large_image" : "summary",
       title: video.title,
       description,
-      images: video.thumbnailUrl ? [video.thumbnailUrl] : undefined,
+      images: image ? [image] : undefined,
     },
   };
 }
