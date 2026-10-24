@@ -189,7 +189,8 @@ export default function ShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      {/* Cột lưới mặc định rộng theo nội dung: hàng biểu tượng dài sẽ đẩy cả hộp thoại tràn ra ngoài */}
+      <DialogContent className="max-w-lg grid-cols-[minmax(0,1fr)]">
         <DialogHeader>
           <DialogTitle>Chia sẻ</DialogTitle>
         </DialogHeader>
