@@ -203,6 +203,8 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-search-relevance-design.md`.
 - **Kênh**: `GET /api/channels/search?q=&limit=&strict=`; tab "Tất cả" (khi chưa lọc) hiện tối đa 2 kênh khớp chặt ở đầu, tab "Kênh" tối đa 20 kênh khớp rộng. Dữ liệu hiển thị lấy từ MySQL. Kênh mới được ghi vào chỉ mục khi tạo (`initiateChannel`).
 - **Code chết thấy được (chưa đụng):** `events/VideoSearchSyncListener` nghe các sự kiện video không ai phát, vẫn ghi vào chỉ mục cũ `videos`.
 
+- **Anh đã thử trên trình duyệt: OK (24/10)** (cả gói 14 bộ lọc / hộp thoại Bộ lọc và gói 15).
+
 **Đã kiểm tra:** test `SearchIndexesTest` (4: tạo chỉ mục với đủ analyzer, dùng lại chỉ mục có sẵn, lỗi thì quay về `videos`), `ChannelSearchServiceTest` (5: ES giữ thứ tự + lấy dữ liệu MySQL, ES lỗi → MySQL, ẩn kênh bị ẩn, limit), `VideoIndexerTest` (2), cả bộ backend xanh (14 lớp); client tsc / eslint / `next build`. Sau deploy: log "Chỉ mục tìm kiếm: video = videos_v2, kênh = channels", đồng bộ 1 video + 3 kênh, không lỗi. curl trên production: video "view" ra với `veiw` / `vieww` / `VIEW`, và với tên kênh `kysonhuynh` / `ky son huynh` / `son huynh`; `abcxyz` → 0; kênh: `kysonhuynh`, `hoangthai` (dính chữ), `huyng` (sai chính tả), `ky son huynh` (chặt) đều ra đúng kênh; bộ lọc C1 và gợi ý vẫn đúng; các trang `/search` trả 200. (Log không lọc ra được dòng "Đã tạo chỉ mục", nhưng ca dính chữ chỉ khớp được khi chỉ mục có cấu hình mới, nên cấu hình đã có hiệu lực.) **Chưa kiểm tra:** giao diện trên trình duyệt.
 
 ---
