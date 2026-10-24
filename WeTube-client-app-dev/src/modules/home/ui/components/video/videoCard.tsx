@@ -12,7 +12,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useSaveInteractionMutation } from "@/app/api/interactionApi";
 import { Skeleton } from "@/components/ui/skeleton";
 import {

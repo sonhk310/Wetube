@@ -2,7 +2,6 @@
 /* Lớp animate-in / slide-in-from-* cho Sheet, Dialog, Dropdown (shadcn) trên Tailwind v4 */
 @import "tw-animate-css";
 @import "@radix-ui/themes/styles.css";
-@import "react-toastify/dist/ReactToastify.css";
 
 @tailwind components;
 @tailwind utilities;

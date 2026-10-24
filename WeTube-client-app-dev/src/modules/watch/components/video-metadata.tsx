@@ -27,7 +27,7 @@ import ShareDialog from "./share-dialog";
 import SaveToPlaylistDialog from "./save-to-playlist-dialog";
 import { useToggleDislikeMutation } from "@/app/api/videoApi";
 import { useControls } from "@/hooks/use-controls";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
 
 export default function VideoMetadata() {

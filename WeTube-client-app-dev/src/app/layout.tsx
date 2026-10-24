@@ -7,9 +7,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { LoadingBarProvider } from "@/contexts/loading-bar-context";
 import { LoadingBar } from "@/components/LoadingBar";
 import { NavigationEvents } from "@/components/NavigationEvents";
-import { Bounce, ToastContainer } from "react-toastify";
-import { Toaster } from "react-hot-toast";
-import "react-toastify/dist/ReactToastify.css";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,21 +56,8 @@ export default function RootLayout({
                 <NavigationEvents />
               </Suspense>
               {children}
-              <ToastContainer
-                position="top-center"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick={false}
-                rtl={false}
-                pauseOnFocusLoss={false}
-                draggable={false}
-                pauseOnHover={false}
-                theme="colored"
-                transition={Bounce}
-              />
-              {/* Một số màn hình (Studio, upload, Lưu playlist, thích video) dùng react-hot-toast */}
-              <Toaster position="top-center" />
+              {/* Toast của shadcn (Sonner), giữa cạnh dưới; gọi qua lib/toastEmitter hoặc toast của "sonner" */}
+              <Toaster position="bottom-center" richColors closeButton />
             </Providers>
           </AuthProvider>
         </LoadingBarProvider>

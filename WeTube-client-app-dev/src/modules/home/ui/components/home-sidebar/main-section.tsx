@@ -14,7 +14,7 @@ import {usePathname} from "next/navigation";
 import {useState} from "react";
 import { useAuth } from "@/contexts/auth-context";
 import RoomModal from "@/modules/rooms/ui/components/room/roomModal";
-import {Bounce, toast } from "react-toastify";
+import { toastEmitter } from "@/lib/toastEmitter";
 
 const items = [
     { title: "Trang chủ", url: pageUrls.HOME, icon: HomeIcon },
@@ -39,16 +39,7 @@ export const MainSection = () => {
         }
         
         if (!userId) {
-            toast('👀 Bạn cần đăng nhập để dùng tính năng này!', {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                theme: "light",
-                transition: Bounce,
-            });
+            toastEmitter.info("Bạn cần đăng nhập để dùng tính năng này!");
             return;
         }
 

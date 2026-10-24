@@ -99,7 +99,7 @@ const getRandomBackground = () => {
 };
 
 const showError = (err: unknown, fallback: string) =>
-    toastEmitter.error(apiErrorMessage(err, fallback), { autoClose: 4000 });
+    toastEmitter.error(apiErrorMessage(err, fallback), { duration: 4000 });
 
 /** Ô nhập nhanh dùng cho "Phản hồi" và "Chỉnh sửa". */
 const InlineComposer = ({

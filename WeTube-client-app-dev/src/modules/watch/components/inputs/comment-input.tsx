@@ -43,7 +43,7 @@ export const CommentInput = () => {
             setIsFocused(false);
         } catch (err) {
             // Giữ nguyên chữ trong ô để người dùng gửi lại
-            toastEmitter.error(apiErrorMessage(err, "Không gửi được bình luận, vui lòng thử lại."), { autoClose: 4000 });
+            toastEmitter.error(apiErrorMessage(err, "Không gửi được bình luận, vui lòng thử lại."), { duration: 4000 });
         }
     };
 
