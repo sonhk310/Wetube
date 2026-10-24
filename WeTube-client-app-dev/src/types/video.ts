@@ -191,7 +191,7 @@ export interface VideoFormDetail {
   description: string;
   videoUrl: string;
   thumbnailUrl: string;
-  status: "ACTIVE" | "PUBLIC" | "PRIVATE" | "UNLISTED" | "PENDING" | "INACTIVE";
+  status: "ACTIVE" | "PUBLIC" | "PRIVATE" | "UNLISTED" | "PENDING" | "INACTIVE" | "DRAFT";
   createdAt: string;
   updatedAt: string;
   tags: Tag[];

@@ -38,6 +38,7 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   UNLISTED: { label: "Không công khai", className: "bg-yellow-100 text-yellow-700" },
   PRIVATE: { label: "Riêng tư", className: "bg-gray-200 text-gray-700" },
   INACTIVE: { label: "Bị ẩn", className: "bg-red-100 text-red-700" },
+  DRAFT: { label: "Bản nháp", className: "bg-blue-100 text-blue-700" },
 };
 
 const formatDate = (dateString: string) => {

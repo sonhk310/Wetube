@@ -49,7 +49,9 @@ const formSchema = z.object({
     .string()
     .max(5000, { message: "Mô tả tối đa 5000 ký tự." })
     .optional(),
-  status: z.enum(["ACTIVE", "PUBLIC", "PRIVATE", "UNLISTED", "PENDING", "INACTIVE"]),
+  status: z
+    .enum(["ACTIVE", "PUBLIC", "PRIVATE", "UNLISTED", "PENDING", "INACTIVE", "DRAFT"])
+    .refine((value) => value !== "DRAFT", { message: "Chọn chế độ hiển thị để đăng video" }),
   tags: z
     .string()
     .max(200, { message: "Thẻ tối đa 200 ký tự." })
@@ -471,6 +473,11 @@ export default function FormSection({ videoId }: FormSectionProps) {
                           </div>
                         </SelectItem>
                         <SelectItem value="INACTIVE">Bị quản trị viên ẩn</SelectItem>
+                        {video?.status === "DRAFT" && (
+                          <SelectItem value="DRAFT" disabled>
+                            Bản nháp (chưa đăng)
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
@@ -478,7 +485,9 @@ export default function FormSection({ videoId }: FormSectionProps) {
                       {field.value === "UNLISTED" && "Chỉ người có liên kết mới xem được; video không hiện trong tìm kiếm hay gợi ý."}
                       {field.value === "PRIVATE" && "Chỉ bạn xem được video này."}
                       {field.value === "INACTIVE" && "Video đã bị quản trị viên ẩn do vi phạm, bạn không thể tự công khai lại."}
+                      {field.value === "DRAFT" && "Video chưa được đăng. Chọn chế độ hiển thị rồi bấm Lưu để đăng."}
                     </p>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
