@@ -180,6 +180,7 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-studio-analytics-design.md`; k�
 - **Em tự quyết:** chỉ số liệu cả kênh (chưa có biểu đồ riêng từng video); màu đường xanh `#065fd4`; lượt xem / bình luận của chính chủ kênh vẫn tính (giống số tổng hiện có).
 
 **Đã kiểm tra:** test backend `ViewStatsTest` (3), `WatchTimeTrackerTest` (4), `StudioAnalyticsServiceTest` (6: khoảng ngày sai → 400, đủ ngày, chia ngày giờ VN, tổng, `trackingSince`, chưa có kênh → 0), cả bộ xanh (10 lớp); client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build` (có route `/studio/analytics`). Sau deploy: log không có Exception / cảnh báo ghi số liệu; `GET /api/studio/analytics` 401 khi chưa đăng nhập; `POST /watch-time?t=5` 204 (em gọi thử với anonId `claude-check`, đã cộng 5 giây vào video `be49c4b5…`), `t=-1` 400, video không tồn tại 404; `/studio/analytics` 200. **Chưa kiểm tra:** giao diện trên trình duyệt, số liệu khi đã đăng nhập.
+- **Anh đã thử trên trình duyệt: OK (24/10).**
 - **Còn để ý:** khách có thể đổi `anonId` liên tục để thổi phồng thời gian xem (bị chặn ở 60 lần/phút/IP × 35 giây).
 ---
 
