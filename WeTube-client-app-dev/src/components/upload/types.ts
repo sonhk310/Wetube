@@ -1,5 +1,6 @@
 export type UploadState =
-  | { phase: "uploading"; percent: number }
+  /** etaSeconds: thời gian còn lại ước theo tốc độ đã gửi (chưa có ở lúc đầu). */
+  | { phase: "uploading"; percent: number; etaSeconds?: number }
   | { phase: "processing" }
   | { phase: "done"; videoId: string }
   | { phase: "error"; message: string };

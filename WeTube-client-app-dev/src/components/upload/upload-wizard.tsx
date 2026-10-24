@@ -21,6 +21,7 @@ import { StepElements } from "./step-elements";
 import { StepVisibility } from "./step-visibility";
 import { UploadPreview } from "./upload-preview";
 import { UploadStepper } from "./upload-stepper";
+import { UploadFooterStatus, UploadTopBar } from "./upload-status";
 import type { FormErrors, StepId, UploadState, VideoMeta, WizardForm } from "./types";
 
 const STEPS: { id: StepId; label: string }[] = [
@@ -114,12 +115,19 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
       const controller = new AbortController();
       abortRef.current = controller;
       setUpload({ phase: "uploading", percent: 0 });
+      const startedAt = Date.now();
       uploadDraft(
         file,
         m,
         (percent) => {
           if (controller.signal.aborted) return;
-          setUpload(percent >= 100 ? { phase: "processing" } : { phase: "uploading", percent });
+          if (percent >= 100) {
+            setUpload({ phase: "processing" });
+            return;
+          }
+          const elapsed = (Date.now() - startedAt) / 1000;
+          const etaSeconds = percent > 0 ? (elapsed * (100 - percent)) / percent : undefined;
+          setUpload({ phase: "uploading", percent, etaSeconds });
         },
         controller.signal
       )
@@ -281,7 +289,7 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+      <div className="flex items-center justify-between px-6 py-4">
         <DialogTitle className="truncate pr-4 text-xl font-medium text-black">
           {form.title.trim() || "Tải video lên"}
         </DialogTitle>
@@ -290,6 +298,7 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
           <span className="sr-only">Đóng</span>
         </Button>
       </div>
+      <UploadTopBar upload={upload} />
 
       <UploadStepper
         steps={STEPS.map((s, i) => ({ ...s, error: s.id === "details" && detailsHasError, disabled: !canOpen(i) }))}
@@ -334,34 +343,12 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
       </div>
 
       <div className="flex items-center gap-4 border-t border-gray-200 px-6 py-3">
-        <div className="min-w-0 flex-1 text-sm">
-          {upload.phase === "uploading" && (
-            <div className="max-w-xs">
-              <p className="mb-1 text-gray-700">Đang tải lên {upload.percent}%…</p>
-              <div className="h-1.5 overflow-hidden rounded-full bg-gray-200">
-                <div className="h-full bg-blue-600 transition-all" style={{ width: `${upload.percent}%` }} />
-              </div>
-            </div>
-          )}
-          {upload.phase === "processing" && (
-            <p className="flex items-center gap-2 text-gray-700">
-              <Loader2 className="h-4 w-4 animate-spin" /> Đang xử lý…
-            </p>
-          )}
-          {upload.phase === "done" && <p className="text-green-700">Đã tải lên</p>}
-          {upload.phase === "error" && (
-            <p className="flex flex-wrap items-center gap-2 text-red-600">
-              <span className="truncate">{upload.message}</span>
-              <button
-                type="button"
-                onClick={() => startUpload(meta)}
-                className="font-medium text-blue-600 hover:underline"
-              >
-                Thử lại
-              </button>
-            </p>
-          )}
-        </div>
+        <UploadFooterStatus
+          upload={upload}
+          height={Math.min(meta.width, meta.height)}
+          checksOk={!detailsHasError}
+          onRetry={() => startUpload(meta)}
+        />
         {stepIndex > 0 && (
           <Button variant="ghost" onClick={() => setStep(STEPS[stepIndex - 1].id)} disabled={publishing}>
             Quay lại
