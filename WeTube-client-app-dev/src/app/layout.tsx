@@ -8,6 +8,7 @@ import { LoadingBarProvider } from "@/contexts/loading-bar-context";
 import { LoadingBar } from "@/components/LoadingBar";
 import { NavigationEvents } from "@/components/NavigationEvents";
 import { Bounce, ToastContainer } from "react-toastify";
+import { Toaster } from "react-hot-toast";
 import "react-toastify/dist/ReactToastify.css";
 
 const geistSans = Geist({
@@ -70,6 +71,8 @@ export default function RootLayout({
                 theme="colored"
                 transition={Bounce}
               />
+              {/* Một số màn hình (Studio, upload, Lưu playlist, thích video) dùng react-hot-toast */}
+              <Toaster position="top-center" />
             </Providers>
           </AuthProvider>
         </LoadingBarProvider>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import toast from "react-hot-toast";
+import { toastEmitter } from "@/lib/toastEmitter";
 import { ChevronLeft, ChevronRight, Facebook, Linkedin, Mail, Send, Share2 } from "lucide-react";
 import {
   Dialog,
@@ -104,8 +104,8 @@ export default function ShareDialog({
 
   const handleCopy = async () => {
     const ok = await copy(url);
-    if (ok) toast.success("Đã sao chép liên kết");
-    else toast.error("Không sao chép được, hãy chép thủ công");
+    if (ok) toastEmitter.success("Đã sao chép liên kết");
+    else toastEmitter.error("Không sao chép được, hãy chép thủ công");
   };
 
   const popup = (shareUrl: string) =>
