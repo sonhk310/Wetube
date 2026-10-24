@@ -1,0 +1,16 @@
+{
+  "analysis": {
+    "char_filter": {
+      "strip_non_alnum": { "type": "pattern_replace", "pattern": "[^\\p{L}\\p{N}]+", "replacement": "" }
+    },
+    "tokenizer": {
+      "trigram": { "type": "ngram", "min_gram": 3, "max_gram": 3, "token_chars": ["letter", "digit"] },
+      "edge_prefix": { "type": "edge_ngram", "min_gram": 1, "max_gram": 20, "token_chars": ["letter", "digit"] }
+    },
+    "analyzer": {
+      "folded": { "type": "custom", "tokenizer": "standard", "filter": ["lowercase", "asciifolding"] },
+      "compact": { "type": "custom", "char_filter": ["strip_non_alnum"], "tokenizer": "trigram", "filter": ["lowercase", "asciifolding"] },
+      "autocomplete": { "type": "custom", "tokenizer": "edge_prefix", "filter": ["lowercase", "asciifolding"] }
+    }
+  }
+}

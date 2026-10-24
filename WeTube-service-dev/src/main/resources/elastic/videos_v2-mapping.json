@@ -1,0 +1,30 @@
+{
+  "properties": {
+    "id": { "type": "keyword" },
+    "title": {
+      "type": "text", "analyzer": "folded",
+      "fields": {
+        "compact": { "type": "text", "analyzer": "compact" },
+        "prefix": { "type": "text", "analyzer": "autocomplete", "search_analyzer": "folded" },
+        "keyword": { "type": "keyword", "ignore_above": 256 }
+      }
+    },
+    "description": { "type": "text", "analyzer": "folded" },
+    "channelName": {
+      "type": "text", "analyzer": "folded",
+      "fields": { "compact": { "type": "text", "analyzer": "compact" } }
+    },
+    "tags": { "type": "keyword", "fields": { "text": { "type": "text", "analyzer": "folded" } } },
+    "userId": { "type": "keyword" },
+    "channelId": { "type": "keyword" },
+    "categories": { "type": "keyword" },
+    "createdAt": { "type": "date", "format": "date_time||strict_date_optional_time||epoch_millis" },
+    "thumbnailUrl": { "type": "keyword", "index": false },
+    "videoUrl": { "type": "keyword", "index": false },
+    "totalView": { "type": "integer" },
+    "duration": { "type": "float" },
+    "isShort": { "type": "boolean" },
+    "name": { "type": "text", "analyzer": "folded" },
+    "picture": { "type": "keyword", "index": false }
+  }
+}

@@ -22,8 +22,10 @@ public class ChannelController {
 
     /** Tìm kênh theo tên (bộ lọc "Kênh" ở trang tìm kiếm). */
     @GetMapping("/search")
-    public ResponseEntity<List<ChannelSearchDto>> search(@RequestParam("q") String query) {
-        return ResponseEntity.ok(channelSearchService.search(query));
+    public ResponseEntity<List<ChannelSearchDto>> search(@RequestParam("q") String query,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "false") boolean strict) {
+        return ResponseEntity.ok(channelSearchService.search(query, limit, strict));
     }
 
     @GetMapping("/{channelId}")

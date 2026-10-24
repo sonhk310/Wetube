@@ -1,0 +1,13 @@
+{
+  "properties": {
+    "id": { "type": "keyword" },
+    "name": {
+      "type": "text", "analyzer": "folded",
+      "fields": {
+        "compact": { "type": "text", "analyzer": "compact" },
+        "prefix": { "type": "text", "analyzer": "autocomplete", "search_analyzer": "folded" }
+      }
+    },
+    "totalSubscribers": { "type": "integer" }
+  }
+}

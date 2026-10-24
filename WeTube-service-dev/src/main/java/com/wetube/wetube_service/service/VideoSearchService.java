@@ -16,7 +16,6 @@ import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.FetchSourceFilter;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +23,7 @@ import com.wetube.wetube_service.dto.video.VideoDto;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.search.SearchFilters;
+import com.wetube.wetube_service.search.SearchIndexes;
 import com.wetube.wetube_service.search.VideoDocument;
 import com.wetube.wetube_service.security.VideoAccess;
 
@@ -39,8 +39,7 @@ public class VideoSearchService {
         private final ElasticsearchOperations elasticsearchOperations;
         private final VideoRepository videoRepository;
         private final VideoMapper videoMapper;
-
-        private static final IndexCoordinates INDEX = IndexCoordinates.of("videos");
+        private final SearchIndexes indexes;
 
         // ================== SEARCH TRẢ VỀ ELASTIC DOCUMENT ==================
 
@@ -71,7 +70,7 @@ public class VideoSearchService {
                                 .withQuery(term(t -> t.field("title.keyword").value(title)))
                                 .build();
 
-                SearchHits<VideoDocument> hits = elasticsearchOperations.search(query, VideoDocument.class, INDEX);
+                SearchHits<VideoDocument> hits = elasticsearchOperations.search(query, VideoDocument.class, indexes.videos());
                 return hits.hasSearchHits() ? hits.getSearchHits().get(0).getContent() : null;
         }
 
@@ -80,8 +79,12 @@ public class VideoSearchService {
                 NativeQuery query = new NativeQueryBuilder()
                                 .withQuery(bool(b -> b
                                                 .should(matchPhrasePrefix(m -> m.field("title").query(prefix).boost(3f)))
+                                                // videos_v2: tiền tố không dấu ("lac tr" -> "Lạc trôi")
+                                                .should(match(m -> m.field("title.prefix").query(prefix)
+                                                                .operator(co.elastic.clients.elasticsearch._types.query_dsl.Operator.And)
+                                                                .boost(3f)))
                                                 .should(multiMatch(m -> m
-                                                                .fields("title", "description", "tags", "name")
+                                                                .fields("title", "description", "tags", "name", "channelName")
                                                                 .query(prefix)
                                                                 .fuzziness("AUTO")))
                                                 .minimumShouldMatch("1")))
@@ -89,7 +92,7 @@ public class VideoSearchService {
                                 .withMaxResults(size)
                                 .build();
 
-                SearchHits<VideoDocument> hits = elasticsearchOperations.search(query, VideoDocument.class, INDEX);
+                SearchHits<VideoDocument> hits = elasticsearchOperations.search(query, VideoDocument.class, indexes.videos());
 
                 return hits.getSearchHits().stream()
                                 .map(h -> h.getContent().getTitle())
@@ -111,11 +114,19 @@ public class VideoSearchService {
 
                 NativeQuery query = new NativeQueryBuilder()
                                 .withQuery(bool(b -> {
-                                        b.should(wildcard(w -> w.field("title").value(text.toLowerCase() + "*")))
+                                        // Khớp cả cụm xếp đầu; rồi khớp từ (không dấu, sai 1-2 ký tự) ở tiêu đề / kênh / thẻ / mô tả;
+                                        // rồi khớp mẩu 3 chữ (viết dính, thiếu ký tự). Các trường mới chỉ có ở videos_v2.
+                                        b.should(matchPhrase(m -> m.field("title").query(text).boost(6f)))
                                                         .should(multiMatch(m -> m
-                                                                        .fields("title", "description")
+                                                                        .fields("title^3", "channelName^2", "tags.text^2", "description")
                                                                         .query(text)
-                                                                        .fuzziness("AUTO")))
+                                                                        .fuzziness("AUTO")
+                                                                        .boost(2f)))
+                                                        .should(match(m -> m.field("title.compact").query(text)
+                                                                        .minimumShouldMatch("60%")))
+                                                        .should(match(m -> m.field("channelName.compact").query(text)
+                                                                        .minimumShouldMatch("60%")))
+                                                        .should(wildcard(w -> w.field("title").value(text.toLowerCase() + "*")))
                                                         // Có filter thì should thành tuỳ chọn: bắt buộc khớp ít nhất 1
                                                         .minimumShouldMatch("1");
                                         if (filters.shortsOnly() != null) {
@@ -141,7 +152,7 @@ public class VideoSearchService {
                                 .withPageable(pageable)
                                 .build();
 
-                SearchHits<VideoDocument> hits = elasticsearchOperations.search(query, VideoDocument.class, INDEX);
+                SearchHits<VideoDocument> hits = elasticsearchOperations.search(query, VideoDocument.class, indexes.videos());
 
                 List<VideoDto> videos = hits.getSearchHits().stream()
                                 .map(SearchHit::getContent)
@@ -161,7 +172,7 @@ public class VideoSearchService {
         // ================== HELPER ==================
 
         private Page<VideoDocument> search(NativeQuery query, Pageable pageable) {
-                SearchHits<VideoDocument> hits = elasticsearchOperations.search(query, VideoDocument.class, INDEX);
+                SearchHits<VideoDocument> hits = elasticsearchOperations.search(query, VideoDocument.class, indexes.videos());
                 List<VideoDocument> content = hits.getSearchHits().stream()
                                 .map(SearchHit::getContent)
                                 .toList();

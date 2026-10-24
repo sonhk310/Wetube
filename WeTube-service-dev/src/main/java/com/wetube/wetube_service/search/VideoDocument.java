@@ -60,6 +60,10 @@ public class VideoDocument {
     @Field(type = FieldType.Text)
     private String name;
 
+    /** Tên kênh, để gõ tên kênh ra video của kênh. */
+    @Field(type = FieldType.Text)
+    private String channelName;
+
     @Field(type = FieldType.Text)
     private String picture;
 }

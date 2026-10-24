@@ -14,6 +14,7 @@ import com.wetube.wetube_service.repository.channel.ChannelCategoryRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
 import com.wetube.wetube_service.repository.UserRepository;
+import com.wetube.wetube_service.service.channel.ChannelIndexer;
 import com.wetube.wetube_service.service.channel.ChannelService;
 import com.wetube.wetube_service.service.impl.GeoIPService;
 import lombok.AllArgsConstructor;
@@ -37,6 +38,7 @@ public class ChannelServiceImpl implements ChannelService {
     private final ChannelCategoryRepository categoryRepository;
     private final GeoIPService geoIPService;
     private final SubscriptionRepository subscriptionRepository;
+    private final ChannelIndexer channelIndexer;
 
     @Override
     public ChannelResponseDto getChannelById(UUID channelId, UUID viewerId) {
@@ -96,5 +98,6 @@ public class ChannelServiceImpl implements ChannelService {
         user.setChannel(channel);
 
         userRepository.save(user);
+        channelIndexer.index(channel);
     }
 }
