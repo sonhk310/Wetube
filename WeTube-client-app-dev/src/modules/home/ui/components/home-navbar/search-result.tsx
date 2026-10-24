@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { SlidersHorizontal, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import apiClient from "@/lib/apiClient";
 import { cn, formatCompact, formatDuration } from "@/lib/utils";
 
@@ -252,8 +253,12 @@ function SearchResultsContent() {
         )}
       </div>
 
-      {panelOpen && !isChannel && (
-        <div className="mt-3 grid grid-cols-1 gap-4 rounded-xl border bg-white p-4 sm:grid-cols-3">
+      <Dialog open={panelOpen && !isChannel} onOpenChange={setPanelOpen}>
+        <DialogContent className="grid-cols-[minmax(0,1fr)] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Bộ lọc tìm kiếm</DialogTitle>
+          </DialogHeader>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           {FILTER_GROUPS.map((group) => {
             const current = { type, duration, uploaded, sort }[group.key];
             return (
@@ -266,7 +271,10 @@ function SearchResultsContent() {
                       <button
                         key={opt.value || "default"}
                         type="button"
-                        onClick={() => setFilter(group.key, opt.value)}
+                        onClick={() => {
+                          setFilter(group.key, opt.value);
+                          setPanelOpen(false); // như YouTube: chọn xong thì đóng
+                        }}
                         className={cn(
                           "flex items-center justify-between rounded-md px-2 py-1.5 text-left text-sm hover:bg-gray-100",
                           active && "font-semibold"
@@ -282,7 +290,8 @@ function SearchResultsContent() {
             );
           })}
         </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
