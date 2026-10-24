@@ -45,11 +45,16 @@ const PROGRESS_INTERVAL_MS = 15_000;
 /** Xem chưa tới chừng này giây thì chưa tính vào lịch sử. */
 const MIN_PROGRESS_SECONDS = 3;
 
-/** Phát tiếp từ vị trí cũ, trừ khi mới xem vài giây hoặc đã xem gần hết (giống YouTube). */
+/**
+ * Phát tiếp từ vị trí cũ, trừ khi mới xem vài giây hoặc đã xem gần hết (giống YouTube).
+ * Video ngắn: hai ngưỡng tính theo tỉ lệ (tối đa 20% độ dài), nếu không video 12 giây
+ * sẽ không bao giờ phát tiếp được (5 giây đầu + 10 giây cuối đã dài hơn cả video).
+ */
 function resumePosition(saved: number | null | undefined, duration: number) {
   if (!saved || !Number.isFinite(duration)) return 0;
-  const nearEnd = duration - Math.max(10, duration * 0.05);
-  return saved > 5 && saved < nearEnd ? saved : 0;
+  const head = Math.min(5, duration * 0.2);
+  const tail = Math.min(Math.max(10, duration * 0.05), duration * 0.2);
+  return saved > head && saved < duration - tail ? saved : 0;
 }
 
 type FlashIcon = "play" | "pause" | "forward" | "back" | "volume" | "mute";
