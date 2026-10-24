@@ -137,6 +137,7 @@ public class PlaylistServiceImpl implements PlaylistService {
                             .videoUrl(video.getVideoUrl())
                             .thumbnailUrl(video.getThumbnailUrl())
                             .duration(video.getDuration())
+                            .isShort(video.isShort())
                             .totalView(video.getTotalView())
                             .videoStatus(video.getVideosStatus() != null ? video.getVideosStatus().name() : null)
                             .description(video.getDescription())

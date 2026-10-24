@@ -267,6 +267,8 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
       abortRef.current?.abort();
     } else if (upload.phase === "done") {
       toastEmitter.success("Đã lưu bản nháp trong Studio");
+      // Studio lấy danh sách từ playlist "đã tải lên": phải làm mới cả cache Playlist
+      dispatch(playlistApi.util.invalidateTags(["Playlist"]));
       dispatch(videoApi.util.invalidateTags(["VideoList"]));
     }
     onClose();
