@@ -19,6 +19,8 @@ public class PlaylistVideoDetailDto {
     /** Boolean (không phải boolean) để JSON có khoá "isShort" thay vì "short". */
     private Boolean isShort;
     private int totalView;
+    /** Số bình luận (gồm cả trả lời); chỉ có ở API chi tiết playlist theo id (Studio dùng). */
+    private Long commentCount;
     /** Chế độ hiển thị của video (ACTIVE, UNLISTED, PRIVATE, INACTIVE...), để Studio hiện nhãn. */
     private String videoStatus;
     private LocalDateTime createdAt;

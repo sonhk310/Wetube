@@ -3,6 +3,7 @@ package com.wetube.wetube_service.service.impl;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ import com.wetube.wetube_service.dto.response.playlist.PlaylistVideoDto;
 import com.wetube.wetube_service.dto.response.playlist.UserPlaylistDto;
 import com.wetube.wetube_service.entity.AppUser;
 import com.wetube.wetube_service.entity.channel.Channel;
+import com.wetube.wetube_service.entity.interaction.Comment;
 import com.wetube.wetube_service.entity.playlist.Playlist;
 import com.wetube.wetube_service.entity.playlist.PlaylistVideo;
 import com.wetube.wetube_service.entity.video.Video;
@@ -27,6 +29,7 @@ import com.wetube.wetube_service.repository.PlaylistRepository;
 import com.wetube.wetube_service.repository.PlaylistVideoRepository;
 import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
+import com.wetube.wetube_service.repository.interaction.CommentRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.PlaylistService;
@@ -46,6 +49,7 @@ public class PlaylistServiceImpl implements PlaylistService {
     private final ChannelRepository channelRepo;
     private final PlaylistMapper playlistMapper;
     private final RedisService redisService;
+    private final CommentRepository commentRepository;
 
     @Override
     public UserPlaylistDto createPlaylist(CreatePlaylistRequest dto){
@@ -125,7 +129,9 @@ public class PlaylistServiceImpl implements PlaylistService {
                 .orElseThrow(() -> new ResourceNotFoundException("Playlist", "id", playlistId.toString()));
 
 //        return playlistMapper.toPlaylistDetailDto(playlist);
-        List<PlaylistVideoDetailDto> videoDetails = visibleVideos(playlist, viewerId, admin).stream()
+        List<PlaylistVideo> visible = visibleVideos(playlist, viewerId, admin);
+        Map<UUID, Long> commentCounts = commentCounts(visible);
+        List<PlaylistVideoDetailDto> videoDetails = visible.stream()
                 .map(playlistVideo -> {
                     Video video = playlistVideo.getVideo();
                     AppUser user = video.getUser();
@@ -139,6 +145,7 @@ public class PlaylistServiceImpl implements PlaylistService {
                             .duration(video.getDuration())
                             .isShort(video.isShort())
                             .totalView(video.getTotalView())
+                            .commentCount(commentCounts.getOrDefault(video.getId(), 0L))
                             .videoStatus(video.getVideosStatus() != null ? video.getVideosStatus().name() : null)
                             .description(video.getDescription())
                             .createdAt(video.getCreatedAt())
@@ -171,6 +178,16 @@ public class PlaylistServiceImpl implements PlaylistService {
         dto.setVideos(playlistMapper.toPlaylistVideoDetailDtoList(visible));
         dto.setTotalVideos(visible.size());
         return dto;
+    }
+
+    /** Số bình luận của các video trong playlist, đếm bằng một truy vấn. */
+    private Map<UUID, Long> commentCounts(List<PlaylistVideo> playlistVideos) {
+        if (playlistVideos.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> ids = playlistVideos.stream().map(pv -> pv.getVideo().getId()).toList();
+        return commentRepository.countByTargetIds(Comment.TargetType.VIDEO, ids).stream()
+                .collect(Collectors.toMap(row -> (UUID) row[0], row -> (Long) row[1]));
     }
 
     /**

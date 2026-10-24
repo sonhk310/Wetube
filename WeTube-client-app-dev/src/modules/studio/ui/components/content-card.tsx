@@ -12,6 +12,7 @@ import {
   Globe2,
   Link as LinkIcon,
   Lock,
+  MessageSquare,
   MoreVertical,
   Pencil,
   Trash2,
@@ -107,8 +108,13 @@ export function ContentCard({ video, vertical, onDelete }: ContentCardProps) {
           </span>
         </p>
         {!isDraft && (
-          <p className="mt-1 flex items-center gap-1 text-xs text-gray-600">
-            <BarChart3 className="h-3.5 w-3.5" /> {video.totalView}
+          <p className="mt-1 flex items-center gap-3 text-xs text-gray-600">
+            <span className="flex items-center gap-1" title="Lượt xem">
+              <BarChart3 className="h-3.5 w-3.5" /> {video.totalView}
+            </span>
+            <span className="flex items-center gap-1" title="Bình luận">
+              <MessageSquare className="h-3.5 w-3.5" /> {video.commentCount ?? 0}
+            </span>
           </p>
         )}
       </Link>

@@ -40,6 +40,8 @@ export interface VideoFromPlaylist {
   description: string;
   duration: number;
   totalView: number;
+  /** Số bình luận (gồm cả trả lời); chỉ có ở API chi tiết playlist theo id. */
+  commentCount?: number;
   /** Chế độ hiển thị: ACTIVE, UNLISTED, PRIVATE, INACTIVE (bị admin ẩn)... */
   videoStatus?: string;
   isShort?: boolean;

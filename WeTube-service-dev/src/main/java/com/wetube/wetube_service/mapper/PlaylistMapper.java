@@ -79,6 +79,7 @@ public interface PlaylistMapper {
     @Mapping(target = "description", source = "video.description")
     @Mapping(target = "duration", source = "video.duration")
     @Mapping(target = "totalView", source = "video.totalView")
+    @Mapping(target = "commentCount", ignore = true)
     @Mapping(target = "videoStatus", expression = "java(playlistVideo.getVideo().getVideosStatus() != null ? playlistVideo.getVideo().getVideosStatus().name() : null)")
     @Mapping(target = "createdAt", source = "createdAt")
     @Mapping(target = "updatedAt", source = "updatedAt")
