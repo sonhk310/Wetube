@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
   BellIcon,
   ChevronDownIcon,
@@ -12,7 +13,7 @@ import {
   HandThumbUpIcon as HandThumbUpSolid,
 } from "@heroicons/react/24/solid";
 import { useVideoStore } from "@/store/zustand/videoStore";
-import { timeAgo } from "@/lib/utils";
+import { formatCompact, timeAgo } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import {
   useSubscribeMutation,
@@ -32,6 +33,9 @@ import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
 export default function VideoMetadata() {
   const videoDetail = useVideoStore((state) => state.videoDetail);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  // Số người đăng ký đổi ngay khi bấm Đăng ký / Huỷ (server chỉ trả số lúc tải trang)
+  const [subscriberDelta, setSubscriberDelta] = useState(0);
+  const [subscribing, setSubscribing] = useState(false);
   const [savedLater, setSavedLater] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -40,7 +44,8 @@ export default function VideoMetadata() {
   const videoId = videoDetail?.detail?.id;
   const { data: likeInfo, refetch: refetchLike } = useGetLikeInfoQuery(
     { targetId: videoId ?? "", targetType: "VIDEO", userId: user?.sub ?? "" },
-    { skip: !videoId || !user?.sub }
+    // Số lượt thích tự cập nhật khi quay lại tab và mỗi 30 giây (khi tab đang mở)
+    { skip: !videoId || !user?.sub, refetchOnFocus: true, pollingInterval: 30_000, skipPollingIfUnfocused: true }
   );
   const [toggleLike] = useToggleLikeMutation();
   const [toggleDislike] = useToggleDislikeMutation();
@@ -49,6 +54,7 @@ export default function VideoMetadata() {
     if (videoDetail?.detail?.subscribed !== undefined) {
       setIsSubscribed(videoDetail.detail.subscribed);
     }
+    setSubscriberDelta(0);
   }, [videoDetail]);
 
   const [subscribe] = useSubscribeMutation();
@@ -123,8 +129,15 @@ export default function VideoMetadata() {
     }
   };
 
+  const isOwnChannel = !!user?.channelId && user.channelId === channelId;
+
   const handleSubscribe = async () => {
-    if (!user?.sub) return;
+    if (!user?.sub) {
+      toast.error("Hãy đăng nhập để đăng ký kênh");
+      return;
+    }
+    if (subscribing) return;
+    setSubscribing(true);
     try {
       if (!isSubscribed) {
         await subscribe({
@@ -133,15 +146,22 @@ export default function VideoMetadata() {
           tierId: undefined,
         }).unwrap();
         setIsSubscribed(true);
+        setSubscriberDelta((d) => d + 1);
+        toast.success("Đã đăng ký kênh");
       } else {
         await unsubscribe({
           subscriberId: user.sub,
           channelId,
         }).unwrap();
         setIsSubscribed(false);
+        setSubscriberDelta((d) => d - 1);
+        toast.success("Đã huỷ đăng ký");
       }
     } catch (err) {
       console.error("Failed to update subscription:", err);
+      toast.error("Không cập nhật được đăng ký, vui lòng thử lại");
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -164,24 +184,35 @@ export default function VideoMetadata() {
               <p className="font-bold font-lg cursor-pointer">{name}</p>
 
               <p className="text-gray-500 text-xs font-semibold">
-                {totalSubscribers}
+                {formatCompact(Math.max(0, (totalSubscribers ?? 0) + subscriberDelta))} người đăng ký
               </p>
             </section>
           </div>
-          <button
-            onClick={handleSubscribe}
-            className={`rounded-full flex gap-2 py-2 px-3 cursor-pointer ${
-              isSubscribed
-                ? "bg-gray-100 hover:bg-gray-200"
-                : "bg-black text-white hover:bg-gray-800"
-            } items-center`}
-          >
-            {isSubscribed && <BellIcon className="size-5" />}
-            <p className="text-sm font-bold">
-              {isSubscribed ? "Đã đăng ký" : "Đăng ký"}
-            </p>
-            {isSubscribed && <ChevronDownIcon className="size-4.5" />}
-          </button>
+          {isOwnChannel ? (
+            // Video của chính mình: YouTube hiện nút quản lý thay cho Đăng ký
+            <Link
+              href={`/studio/videos/${videoDetail.detail.id}`}
+              className="rounded-full bg-gray-100 hover:bg-gray-200 py-2 px-3 text-sm font-bold"
+            >
+              Chỉnh sửa video
+            </Link>
+          ) : (
+            <button
+              onClick={handleSubscribe}
+              disabled={subscribing}
+              className={`rounded-full flex gap-2 py-2 px-3 cursor-pointer disabled:opacity-70 ${
+                isSubscribed
+                  ? "bg-gray-100 hover:bg-gray-200"
+                  : "bg-black text-white hover:bg-gray-800"
+              } items-center`}
+            >
+              {isSubscribed && <BellIcon className="size-5" />}
+              <p className="text-sm font-bold">
+                {isSubscribed ? "Đã đăng ký" : "Đăng ký"}
+              </p>
+              {isSubscribed && <ChevronDownIcon className="size-4.5" />}
+            </button>
+          )}
         </section>
 
         <section className="flex justify-end items-center gap-3 ">

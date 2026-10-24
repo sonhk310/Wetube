@@ -28,11 +28,13 @@ export const subscriptionsApi = createApi({
         getSubscribedChannels: builder.query<Channel[], string>({
             query: (userId) => `/${userId}`,
         }),
+        // Backend trả chữ thường ("Subscribed successfully"), đọc như JSON sẽ báo lỗi dù đã đăng ký xong
         subscribe: builder.mutation<string, SubscriptionRequest>({
             query: (body) => ({
                 url: "/subscribe",
                 method: "POST",
                 body,
+                responseHandler: "text",
             }),
         }),
         unsubscribe: builder.mutation<string, UnsubscribeRequest>({
@@ -40,6 +42,7 @@ export const subscriptionsApi = createApi({
                 url: "/unsubscribe",
                 method: "POST",
                 body,
+                responseHandler: "text",
             }),
         }),
     }),

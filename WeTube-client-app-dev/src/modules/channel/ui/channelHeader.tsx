@@ -8,6 +8,7 @@ import {
   useUnsubscribeMutation,
 } from "@/app/api/subscriptionsApi";
 import { useAuth } from "@/contexts/auth-context";
+import { toastEmitter } from "@/lib/toastEmitter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 
@@ -39,7 +40,10 @@ export default function ChannelHeader() {
   const isOwner = !!user?.sub && user.sub === channel.userId;
 
   const handleSubscribe = async () => {
-    if (!user?.sub) return;
+    if (!user?.sub) {
+      toastEmitter.error("Hãy đăng nhập để đăng ký kênh");
+      return;
+    }
     try {
       if (subscribed) {
         await unsubscribe({ subscriberId: user.sub, channelId: channel.id }).unwrap();

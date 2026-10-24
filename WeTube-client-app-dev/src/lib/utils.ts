@@ -26,6 +26,13 @@ export const snakeCaseToTitle = (str: string) => {
     .replace(/\b\w/g, (match) => match.toUpperCase());
 };
 
+const compactFormatter = new Intl.NumberFormat("vi-VN", { notation: "compact", maximumFractionDigits: 1 });
+
+/** 1200 -> "1,2 N", 1250000 -> "1,3 Tr" (như YouTube tiếng Việt). */
+export function formatCompact(n: number): string {
+  return compactFormatter.format(n);
+}
+
 export function timeAgo(dateString: string): string {
   const now = new Date();
   const date = new Date(dateString);

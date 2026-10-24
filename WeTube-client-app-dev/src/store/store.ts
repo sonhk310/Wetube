@@ -7,6 +7,7 @@ import { searchApi } from "@/app/api/searchApi";
 import { videoApi } from "@/app/api/videoApi";
 import { subscriptionsApi } from "@/app/api/subscriptionsApi";
 import { configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
 import { channelApi } from '@/app/api/channelApi';
 import { interactionApi } from "@/app/api/interactionApi";
 
@@ -37,6 +38,9 @@ export const store = configureStore({
       interactionApi.middleware
     ),
 });
+
+// Cho phép refetchOnFocus / refetchOnReconnect của các query
+setupListeners(store.dispatch);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

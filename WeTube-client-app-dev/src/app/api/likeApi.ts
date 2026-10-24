@@ -39,6 +39,22 @@ export const likesApi = createApi({
                 method: "POST",
                 params: { targetId, targetType, userId },
             }),
+            // Đổi số ngay khi bấm; lỗi thì trả lại như cũ. Sau đó vẫn lấy lại số thật từ server.
+            async onQueryStarted({ targetId, targetType, userId }, { dispatch, queryFulfilled }) {
+                const patch = dispatch(
+                    likesApi.util.updateQueryData("getLikeInfo", { targetId, targetType, userId }, (draft) => {
+                        const liked = !draft.liked;
+                        draft.liked = liked;
+                        draft.likeCount = Math.max(0, draft.likeCount + (liked ? 1 : -1));
+                        if (liked) draft.disliked = false;
+                    })
+                );
+                try {
+                    await queryFulfilled;
+                } catch {
+                    patch.undo();
+                }
+            },
             invalidatesTags: (_result, _error, { targetId, targetType, userId }) => [
                 { type: "Like", id: `${targetType}-${targetId}-${userId}` },
             ],
