@@ -137,6 +137,13 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 - **Trang Lịch sử** (`history-list.tsx`, `SideBar.tsx`, zustand `store/zustand/useHistoryStore.ts`): ô tìm lọc theo tiêu đề / tên kênh; nút "Xóa tất cả nhật ký xem" (hỏi lại); nút "Tạm dừng / Bật lưu nhật ký xem"; nút "Xóa khỏi nhật ký xem" trước đây hỏng (gọi `/playlists/history/{id}`), giờ dùng API mới. DTO lịch sử có thêm `channelName` (trước hiện "Unknown"). Các nút "Quản lý toàn bộ nhật ký hoạt động", "Bình luận", "Bài đăng", "Trò chuyện trực tiếp" vẫn là nút chết, chưa động tới.
 - **Sự cố deploy:** lần deploy backend đầu (13:52 giờ VN, job `cmvm1jvl…`) bị crash-loop, Vibe Host giữ bản cũ. Em cho runner chạy trước `AdminSeeder` (`@Order(0)`), deploy lại thì chạy. Nhưng log lần sau không có dòng "Đã thêm cột", tức cột đã có sẵn (có lẽ Hibernate thêm ở lần hỏng), nên **nguyên nhân thật của lần crash đầu chưa xác nhận** (log health check bị cắt mất dòng lỗi).
 
+- **Sửa sau khi anh test (commit `ea17640`, `3ab8a69`, deploy backend 14:29, client 14:32 giờ VN):**
+  - Phải xem hết video mới thấy trong lịch sử: trình phát chỉ gửi vị trí mỗi 15 giây hoặc khi dừng / rời trang, nên xem ngắn rồi mở Lịch sử thì trang tải trước khi kịp ghi. Giờ xem được 3 giây là gửi ngay một lần (`video/index.tsx`, `firstReportedFor`).
+  - Lượt xem trong lịch sử luôn "0": client đọc `totalViews`, DTO là `totalView`.
+  - Tên kênh trong lịch sử bấm được (DTO thêm `channelId`, `VideoItem` có `Link` tới `/channel/{id}`).
+  - Sidebar: thêm "Kênh của bạn" (đầu mục "Bạn", `/channel/{user.channelId}`), bỏ "WeTube Studio", "Thêm từ WeTube" thành "Dịch vụ khác của WeTube".
+  - **Chưa sửa (chờ anh quyết):** "Hỗ trợ" trỏ nhầm `/otherservices/reportdiary` nên sáng cùng "Nhật ký báo cáo"; "Cài đặt" trỏ `/playlists/history` nên sáng ở trang Lịch sử. Trang `/otherservices/support`, `/otherservices/feedback` và trang cài đặt đều chưa có.
+
 **Đã kiểm tra:** `./gradlew compileJava compileTestJava`; test tạm trên H2 cho 2 truy vấn mới của `UserRepository` (đã xoá test); khởi động cả app trên H2 ở máy (context lên được, chỉ hỏng ở SQL riêng MySQL của `VideoSchemaInitializer`, không liên quan); `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`. Sau deploy: log backend không có Exception, 4 API mới trả 401 khi chưa đăng nhập, `/`, `/playlists/history`, `/watch/…` trả 200. **Chưa kiểm tra:** các thao tác khi đã đăng nhập, giao diện trên trình duyệt.
 
 ---
