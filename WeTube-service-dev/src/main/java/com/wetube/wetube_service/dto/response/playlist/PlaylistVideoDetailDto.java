@@ -16,6 +16,8 @@ public class PlaylistVideoDetailDto {
     private String thumbnailUrl;
     private String description;
     private float duration;
+    /** Boolean (không phải boolean) để JSON có khoá "isShort" thay vì "short". */
+    private Boolean isShort;
     private int totalView;
     /** Chế độ hiển thị của video (ACTIVE, UNLISTED, PRIVATE, INACTIVE...), để Studio hiện nhãn. */
     private String videoStatus;
