@@ -171,6 +171,16 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-upload-flow-design.md`; kế ho
 
 **Đã kiểm tra:** test backend `ShortsRuleTest` (3) và `VideoDraftTest` (3) qua, cả bộ test backend xanh; `tsc` (chỉ 12 lỗi TS7006 cũ), eslint các tệp đã sửa, `next build`. Sau deploy: log backend không có Exception, ENUM `videos_status` đã có `DRAFT`, `POST /api/videos/drafts` trả 401 khi chưa đăng nhập, `/api/videos/shorts` trả 200 (rỗng: video công khai duy nhất không đạt quy tắc Shorts mới), các trang `/`, `/studio`, `/shorts`, `/playlists/history` trả 200. **Chưa kiểm tra:** thử trên trình duyệt (tải lên thật, tiến trình, Shorts, danh sách phát, phụ đề AI).
 
+
+### Gói 13: E1 Số liệu phân tích (commit `aa1b7ae`…`8073a1d`, **chưa push, chờ anh duyệt**)
+Thiết kế: `docs/superpowers/specs/2026-10-24-studio-analytics-design.md`; kế hoạch: `docs/superpowers/plans/2026-10-24-studio-analytics.md`.
+- **Trang `/studio/analytics`** (mục "Số liệu phân tích" ở thanh bên Studio): 4 ô số (Lượt xem, Thời gian xem (giờ), Người đăng ký mới, Bình luận), bấm ô nào thì biểu đồ đường theo ngày vẽ số đó; chọn 7 / 28 / 90 ngày (mặc định 28). Chart của shadcn (`components/ui/chart.tsx`, `recharts` 2.15.4). Lượt xem / thời gian xem có vùng xám + chú thích "Chưa ghi dữ liệu trước …".
+- **Bảng `video_daily_stats`** (runner `VideoDailyStatsTableInitializer`, SQL thẳng qua `service/analytics/VideoStatsStore.java`, upsert cộng dồn, transaction riêng): lượt xem cộng trong `registerView`; thời gian xem cộng ở `/progress` (đã đăng nhập) và API mới công khai `POST /api/videos/{id}/watch-time?t=&anonId=` (khách, giới hạn 60 lần/phút/IP). Thời gian xem = phần vị trí tăng so với lần báo trước (Redis `wt:`), chỉ cộng khi 0 < delta ≤ 35 giây (đủ cho tốc độ 2x), tua thì lần đó 0.
+- **API `GET /api/studio/analytics?days=7|28|90`** (`StudioAnalyticsService`): ngày theo giờ VN, đủ mọi ngày; người đăng ký mới từ `subscriptions.created_at` (không trừ huỷ đăng ký), bình luận + trả lời trên video chưa xoá từ `comments.created_at` (có số liệu quá khứ); lượt xem / thời gian xem chỉ có từ ngày deploy.
+- **Em tự quyết:** chỉ số liệu cả kênh (chưa có biểu đồ riêng từng video); màu đường xanh `#065fd4`; lượt xem / bình luận của chính chủ kênh vẫn tính (giống số tổng hiện có).
+
+**Đã kiểm tra:** test backend `ViewStatsTest` (3), `WatchTimeTrackerTest` (4), `StudioAnalyticsServiceTest` (6: khoảng ngày sai → 400, đủ ngày, chia ngày giờ VN, tổng, `trackingSince`, chưa có kênh → 0), cả bộ xanh (10 lớp); client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build` (có route `/studio/analytics`). **Chưa kiểm tra:** câu SQL trên MySQL thật (máy không có MySQL, kiểm sau deploy), giao diện trên trình duyệt.
+- **Còn để ý:** khách có thể đổi `anonId` liên tục để thổi phồng thời gian xem (bị chặn ở 60 lần/phút/IP × 35 giây).
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
@@ -236,7 +246,7 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 ### E. Cho người làm video (Studio)
 | # | Việc | Ở đâu | Cỡ | Ghi chú |
 |---|---|---|---|---|
-| E1 | Thống kê: lượt xem theo ngày, thời gian xem, người đăng ký mới, video nổi bật | BE+FE | L | |
+| E1 | ✅ Thống kê: lượt xem theo ngày, thời gian xem, người đăng ký mới, bình luận | BE+FE | L | Gói 13; chưa có video nổi bật / biểu đồ từng video |
 | E2 | Duyệt / sửa phụ đề AI trước khi đăng | BE+FE | M | PRD có yêu cầu |
 | E3 | ✅ Thanh tiến trình upload + trạng thái "đang xử lý" | BE+FE | M | Gói 12 (làm cùng flow tải lên 4 bước, bản nháp, Shorts) |
 | E4 | Đặt lịch công khai video | BE+FE | M | |
