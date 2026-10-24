@@ -41,12 +41,22 @@ public class CommentServiceImpl implements CommentService {
     private final NotificationService notificationService;
 
     @Override
-    public List<CommentResponseDto> getCommentsByTargetId(UUID targetId, Comment.TargetType type) {
+    public List<CommentResponseDto> getCommentsByTargetId(UUID targetId, Comment.TargetType type, Sort sort) {
         List<Comment> roots = commentRepository
                 .findByTargetTypeAndTargetIdAndParentCommentIdIsNullOrderByCreatedAtDesc(type, targetId);
+        UUID ownerId = type == Comment.TargetType.VIDEO ? videoOwnerId(targetId) : null;
 
+        // Danh sách đã theo mới nhất; sort ổn định nên cùng điểm thì bình luận mới hơn vẫn đứng trước
+        Comparator<CommentResponseDto> order = Comparator.comparing(
+                (CommentResponseDto c) -> Boolean.TRUE.equals(c.getPinned())).reversed();
+        if (sort == Sort.TOP) {
+            order = order.thenComparing(
+                    c -> Optional.ofNullable(c.getLikeCount()).orElse(0) + Optional.ofNullable(c.getReplyCount()).orElse(0),
+                    Comparator.reverseOrder());
+        }
         return roots.stream()
-                .map(this::toResponseWithReplies)
+                .map(c -> toResponseWithReplies(c, ownerId))
+                .sorted(order)
                 .collect(Collectors.toList());
     }
 
@@ -55,7 +65,50 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
-        return toResponseWithReplies(comment);
+        return toResponseWithReplies(comment, ownerOf(comment));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UUID videoOwnerOf(UUID commentId) {
+        return commentRepository.findById(commentId).map(this::ownerOf).orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public CommentResponseDto setPinned(UUID commentId, boolean pinned) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+        if (comment.getParentCommentId() != null || comment.getTargetType() != Comment.TargetType.VIDEO) {
+            throw new IllegalArgumentException("Chỉ ghim được bình luận gốc dưới video");
+        }
+        if (pinned) {
+            commentRepository.unpinAll(comment.getTargetType(), comment.getTargetId());
+        }
+        commentRepository.setPinned(commentId, pinned);
+        return getCommentById(commentId);
+    }
+
+    @Override
+    @Transactional
+    public CommentResponseDto setHearted(UUID commentId, boolean hearted, UUID actorId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+        boolean wasHearted = Boolean.TRUE.equals(comment.getHearted());
+        UUID authorId = comment.getUser() != null ? comment.getUser().getId() : null;
+        UUID videoId = comment.getTargetId();
+        String content = comment.getContent();
+        commentRepository.setHearted(commentId, hearted);
+        if (hearted && !wasHearted) {
+            try {
+                notificationService.notifyCommentHeart(authorId, actorId, videoId, commentId, content);
+            } catch (Exception e) {
+                log.warn("Không tạo được thông báo tim cho bình luận {}: {}", commentId, e.getMessage());
+            }
+        }
+        Comment updated = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
+        return toResponseBasic(updated, ownerOf(updated));
     }
 
     @Override
@@ -82,6 +135,7 @@ public class CommentServiceImpl implements CommentService {
         comment.setUser(user);
         Comment saved = commentRepository.save(comment);
         notifyAboutComment(saved, user.getId());
+        UUID ownerId = ownerOf(saved);
 
         if (saved.getTargetType() == Comment.TargetType.POST) {
             postRepository.findById(saved.getTargetId()).ifPresent(post -> {
@@ -91,7 +145,7 @@ public class CommentServiceImpl implements CommentService {
             });
         }
 
-        return toResponseWithReplies(saved);
+        return toResponseWithReplies(saved, ownerId);
     }
 
     /** Trả lời bình luận -> báo người viết bình luận gốc; bình luận mới trên video -> báo chủ video. */
@@ -128,7 +182,7 @@ public class CommentServiceImpl implements CommentService {
         }
 
         Comment updated = commentRepository.save(comment);
-        return toResponseWithReplies(updated);
+        return toResponseWithReplies(updated, ownerOf(updated));
     }
 
     @Override
@@ -151,30 +205,46 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public List<CommentResponseDto> getReplies(UUID parentId) {
         List<Comment> replies = commentRepository.findByParentCommentIdOrderByCreatedAtAsc(parentId);
+        UUID ownerId = replies.isEmpty() ? null : ownerOf(replies.get(0));
         return replies.stream()
-                .map(this::toResponseBasic)
+                .map(c -> toResponseBasic(c, ownerId))
                 .collect(Collectors.toList());
     }
 
-    private CommentResponseDto toResponseWithReplies(Comment comment) {
-        CommentResponseDto dto = toResponseBasic(comment);
+    /** Chủ video chứa bình luận, null nếu không phải bình luận video. */
+    private UUID ownerOf(Comment comment) {
+        return comment.getTargetType() == Comment.TargetType.VIDEO ? videoOwnerId(comment.getTargetId()) : null;
+    }
+
+    private UUID videoOwnerId(UUID videoId) {
+        return videoRepository.findById(videoId)
+                .map(v -> v.getUser() != null ? v.getUser().getId() : null)
+                .orElse(null);
+    }
+
+    private CommentResponseDto toResponseWithReplies(Comment comment, UUID videoOwnerId) {
+        CommentResponseDto dto = toResponseBasic(comment, videoOwnerId);
 
         List<Comment> replies = commentRepository.findByParentCommentIdOrderByCreatedAtAsc(comment.getId());
         dto.setReplyCount(replies.size());
         dto.setReplies(
                 replies.stream()
-                        .map(this::toResponseBasic) // reply cũng có userDto
+                        .map(c -> toResponseBasic(c, videoOwnerId)) // reply cũng có userDto
                         .collect(Collectors.toList()));
 
         return dto;
     }
 
-    private CommentResponseDto toResponseBasic(Comment comment) {
+    private CommentResponseDto toResponseBasic(Comment comment, UUID videoOwnerId) {
         CommentResponseDto dto = commentMapper.toResponseDto(comment);
 
         if (comment.getUser() != null) {
             dto.setUser(userMapper.toBasicDto(comment.getUser()));
         }
+        dto.setPinned(Boolean.TRUE.equals(comment.getPinned()));
+        dto.setHearted(Boolean.TRUE.equals(comment.getHearted()));
+        dto.setByCreator(videoOwnerId != null && comment.getUser() != null
+                && videoOwnerId.equals(comment.getUser().getId()));
 
         dto.setReplyCount(0);
         dto.setReplies(Collections.emptyList());

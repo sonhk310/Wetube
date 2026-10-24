@@ -62,6 +62,11 @@ const ReportStatus: React.FC = () => {
                     <Link href={`/watch/${r.videoId}`} className="text-blue-600 hover:underline">
                       {r.videoTitle}
                     </Link>
+                    {r.commentId && (
+                      <div className="text-xs text-gray-600 mt-1 break-words">
+                        Bình luận: {r.commentContent ?? "(đã bị xoá)"}
+                      </div>
+                    )}
                   </td>
                   <td className="py-3 px-4">
                     {REPORT_REASONS[r.reason] ?? r.reason}

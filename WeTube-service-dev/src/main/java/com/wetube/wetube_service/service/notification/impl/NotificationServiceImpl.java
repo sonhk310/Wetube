@@ -82,6 +82,15 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void notifyCommentHeart(UUID recipientId, UUID actorId, UUID videoId, UUID commentId, String text) {
+        if (notificationRepo.existsByTypeAndCommentId(Notification.Type.COMMENT_HEART, commentId)) {
+            return;
+        }
+        notifyComment(Notification.Type.COMMENT_HEART, recipientId, actorId, videoId, commentId, text);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public NotificationPage list(UUID userId, int page, int size) {
         Page<Notification> result = notificationRepo.findByRecipientIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size));

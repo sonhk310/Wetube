@@ -10,7 +10,7 @@ import { API_PREFIX } from "@/constants/appConstant";
 import { apiFetch } from "@/lib/apiFetch";
 import { cn, timeAgo } from "@/lib/utils";
 
-type NotificationType = "NEW_VIDEO" | "COMMENT_REPLY" | "VIDEO_COMMENT";
+type NotificationType = "NEW_VIDEO" | "COMMENT_REPLY" | "VIDEO_COMMENT" | "COMMENT_HEART";
 
 interface NotificationItem {
   id: string;
@@ -45,6 +45,8 @@ function message(n: NotificationItem) {
       return `${who} đã trả lời bình luận của bạn: "${n.text ?? ""}"`;
     case "VIDEO_COMMENT":
       return `${who} đã bình luận về video "${n.videoTitle ?? ""}": "${n.text ?? ""}"`;
+    case "COMMENT_HEART":
+      return `${who} đã thả ❤️ bình luận của bạn: "${n.text ?? ""}"`;
   }
 }
 

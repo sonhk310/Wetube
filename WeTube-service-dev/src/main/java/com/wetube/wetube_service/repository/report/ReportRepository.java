@@ -14,7 +14,11 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
 
     List<Report> findAllByOrderByCreatedAtDesc();
 
-    boolean existsByVideoIdAndReporterIdAndStatus(UUID videoId, UUID reporterId, Report.Status status);
+    boolean existsByVideoIdAndCommentIdIsNullAndReporterIdAndStatus(UUID videoId, UUID reporterId, Report.Status status);
+
+    boolean existsByCommentIdAndReporterIdAndStatus(UUID commentId, UUID reporterId, Report.Status status);
+
+    List<Report> findByCommentIdAndStatus(UUID commentId, Report.Status status);
 
     List<Report> findByVideoIdAndStatus(UUID videoId, Report.Status status);
 }

@@ -1,5 +1,6 @@
 package com.wetube.wetube_service.security;
 
+import com.wetube.wetube_service.entity.interaction.Comment;
 import com.wetube.wetube_service.enumeration.PlaylistType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -25,6 +26,54 @@ public class OwnershipGuard {
     @Transactional(readOnly = true)
     public void commentOwner(UUID commentId, Jwt jwt) {
         check(single("select c.user.id from Comment c where c.id = :id", commentId), jwt);
+    }
+
+    /** Xoá bình luận: người viết, chủ video chứa bình luận, hoặc admin. */
+    @Transactional(readOnly = true)
+    public void commentRemovable(UUID commentId, Jwt jwt) {
+        UUID me = CurrentUser.id(jwt);
+        UUID author = single("select c.user.id from Comment c where c.id = :id", commentId);
+        if (author != null && author.equals(me)) {
+            return;
+        }
+        UUID videoOwner = commentVideoOwnerId(commentId);
+        if (videoOwner != null && videoOwner.equals(me)) {
+            return;
+        }
+        if (author == null && videoOwner == null
+                && single("select c.id from Comment c where c.id = :id", commentId) == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy");
+        }
+        if (!CurrentUser.isAdmin(jwt)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền với nội dung này");
+        }
+    }
+
+    /**
+     * Ghim / thả tim: chỉ đúng chủ video chứa bình luận (admin cũng không, vì tim và ghim hiển thị là
+     * của chủ kênh).
+     */
+    @Transactional(readOnly = true)
+    public void commentVideoOwner(UUID commentId, Jwt jwt) {
+        UUID me = CurrentUser.id(jwt);
+        if (single("select c.id from Comment c where c.id = :id", commentId) == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy");
+        }
+        UUID videoOwner = commentVideoOwnerId(commentId);
+        if (videoOwner == null || !videoOwner.equals(me)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Chỉ chủ video mới làm được việc này");
+        }
+    }
+
+    private UUID commentVideoOwnerId(UUID commentId) {
+        List<UUID> rows = em.createQuery("""
+                        select v.user.id from Video v, Comment c
+                        where c.id = :id and c.targetType = :video and v.id = c.targetId""", UUID.class)
+                .setParameter("id", commentId)
+                .setParameter("video", Comment.TargetType.VIDEO)
+                .setMaxResults(1)
+                .getResultList();
+        return rows.isEmpty() ? null : rows.get(0);
     }
 
     @Transactional(readOnly = true)

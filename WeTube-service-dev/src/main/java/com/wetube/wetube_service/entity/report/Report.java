@@ -8,7 +8,10 @@ import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/** Báo cáo vi phạm của người xem đối với một video; admin xử lý trong trang quản trị của client. */
+/**
+ * Báo cáo vi phạm của người xem đối với một video, hoặc một bình luận dưới video (commentId khác null);
+ * admin xử lý trong trang quản trị của client.
+ */
 @Entity
 @Table(name = "reports")
 @Getter
@@ -29,6 +32,11 @@ public class Report {
     @Column(name = "video_id", nullable = false, columnDefinition = "VARCHAR(36)")
     @JdbcTypeCode(SqlTypes.VARCHAR)
     private UUID videoId;
+
+    /** Có giá trị khi báo cáo một bình luận (videoId là video chứa bình luận đó). */
+    @Column(name = "comment_id", columnDefinition = "VARCHAR(36)")
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    private UUID commentId;
 
     @Column(name = "reporter_id", nullable = false, columnDefinition = "VARCHAR(36)")
     @JdbcTypeCode(SqlTypes.VARCHAR)

@@ -7,6 +7,8 @@ import {useAuth} from "@/contexts/auth-context";
 import { useCreateCommentMutation } from "@/app/api/commentApi";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import Image from 'next/image';
+import { toastEmitter } from "@/lib/toastEmitter";
+import { apiErrorMessage } from "@/lib/apiError";
 
 export const CommentInput = () => {
     const [isFocused, setIsFocused] = useState(false);
@@ -40,7 +42,8 @@ export const CommentInput = () => {
             setValue("");
             setIsFocused(false);
         } catch (err) {
-            console.error("Failed to post comment:", err);
+            // Giữ nguyên chữ trong ô để người dùng gửi lại
+            toastEmitter.error(apiErrorMessage(err, "Không gửi được bình luận, vui lòng thử lại."), { autoClose: 4000 });
         }
     };
 

@@ -9,7 +9,19 @@ import java.util.UUID;
 
 public interface CommentService {
 
-    List<CommentResponseDto> getCommentsByTargetId(UUID targetId, Comment.TargetType type);
+    enum Sort { TOP, NEWEST }
+
+    /** Bình luận gốc của target; bình luận đã ghim luôn đứng đầu. */
+    List<CommentResponseDto> getCommentsByTargetId(UUID targetId, Comment.TargetType type, Sort sort);
+
+    /** Chủ của video chứa bình luận (null nếu bình luận không thuộc video). */
+    UUID videoOwnerOf(UUID commentId);
+
+    /** Ghim bình luận gốc (bỏ ghim bình luận đang ghim khác của video) hoặc bỏ ghim. */
+    CommentResponseDto setPinned(UUID commentId, boolean pinned);
+
+    /** Chủ video thả / bỏ tim. */
+    CommentResponseDto setHearted(UUID commentId, boolean hearted, UUID actorId);
 
     CommentResponseDto getCommentById(UUID id);
 

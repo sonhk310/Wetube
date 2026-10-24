@@ -31,6 +31,9 @@ public interface NotificationService {
     /** Trả lời bình luận / bình luận video. Bỏ qua khi người nhận chính là người bình luận. */
     void notifyComment(Notification.Type type, UUID recipientId, UUID actorId, UUID videoId, UUID commentId, String text);
 
+    /** Chủ video thả tim bình luận: báo người viết, mỗi bình luận một lần (bỏ tim rồi thả lại không báo nữa). */
+    void notifyCommentHeart(UUID recipientId, UUID actorId, UUID videoId, UUID commentId, String text);
+
     NotificationPage list(UUID userId, int page, int size);
 
     long unreadCount(UUID userId);

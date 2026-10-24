@@ -1,6 +1,6 @@
 # WeTube → "YouTube của riêng mình": đã làm, đang làm, sẽ làm
 
-Cập nhật: 2026-10-23. File này để anh đọc ở nhà rồi làm tiếp. Không chứa mật khẩu hay khoá nào.
+Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp. Không chứa mật khẩu hay khoá nào.
 
 - Client: https://wetube.vibe.tinhgon.xyz
 - Backend: https://wetube-service.vibe.tinhgon.xyz
@@ -92,6 +92,19 @@ Cập nhật: 2026-10-23. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Chưa kiểm tra trên trình duyệt thật:** xem trước khi rê chuột, menu ⋮, thanh chip, hết thu hẹp trang (anh sẽ thử).
 
+### Gói 8: A6 + A7, bình luận kiểu YouTube (commit, CHƯA deploy)
+- **Sắp xếp** "Bình luận hàng đầu" (thích + trả lời nhiều trước) / "Mới nhất xếp trước": `GET /api/comments/VIDEO/{id}?sort=top|newest` (mặc định `top`). Bình luận đã ghim luôn ở đầu. Số bình luận tính cả phản hồi.
+- **Ghim** (chủ video, chỉ bình luận gốc, mỗi video 1 cái): `POST|DELETE /api/comments/{id}/pin`. Hiện "📌 Đã ghim bởi {kênh}".
+- **Tim của chủ kênh**: `POST|DELETE /api/comments/{id}/heart`. Hiện ảnh kênh kèm tim đỏ; người viết nhận thông báo `COMMENT_HEART` (mỗi bình luận một lần).
+- Ghim / tim: chỉ đúng chủ video (admin cũng không, vì hiển thị là của chủ kênh). Cập nhật bằng câu `UPDATE` thẳng để không đổi `updatedAt`.
+- **Chủ video gỡ được bình luận** của người khác dưới video mình (`OwnershipGuard.commentRemovable`); sửa vẫn chỉ người viết.
+- **Báo cáo bình luận**: `POST /api/reports` nhận `commentId` (bảng `reports` thêm cột `comment_id`). Admin có nút "Xoá bình luận" (`action=DELETE_COMMENT`), Nhật ký báo cáo hiện nội dung bình luận. Không báo cáo được bình luận của chính mình. Hộp thoại báo cáo dùng chung (`modules/reports/report-dialog.tsx`).
+- Thẻ bình luận: menu ⋮ (Ghim / Chỉnh sửa / Xoá hoặc Gỡ bỏ / Báo cáo; màn hình lớn chỉ hiện khi rê chuột), nhãn tên xám cho chủ kênh, "x giờ trước" + "(đã chỉnh sửa)", số thích hiện cả khi chưa đăng nhập.
+- **A7**: lỗi khi gửi bình luận / phản hồi / sửa / xoá / ghim / tim hiện toast (lấy `message` của backend, vd. 429 "Bạn bình luận quá nhanh..."), chữ vẫn giữ trong ô (`lib/apiError.ts`).
+- Schema: `job/CommentSchemaInitializer.java` thêm `comments.pinned`, `comments.hearted`, `reports.comment_id` nếu chưa có (mỗi câu một transaction riêng).
+
+**Đã kiểm tra:** biên dịch backend (Gradle 8.14.3), `tsc` (chỉ còn 12 lỗi TS7006 cũ), eslint, `next build`. **Chưa kiểm tra:** chạy thật trên server (chưa deploy), giao diện trên trình duyệt.
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
@@ -106,7 +119,6 @@ Nếu có lỗi: ghi giờ + màn hình, em tra log (`get_runtime_logs`).
 
 ### 2.2 Redis: phần còn lại
 - Code đã xong (xem gói 3 ở trên). Cấu hình Redis trên Vibe Host đề xuất: 0,25 core (tối đa 0,5), RAM 64–128 MB, `maxmemory-policy allkeys-lru`, tắt lưu đĩa (chỉ dùng làm cache). Em chưa kiểm tra Redis đang chạy với cấu hình nào.
-- Client chưa hiện thông báo khi bị 429 ở ô bình luận (bình luận không gửi được nhưng chữ vẫn còn trong ô, lỗi chỉ ghi ra console). Phụ đề AI và báo cáo thì đã hiện thông báo lỗi của backend.
 - Sau này nếu cần: gộp lượt xem rồi ghi MySQL theo lô; lưu trạng thái phòng xem chung vào Redis.
 
 ---
@@ -124,9 +136,9 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 | A3 | ✅ **Màn hình hết video + tự phát video tiếp theo** (đếm ngược, nút huỷ, công tắc Tự phát) | FE | M | Hiện chỉ có nút xem lại |
 | A4 | ✅ **Thông báo (chuông)**: kênh đã đăng ký có video mới, có người trả lời / thích bình luận | BE+FE | L | Đã ẩn nút; cần bảng thông báo, API, đếm chưa đọc |
 | A5 | ✅ **Trang Đăng ký dạng bảng tin**: video mới của các kênh đã đăng ký | BE+FE | M | Hiện là giao diện bong bóng kênh |
-| A6 | **Bình luận**: sắp xếp Nổi bật / Mới nhất, ghim, tim của chủ kênh, báo cáo bình luận | BE+FE | M | Chưa có |
-| A7 | **Báo lỗi khi bị giới hạn (429)** ở ô bình luận | FE | S | Hiện bình luận không gửi được mà không báo gì |
-| A8 | **Gắn tag cho video hiện có** để chip trang chủ có dữ liệu | dữ liệu | S | Hiện chỉ có chip "Tất cả" |
+| A6 | ✅ **Bình luận**: sắp xếp Nổi bật / Mới nhất, ghim, tim của chủ kênh, báo cáo bình luận | BE+FE | M | Gói 8 |
+| A7 | ✅ **Báo lỗi khi bị giới hạn (429)** ở ô bình luận | FE | S | Gói 8 |
+| A8 | **Gắn tag cho video hiện có** để chip trang chủ có dữ liệu | dữ liệu | S | 24/10: production chỉ có 1 video công khai ("view"), chưa có tag nào. Không cần code: anh gắn tag khi upload / sửa video trong Studio (hoặc nút AI viết mô tả và thẻ) |
 
 ### B. Trình phát
 | # | Việc | Ở đâu | Cỡ | Ghi chú |

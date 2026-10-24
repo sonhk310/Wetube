@@ -3,6 +3,9 @@ import { API_PREFIX } from "@/constants/appConstant";
 
 export type TargetType = "POST" | "VIDEO" | "COMMENT";
 
+/** top: nhiều thích + trả lời trước; newest: mới nhất trước. Bình luận đã ghim luôn ở đầu. */
+export type CommentSort = "top" | "newest";
+
 export interface Comment {
     id: string;
     userId: string;
@@ -13,6 +16,12 @@ export interface Comment {
     replyCount?: number;
     replies?: Comment[];
     likeCount?: number;
+    /** Chủ video đã ghim. */
+    pinned?: boolean;
+    /** Chủ video đã thả tim. */
+    hearted?: boolean;
+    /** Người viết là chủ video. */
+    byCreator?: boolean;
 
     user?: {
         id: string;
@@ -42,8 +51,8 @@ export const commentApi = createApi({
     baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/comments`, credentials: "include" }),
     tagTypes: ["Comment"],
     endpoints: (builder) => ({
-        getCommentsByTarget: builder.query<Comment[], { targetId: string; targetType: TargetType }>({
-            query: ({ targetId, targetType }) => `/${targetType}/${targetId}`,
+        getCommentsByTarget: builder.query<Comment[], { targetId: string; targetType: TargetType; sort?: CommentSort }>({
+            query: ({ targetId, targetType, sort }) => `/${targetType}/${targetId}${sort ? `?sort=${sort}` : ""}`,
             providesTags: (result, error, { targetId }) =>
                 result
                     ? [
@@ -87,6 +96,23 @@ export const commentApi = createApi({
             ],
         }),
 
+        /** Chủ video ghim / bỏ ghim bình luận gốc (targetId = id video, để tải lại danh sách). */
+        pinComment: builder.mutation<Comment, { id: string; targetId: string; pinned: boolean }>({
+            query: ({ id, pinned }) => ({
+                url: `/${id}/pin`,
+                method: pinned ? "POST" : "DELETE",
+            }),
+            invalidatesTags: (result, error, { targetId }) => [{ type: "Comment", id: `LIST-${targetId}` }],
+        }),
+
+        /** Chủ video thả / bỏ tim. Thẻ bình luận tự cập nhật trạng thái, không tải lại danh sách. */
+        heartComment: builder.mutation<Comment, { id: string; hearted: boolean }>({
+            query: ({ id, hearted }) => ({
+                url: `/${id}/heart`,
+                method: hearted ? "POST" : "DELETE",
+            }),
+        }),
+
         deleteComment: builder.mutation<void, { id: string; targetId: string }>({
             query: ({ id }) => ({
                 url: `/${id}`,
@@ -106,4 +132,6 @@ export const {
     useCreateCommentMutation,
     useUpdateCommentMutation,
     useDeleteCommentMutation,
+    usePinCommentMutation,
+    useHeartCommentMutation,
 } = commentApi;

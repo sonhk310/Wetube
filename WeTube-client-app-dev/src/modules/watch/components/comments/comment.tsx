@@ -2,8 +2,12 @@
 import {
     ChevronDownIcon,
     ChevronUpIcon,
+    EllipsisVerticalIcon,
     HandThumbUpIcon,
+    HeartIcon,
 } from "@heroicons/react/24/outline";
+import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
+import { Flag, Pencil, Pin, PinOff, Trash2 } from "lucide-react";
 import Profile from "../misc/profile";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
@@ -11,12 +15,24 @@ import { useGetLikeInfoQuery, useToggleLikeMutation } from "@/app/api/likeApi";
 import { useAuth } from "@/contexts/auth-context";
 import { API_PREFIX } from "@/constants/appConstant";
 import { apiFetch } from "@/lib/apiFetch";
+import { apiErrorMessage } from "@/lib/apiError";
+import { toastEmitter } from "@/lib/toastEmitter";
+import { timeAgo } from "@/lib/utils";
 import {
     useCreateCommentMutation,
     useDeleteCommentMutation,
+    useHeartCommentMutation,
+    usePinCommentMutation,
     useUpdateCommentMutation,
 } from "@/app/api/commentApi";
 import { useVideoStore } from "@/store/zustand/videoStore";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ReportDialog from "@/modules/reports/report-dialog";
 
 export interface Comment {
     id: string;
@@ -25,11 +41,19 @@ export interface Comment {
     comment: string;
     picture: string;
     commentedAt: string;
+    /** Có sau khi người viết sửa bình luận. */
+    editedAt?: string;
     likes: number;
     dislikes: number;
     replyCount: number;
     replies?: Comment[];
+    pinned: boolean;
+    hearted: boolean;
+    byCreator: boolean;
 }
+
+// Sửa sau khi đăng hơn chừng này thì hiện "(đã chỉnh sửa)"
+const EDITED_THRESHOLD_MS = 2000;
 
 // Chuyển bình luận từ API sang dạng hiển thị
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,10 +64,18 @@ export const mapApiCommentToUI = (apiComment: any): Comment => ({
     comment: apiComment.content,
     picture: apiComment.user?.picture ?? "",
     commentedAt: apiComment.createdAt,
+    editedAt:
+        apiComment.updatedAt &&
+        new Date(apiComment.updatedAt).getTime() - new Date(apiComment.createdAt).getTime() > EDITED_THRESHOLD_MS
+            ? apiComment.updatedAt
+            : undefined,
     likes: apiComment.likeCount ?? 0,
     dislikes: 0,
     replyCount: apiComment.replyCount ?? 0,
     replies: apiComment.replies ?? [],
+    pinned: !!apiComment.pinned,
+    hearted: !!apiComment.hearted,
+    byCreator: !!apiComment.byCreator,
 });
 
 const item = {
@@ -65,7 +97,10 @@ const getRandomBackground = () => {
     return colors[num];
 };
 
-/** Ô nhập nhanh dùng cho "Trả lời" và "Sửa". */
+const showError = (err: unknown, fallback: string) =>
+    toastEmitter.error(apiErrorMessage(err, fallback), { autoClose: 4000 });
+
+/** Ô nhập nhanh dùng cho "Phản hồi" và "Chỉnh sửa". */
 const InlineComposer = ({
     initialValue,
     placeholder,
@@ -136,11 +171,15 @@ export const CommentComponent = ({
     }>({ isLoading: false, loaded: false, replies: [] });
     const [isReplying, setIsReplying] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [reportOpen, setReportOpen] = useState(false);
     // Nội dung sau khi sửa, hiển thị ngay mà không chờ tải lại danh sách
     const [editedContent, setEditedContent] = useState<string | null>(null);
+    // Tim vừa bấm (chưa có trong dữ liệu từ API)
+    const [heartOverride, setHeartOverride] = useState<boolean | null>(null);
     const { user } = useAuth();
     const userId = user?.sub;
-    const videoId = useVideoStore((state) => state.videoDetail?.detail.id);
+    const video = useVideoStore((state) => state.videoDetail?.detail);
+    const videoId = video?.id;
 
     const { data: likeInfo } = useGetLikeInfoQuery(
         { targetId: comment.id, targetType: "COMMENT", userId: userId! },
@@ -150,25 +189,53 @@ export const CommentComponent = ({
     const [deleteComment, { isLoading: isDeleting }] = useDeleteCommentMutation();
     const [createComment, { isLoading: isPosting }] = useCreateCommentMutation();
     const [updateComment, { isLoading: isUpdating }] = useUpdateCommentMutation();
+    const [pinComment] = usePinCommentMutation();
+    const [heartComment, { isLoading: isHearting }] = useHeartCommentMutation();
     const isOwner = !!userId && userId === comment.authorId;
-    // Chủ bình luận hoặc admin được xoá (backend cũng kiểm tra quyền)
-    const canDelete = !!userId && (isOwner || !!user?.roles?.includes("ROLE_ADMIN"));
+    const isAdmin = !!user?.roles?.includes("ROLE_ADMIN");
+    // Chủ video: ghim, thả tim, gỡ bình luận của người khác (backend cũng kiểm tra quyền)
+    const isVideoOwner = !!user?.channelId && user.channelId === video?.channelId;
+    const canDelete = !!userId && (isOwner || isVideoOwner || isAdmin);
+    const hearted = heartOverride ?? comment.hearted;
     // Danh sách bình luận của video được làm mới theo id video
     const listTargetId = videoId ?? targetId;
 
     const handleDelete = async () => {
-        if (!window.confirm("Xoá bình luận này?")) return;
+        if (!window.confirm(isOwner ? "Xoá bình luận này?" : "Gỡ bình luận này khỏi video?")) return;
         try {
             await deleteComment({ id: comment.id, targetId: listTargetId }).unwrap();
             onDeleted?.(comment.id);
         } catch (err) {
-            console.error("Delete comment failed:", err);
+            showError(err, "Không xoá được bình luận.");
         }
     };
 
     const handleLike = async () => {
-        if (!userId) return;
+        if (!userId) {
+            toastEmitter.info("Hãy đăng nhập để thích bình luận");
+            return;
+        }
         await toggleLike({ targetId: comment.id, targetType: "COMMENT", userId });
+    };
+
+    const handlePin = async () => {
+        try {
+            await pinComment({ id: comment.id, targetId: listTargetId, pinned: !comment.pinned }).unwrap();
+            toastEmitter.success(comment.pinned ? "Đã bỏ ghim bình luận" : "Đã ghim bình luận");
+        } catch (err) {
+            showError(err, "Không ghim được bình luận.");
+        }
+    };
+
+    const handleHeart = async () => {
+        const next = !hearted;
+        setHeartOverride(next);
+        try {
+            await heartComment({ id: comment.id, hearted: next }).unwrap();
+        } catch (err) {
+            setHeartOverride(!next);
+            showError(err, "Không thả tim được.");
+        }
     };
 
     const loadReplies = useCallback(async (commentId: string) => {
@@ -213,7 +280,8 @@ export const CommentComponent = ({
                 await loadReplies(comment.id);
             }
         } catch (err) {
-            console.error("Reply failed:", err);
+            // Ô phản hồi vẫn mở, giữ nguyên chữ để gửi lại
+            showError(err, "Không gửi được phản hồi, vui lòng thử lại.");
         }
     };
 
@@ -241,7 +309,7 @@ export const CommentComponent = ({
             setEditedContent(content);
             setIsEditing(false);
         } catch (err) {
-            console.error("Edit comment failed:", err);
+            showError(err, "Không lưu được bình luận, vui lòng thử lại.");
         }
     };
 
@@ -251,30 +319,47 @@ export const CommentComponent = ({
 
     // Số phản hồi hiển thị: ưu tiên danh sách đã tải (đúng sau khi thêm/xoá), nếu chưa tải thì lấy từ API
     const replyCount = replies.loaded ? replies.replies.length : comment.replyCount;
+    const canPin = isVideoOwner && !rootId;
+    const canReport = !!userId && !isOwner;
+    const hasMenu = canPin || isOwner || canDelete || canReport;
+    const isEdited = !!comment.editedAt || editedContent !== null;
 
     return (
         <motion.div
             variants={item}
-            className="flex w-full justify-start items-start gap-4"
+            className="group flex w-full justify-start items-start gap-4"
         >
             {comment.picture ? (
                 <Profile url={comment.picture} size="10" />
             ) : (
                 <div
-                    className={`h-10 w-10 ${getRandomBackground()} text-white font-semibold text-lg flex justify-center items-center rounded-full`}
+                    className={`h-10 w-10 shrink-0 ${getRandomBackground()} text-white font-semibold text-lg flex justify-center items-center rounded-full`}
                 >
                     {comment.commenter.toUpperCase().charAt(0)}
                 </div>
             )}
-            <div className="flex flex-col justify-center items-start w-full gap-1">
+            <div className="flex flex-col justify-center items-start w-full min-w-0 gap-1">
+                {comment.pinned && !rootId && (
+                    <p className="flex items-center gap-1 text-xs text-gray-600">
+                        <Pin className="size-3.5" />
+                        Đã ghim bởi {video?.name ?? "chủ kênh"}
+                    </p>
+                )}
                 <span className="flex justify-start items-center gap-2">
-          <p className="text-gray-700 text-sm font-semibold">
-            {comment.commenter}
-          </p>
-          <p className="text-xs text-gray-600">
-            {new Date(comment.commentedAt).toLocaleDateString("vi-VN")}
-          </p>
-        </span>
+                    {comment.byCreator ? (
+                        <p className="bg-gray-500 text-white text-xs font-semibold rounded-full px-2 py-0.5">
+                            {comment.commenter}
+                        </p>
+                    ) : (
+                        <p className="text-gray-700 text-sm font-semibold">
+                            {comment.commenter}
+                        </p>
+                    )}
+                    <p className="text-xs text-gray-600">
+                        {timeAgo(comment.commentedAt)}
+                        {isEdited && " (đã chỉnh sửa)"}
+                    </p>
+                </span>
 
                 {isEditing ? (
                     <InlineComposer
@@ -297,43 +382,54 @@ export const CommentComponent = ({
                         className={`inline-flex justify-center items-center gap-1 ${
                             likeInfo?.liked ? "text-blue-600" : "hover:text-blue-600"
                         }`}
+                        aria-label="Thích"
                     >
                         <HandThumbUpIcon className="size-5" />
-                        {(likeInfo?.likeCount ?? 0) > 0 && (
+                        {(likeInfo?.likeCount ?? comment.likes) > 0 && (
                             <p className="text-xs text-gray-600 ">
-                                {likeInfo?.likeCount ?? 0}
+                                {likeInfo?.likeCount ?? comment.likes}
                             </p>
                         )}
                     </button>
+                    {hearted ? (
+                        // Tim của chủ kênh: ảnh đại diện kênh kèm tim đỏ; chủ kênh bấm để bỏ tim
+                        <button
+                            onClick={isVideoOwner ? handleHeart : undefined}
+                            disabled={!isVideoOwner || isHearting}
+                            title={`Được ${video?.name ?? "chủ kênh"} thả tim`}
+                            aria-label={`Được ${video?.name ?? "chủ kênh"} thả tim`}
+                            className="relative size-6 shrink-0 disabled:cursor-default"
+                        >
+                            {video?.picture ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={video.picture} alt="" className="size-5 rounded-full object-cover" />
+                            ) : (
+                                <span className="block size-5 rounded-full bg-gray-300" />
+                            )}
+                            <HeartSolidIcon className="absolute -bottom-0.5 -right-0.5 size-3.5 text-red-600" />
+                        </button>
+                    ) : (
+                        isVideoOwner && (
+                            <button
+                                onClick={handleHeart}
+                                disabled={isHearting}
+                                className="hover:text-red-600"
+                                aria-label="Thả tim"
+                                title="Thả tim"
+                            >
+                                <HeartIcon className="size-5" />
+                            </button>
+                        )
+                    )}
                     {userId && (
                         <button
                             onClick={() => {
                                 setIsReplying((prev) => !prev);
                                 setIsEditing(false);
                             }}
-                            className="text-xs font-semibold text-gray-600 hover:text-blue-600"
+                            className="text-xs font-semibold text-gray-600 hover:text-blue-600 rounded-full px-2 py-1 hover:bg-gray-100"
                         >
-                            Trả lời
-                        </button>
-                    )}
-                    {isOwner && (
-                        <button
-                            onClick={() => {
-                                setIsEditing((prev) => !prev);
-                                setIsReplying(false);
-                            }}
-                            className="text-xs text-gray-500 hover:text-blue-600"
-                        >
-                            Sửa
-                        </button>
-                    )}
-                    {canDelete && (
-                        <button
-                            onClick={handleDelete}
-                            disabled={isDeleting}
-                            className="text-xs text-gray-500 hover:text-red-600 disabled:opacity-50"
-                        >
-                            Xoá
+                            Phản hồi
                         </button>
                     )}
                 </div>
@@ -368,7 +464,7 @@ export const CommentComponent = ({
 
                 {/* Hiển thị replies */}
                 {isRepliesSectionOpen && (
-                    <div className="flex flex-col justify-center items-start w-full gap-6 ml-12 mt-2">
+                    <div className="flex flex-col justify-center items-start w-full gap-6 mt-2">
                         {replies.isLoading && !replies.loaded ? (
                             <p className="text-xs text-gray-500">Đang tải phản hồi...</p>
                         ) : (
@@ -390,6 +486,60 @@ export const CommentComponent = ({
                     </div>
                 )}
             </div>
+
+            {hasMenu && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        {/* Màn hình lớn: chỉ hiện khi rê chuột vào bình luận (giống YouTube) */}
+                        <button
+                            className="shrink-0 rounded-full p-1.5 hover:bg-gray-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
+                            aria-label="Tác vụ khác"
+                        >
+                            <EllipsisVerticalIcon className="size-5" />
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        {canPin && (
+                            <DropdownMenuItem onClick={handlePin}>
+                                {comment.pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
+                                {comment.pinned ? "Bỏ ghim" : "Ghim"}
+                            </DropdownMenuItem>
+                        )}
+                        {isOwner && (
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    setIsEditing(true);
+                                    setIsReplying(false);
+                                }}
+                            >
+                                <Pencil className="size-4" />
+                                Chỉnh sửa
+                            </DropdownMenuItem>
+                        )}
+                        {canDelete && (
+                            <DropdownMenuItem onClick={handleDelete} disabled={isDeleting}>
+                                <Trash2 className="size-4" />
+                                {isOwner ? "Xoá" : "Gỡ bỏ"}
+                            </DropdownMenuItem>
+                        )}
+                        {canReport && (
+                            <DropdownMenuItem onClick={() => setReportOpen(true)}>
+                                <Flag className="size-4" />
+                                Báo cáo
+                            </DropdownMenuItem>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+
+            {canReport && (
+                <ReportDialog
+                    open={reportOpen}
+                    onOpenChange={setReportOpen}
+                    target={{ commentId: comment.id }}
+                    title="Báo cáo bình luận"
+                />
+            )}
         </motion.div>
     );
 };

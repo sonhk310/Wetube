@@ -36,7 +36,9 @@ public class Notification {
         /** Có người trả lời bình luận của mình. */
         COMMENT_REPLY,
         /** Có người bình luận video của mình. */
-        VIDEO_COMMENT
+        VIDEO_COMMENT,
+        /** Chủ video thả tim bình luận của mình. */
+        COMMENT_HEART
     }
 
     @Id

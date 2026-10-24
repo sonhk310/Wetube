@@ -9,6 +9,11 @@ export interface ReportView {
   videoTitle: string;
   thumbnailUrl: string | null;
   videoStatus: string | null;
+  /** Có giá trị khi là báo cáo bình luận. */
+  commentId: string | null;
+  /** null nếu bình luận đã bị xoá. */
+  commentContent: string | null;
+  commentAuthor: string | null;
   reason: string;
   details: string | null;
   status: ReportStatus;
@@ -16,6 +21,8 @@ export interface ReportView {
   createdAt: string;
   resolvedAt: string | null;
 }
+
+export type ReportAction = "HIDE_VIDEO" | "DELETE_COMMENT" | "DISMISS";
 
 export const REPORT_REASONS: Record<string, string> = {
   SPAM: "Spam hoặc gây hiểu lầm",
@@ -43,11 +50,16 @@ async function readError(res: Response) {
 }
 
 export const reportsApi = {
-  create: async (videoId: string, reason: string, details?: string): Promise<ReportView> => {
+  /** Báo cáo video ({ videoId }) hoặc bình luận ({ commentId }). */
+  create: async (
+    target: { videoId: string } | { commentId: string },
+    reason: string,
+    details?: string,
+  ): Promise<ReportView> => {
     const res = await apiFetch(`${API_PREFIX}/reports`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ videoId, reason, details }),
+      body: JSON.stringify({ ...target, reason, details }),
     });
     if (!res.ok) throw new Error(await readError(res));
     return res.json();
@@ -66,7 +78,7 @@ export const reportsApi = {
     return res.json();
   },
 
-  resolve: async (reportId: string, action: "HIDE_VIDEO" | "DISMISS"): Promise<ReportView> => {
+  resolve: async (reportId: string, action: ReportAction): Promise<ReportView> => {
     const res = await apiFetch(`${API_PREFIX}/reports/${reportId}/resolve?action=${action}`, {
       method: "POST",
     });

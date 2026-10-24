@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   REPORT_REASONS,
   REPORT_STATUS_LABELS,
+  ReportAction,
   ReportStatus,
   ReportView,
   reportsApi,
@@ -19,7 +20,7 @@ const FILTERS: { label: string; value?: ReportStatus }[] = [
   { label: "Tất cả" },
 ];
 
-/** Trang quản trị: admin xem báo cáo vi phạm và ẩn video / bác bỏ báo cáo. */
+/** Trang quản trị: admin xem báo cáo vi phạm (video, bình luận) và ẩn video / xoá bình luận / bác bỏ. */
 export default function AdminReportsView() {
   const { user, isLoading } = useAuth();
   const isAdmin = !!user?.roles?.includes("ROLE_ADMIN");
@@ -38,8 +39,9 @@ export default function AdminReportsView() {
     if (isAdmin) load();
   }, [isAdmin, load]);
 
-  const resolve = async (id: string, action: "HIDE_VIDEO" | "DISMISS") => {
+  const resolve = async (id: string, action: ReportAction) => {
     if (action === "HIDE_VIDEO" && !window.confirm("Ẩn video này với mọi người (trừ chủ video)?")) return;
+    if (action === "DELETE_COMMENT" && !window.confirm("Xoá bình luận này (kèm các phản hồi)?")) return;
     setBusyId(id);
     try {
       await reportsApi.resolve(id, action);
@@ -88,6 +90,18 @@ export default function AdminReportsView() {
               <Link href={`/watch/${r.videoId}`} className="font-semibold text-blue-600 hover:underline">
                 {r.videoTitle}
               </Link>
+              {r.commentId && (
+                <p className="border-l-2 border-gray-300 pl-2 text-gray-700">
+                  {r.commentContent !== null ? (
+                    <>
+                      <span className="text-xs font-semibold">Bình luận của {r.commentAuthor ?? "Ẩn danh"}: </span>
+                      <span className="whitespace-pre-wrap break-words">{r.commentContent}</span>
+                    </>
+                  ) : (
+                    <span className="text-xs italic">(bình luận đã bị xoá)</span>
+                  )}
+                </p>
+              )}
               <p>
                 <span className="font-medium">{REPORT_REASONS[r.reason] ?? r.reason}</span>
                 {r.details && <span className="text-gray-600"> · {r.details}</span>}
@@ -100,13 +114,23 @@ export default function AdminReportsView() {
             </div>
             {r.status === "OPEN" && (
               <div className="flex flex-col gap-2 shrink-0">
-                <button
-                  onClick={() => resolve(r.id, "HIDE_VIDEO")}
-                  disabled={busyId === r.id}
-                  className="px-3 py-1 rounded-md bg-red-600 text-white disabled:opacity-60"
-                >
-                  Ẩn video
-                </button>
+                {r.commentId ? (
+                  <button
+                    onClick={() => resolve(r.id, "DELETE_COMMENT")}
+                    disabled={busyId === r.id}
+                    className="px-3 py-1 rounded-md bg-red-600 text-white disabled:opacity-60"
+                  >
+                    Xoá bình luận
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => resolve(r.id, "HIDE_VIDEO")}
+                    disabled={busyId === r.id}
+                    className="px-3 py-1 rounded-md bg-red-600 text-white disabled:opacity-60"
+                  >
+                    Ẩn video
+                  </button>
+                )}
                 <button
                   onClick={() => resolve(r.id, "DISMISS")}
                   disabled={busyId === r.id}

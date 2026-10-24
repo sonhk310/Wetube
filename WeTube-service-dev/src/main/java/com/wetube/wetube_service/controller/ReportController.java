@@ -20,20 +20,22 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReportController {
 
-    public record CreateReportRequest(UUID videoId, String reason, String details) {}
+    /** Báo cáo video: videoId; báo cáo bình luận: commentId. */
+    public record CreateReportRequest(UUID videoId, UUID commentId, String reason, String details) {}
 
     private final ReportService reportService;
     private final RateLimiter rateLimiter;
 
-    /** Người xem báo cáo một video. */
+    /** Người xem báo cáo một video hoặc một bình luận. */
     @PostMapping
     public ResponseEntity<ReportView> create(@RequestBody CreateReportRequest request, @AuthenticationPrincipal Jwt jwt) {
-        if (request.videoId() == null || request.reason() == null) {
-            throw new IllegalArgumentException("Thiếu videoId hoặc lý do báo cáo");
+        if ((request.videoId() == null && request.commentId() == null) || request.reason() == null) {
+            throw new IllegalArgumentException("Thiếu videoId/commentId hoặc lý do báo cáo");
         }
         UUID userId = CurrentUser.id(jwt);
         rateLimiter.check(RateLimiter.Limit.REPORT, userId);
-        ReportView view = reportService.create(userId, request.videoId(), request.reason(), request.details());
+        ReportView view = reportService.create(userId, request.videoId(), request.commentId(), request.reason(),
+                request.details());
         return ResponseEntity.status(HttpStatus.CREATED).body(view);
     }
 
@@ -52,18 +54,19 @@ public class ReportController {
         return ResponseEntity.ok(reportService.list(status));
     }
 
-    /** Admin: action=HIDE_VIDEO ẩn video, action=DISMISS bác bỏ báo cáo. */
+    /** Admin: action=HIDE_VIDEO ẩn video, DELETE_COMMENT xoá bình luận bị báo cáo, DISMISS bác bỏ báo cáo. */
     @PostMapping("/{reportId}/resolve")
     public ResponseEntity<ReportView> resolve(
             @PathVariable UUID reportId,
             @RequestParam String action,
             @AuthenticationPrincipal Jwt jwt) {
         CurrentUser.requireAdmin(jwt);
-        boolean hide = switch (action) {
-            case "HIDE_VIDEO" -> true;
-            case "DISMISS" -> false;
-            default -> throw new IllegalArgumentException("action phải là HIDE_VIDEO hoặc DISMISS");
-        };
-        return ResponseEntity.ok(reportService.resolve(reportId, hide));
+        ReportService.Action parsed;
+        try {
+            parsed = ReportService.Action.valueOf(action);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("action phải là HIDE_VIDEO, DELETE_COMMENT hoặc DISMISS");
+        }
+        return ResponseEntity.ok(reportService.resolve(reportId, parsed));
     }
 }

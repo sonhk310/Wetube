@@ -20,5 +20,11 @@ public class CommentResponseDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer replyCount;
+    /** Chủ video đã ghim. */
+    private Boolean pinned;
+    /** Chủ video đã thả tim. */
+    private Boolean hearted;
+    /** Người viết là chủ video. */
+    private Boolean byCreator;
     private List<CommentResponseDto> replies;
 }

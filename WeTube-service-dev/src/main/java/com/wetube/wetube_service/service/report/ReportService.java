@@ -1,12 +1,15 @@
 package com.wetube.wetube_service.service.report;
 
+import com.wetube.wetube_service.entity.interaction.Comment;
 import com.wetube.wetube_service.entity.report.Report;
 import com.wetube.wetube_service.entity.video.Video;
 import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.exception.ResourceNotFoundException;
+import com.wetube.wetube_service.repository.interaction.CommentRepository;
 import com.wetube.wetube_service.repository.report.ReportRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.service.VideoIndexer;
+import com.wetube.wetube_service.service.interaction.CommentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -29,26 +33,51 @@ public class ReportService {
     public static final Set<String> REASONS = Set.of(
             "SPAM", "VIOLENCE", "SEXUAL", "HATE", "COPYRIGHT", "MISINFORMATION", "OTHER");
 
+    /** commentId != null: báo cáo bình luận; commentContent / commentAuthor null nếu bình luận đã bị xoá. */
     public record ReportView(UUID id, UUID videoId, String videoTitle, String thumbnailUrl,
-                             String videoStatus, String reason, String details, String status,
+                             String videoStatus, UUID commentId, String commentContent, String commentAuthor,
+                             String reason, String details, String status,
                              String resolutionNote, LocalDateTime createdAt, LocalDateTime resolvedAt) {}
+
+    public enum Action { HIDE_VIDEO, DELETE_COMMENT, DISMISS }
 
     private final ReportRepository reportRepository;
     private final VideoRepository videoRepository;
     private final VideoIndexer videoIndexer;
+    private final CommentRepository commentRepository;
+    private final CommentService commentService;
 
-    public ReportView create(UUID reporterId, UUID videoId, String reason, String details) {
+    /** commentId khác null: báo cáo bình luận đó (videoId lấy theo bình luận, tham số videoId bỏ qua). */
+    public ReportView create(UUID reporterId, UUID videoId, UUID commentId, String reason, String details) {
         if (!REASONS.contains(reason)) {
             throw new IllegalArgumentException("Lý do báo cáo không hợp lệ: " + reason);
         }
-        if (!videoRepository.existsById(videoId)) {
-            throw new ResourceNotFoundException("Video", "id", videoId.toString());
-        }
-        if (reportRepository.existsByVideoIdAndReporterIdAndStatus(videoId, reporterId, Report.Status.OPEN)) {
-            throw new IllegalArgumentException("Bạn đã báo cáo video này, báo cáo đang chờ xử lý.");
+        if (commentId != null) {
+            Comment comment = commentRepository.findById(commentId)
+                    .filter(c -> c.getTargetType() == Comment.TargetType.VIDEO)
+                    .orElseThrow(() -> new ResourceNotFoundException("Comment", "id", commentId.toString()));
+            if (comment.getUser() != null && reporterId.equals(comment.getUser().getId())) {
+                throw new IllegalArgumentException("Bạn không thể báo cáo bình luận của chính mình.");
+            }
+            if (reportRepository.existsByCommentIdAndReporterIdAndStatus(commentId, reporterId, Report.Status.OPEN)) {
+                throw new IllegalArgumentException("Bạn đã báo cáo bình luận này, báo cáo đang chờ xử lý.");
+            }
+            videoId = comment.getTargetId();
+        } else {
+            if (videoId == null) {
+                throw new IllegalArgumentException("Thiếu videoId hoặc commentId");
+            }
+            if (!videoRepository.existsById(videoId)) {
+                throw new ResourceNotFoundException("Video", "id", videoId.toString());
+            }
+            if (reportRepository.existsByVideoIdAndCommentIdIsNullAndReporterIdAndStatus(
+                    videoId, reporterId, Report.Status.OPEN)) {
+                throw new IllegalArgumentException("Bạn đã báo cáo video này, báo cáo đang chờ xử lý.");
+            }
         }
         Report report = reportRepository.save(Report.builder()
                 .videoId(videoId)
+                .commentId(commentId)
                 .reporterId(reporterId)
                 .reason(reason)
                 .details(details == null ? null : details.strip())
@@ -71,17 +100,37 @@ public class ReportService {
     }
 
     /**
-     * Admin xử lý báo cáo. hideVideo=true: ẩn video (INACTIVE, gỡ khỏi tìm kiếm/gợi ý) và đóng
-     * mọi báo cáo đang mở của video đó; false: bác bỏ riêng báo cáo này.
+     * Admin xử lý báo cáo. HIDE_VIDEO: ẩn video (INACTIVE, gỡ khỏi tìm kiếm/gợi ý) và đóng mọi báo
+     * cáo đang mở của video đó; DELETE_COMMENT: xoá bình luận bị báo cáo (kèm các trả lời) và đóng mọi
+     * báo cáo đang mở của bình luận đó; DISMISS: bác bỏ riêng báo cáo này.
      */
-    public ReportView resolve(UUID reportId, boolean hideVideo) {
+    public ReportView resolve(UUID reportId, Action action) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report", "id", reportId.toString()));
         LocalDateTime now = LocalDateTime.now();
 
-        if (!hideVideo) {
+        if (action == Action.DISMISS) {
             report.setStatus(Report.Status.DISMISSED);
             report.setResolutionNote("Không vi phạm");
+            report.setResolvedAt(now);
+            return toViews(List.of(report)).get(0);
+        }
+
+        if (action == Action.DELETE_COMMENT) {
+            UUID commentId = report.getCommentId();
+            if (commentId == null) {
+                throw new IllegalArgumentException("Báo cáo này không phải báo cáo bình luận");
+            }
+            if (commentRepository.existsById(commentId)) {
+                commentService.deleteComment(commentId);
+            }
+            for (Report open : reportRepository.findByCommentIdAndStatus(commentId, Report.Status.OPEN)) {
+                open.setStatus(Report.Status.RESOLVED);
+                open.setResolutionNote("Đã xoá bình luận");
+                open.setResolvedAt(now);
+            }
+            report.setStatus(Report.Status.RESOLVED);
+            report.setResolutionNote("Đã xoá bình luận");
             report.setResolvedAt(now);
             return toViews(List.of(report)).get(0);
         }
@@ -106,12 +155,20 @@ public class ReportService {
                 .findAllById(reports.stream().map(Report::getVideoId).distinct().toList())
                 .stream()
                 .collect(Collectors.toMap(Video::getId, Function.identity()));
+        Map<UUID, Comment> comments = commentRepository
+                .findAllById(reports.stream().map(Report::getCommentId).filter(Objects::nonNull).distinct().toList())
+                .stream()
+                .collect(Collectors.toMap(Comment::getId, Function.identity()));
         return reports.stream().map(r -> {
             Video v = videos.get(r.getVideoId());
+            Comment c = r.getCommentId() != null ? comments.get(r.getCommentId()) : null;
             return new ReportView(r.getId(), r.getVideoId(),
                     v != null ? v.getTitle() : "(video đã bị xoá)",
                     v != null ? v.getThumbnailUrl() : null,
                     v != null && v.getVideosStatus() != null ? v.getVideosStatus().name() : null,
+                    r.getCommentId(),
+                    c != null ? c.getContent() : null,
+                    c != null && c.getUser() != null ? c.getUser().getName() : null,
                     r.getReason(), r.getDetails(), r.getStatus().name(), r.getResolutionNote(),
                     r.getCreatedAt(), r.getResolvedAt());
         }).toList();

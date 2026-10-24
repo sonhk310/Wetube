@@ -55,6 +55,14 @@ public class Comment {
     @Column(name = "like_count")
     private Integer likeCount;
 
+    /** Chủ video ghim bình luận này lên đầu (mỗi video tối đa một bình luận). */
+    @Column(name = "pinned")
+    private Boolean pinned;
+
+    /** Chủ video đã thả tim. */
+    @Column(name = "hearted")
+    private Boolean hearted;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -76,6 +84,10 @@ public class Comment {
         updatedAt = createdAt;
         if (likeCount == null)
             likeCount = 0;
+        if (pinned == null)
+            pinned = false;
+        if (hearted == null)
+            hearted = false;
     }
 
     @PreUpdate

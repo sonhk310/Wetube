@@ -25,12 +25,15 @@ public class CommentController {
     private final OwnershipGuard ownershipGuard;
     private final RateLimiter rateLimiter;
 
+    /** sort=top (mặc định: nhiều thích + trả lời trước) hoặc newest. Bình luận đã ghim luôn đứng đầu. */
     @GetMapping("/{targetType}/{targetId}")
     public ResponseEntity<List<CommentResponseDto>> getCommentsByTarget(
             @PathVariable("targetId") UUID targetId,
-            @PathVariable("targetType") Comment.TargetType targetType
+            @PathVariable("targetType") Comment.TargetType targetType,
+            @RequestParam(value = "sort", defaultValue = "top") String sort
     ) {
-        return ResponseEntity.ok(commentService.getCommentsByTargetId(targetId, targetType));
+        CommentService.Sort order = "newest".equalsIgnoreCase(sort) ? CommentService.Sort.NEWEST : CommentService.Sort.TOP;
+        return ResponseEntity.ok(commentService.getCommentsByTargetId(targetId, targetType, order));
     }
 
     @GetMapping("/{id}")
@@ -59,9 +62,35 @@ public class CommentController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteComment(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
-        ownershipGuard.commentOwner(id, jwt);
+        ownershipGuard.commentRemovable(id, jwt);
         commentService.deleteComment(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /** Chủ video ghim bình luận gốc lên đầu (thay bình luận đang ghim, nếu có). */
+    @PostMapping("/{id}/pin")
+    public ResponseEntity<CommentResponseDto> pin(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.commentVideoOwner(id, jwt);
+        return ResponseEntity.ok(commentService.setPinned(id, true));
+    }
+
+    @DeleteMapping("/{id}/pin")
+    public ResponseEntity<CommentResponseDto> unpin(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.commentVideoOwner(id, jwt);
+        return ResponseEntity.ok(commentService.setPinned(id, false));
+    }
+
+    /** Chủ video thả tim bình luận. */
+    @PostMapping("/{id}/heart")
+    public ResponseEntity<CommentResponseDto> heart(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.commentVideoOwner(id, jwt);
+        return ResponseEntity.ok(commentService.setHearted(id, true, CurrentUser.id(jwt)));
+    }
+
+    @DeleteMapping("/{id}/heart")
+    public ResponseEntity<CommentResponseDto> unheart(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.commentVideoOwner(id, jwt);
+        return ResponseEntity.ok(commentService.setHearted(id, false, CurrentUser.id(jwt)));
     }
 }
 

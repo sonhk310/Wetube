@@ -22,6 +22,8 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
 
     boolean existsByTypeAndVideoId(Notification.Type type, UUID videoId);
 
+    boolean existsByTypeAndCommentId(Notification.Type type, UUID commentId);
+
     @Modifying
     @Query("UPDATE Notification n SET n.read = true WHERE n.recipientId = :recipientId AND n.read = false")
     int markAllRead(@Param("recipientId") UUID recipientId);
