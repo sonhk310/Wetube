@@ -80,7 +80,17 @@ Cập nhật: 2026-10-23. File này để anh đọc ở nhà rồi làm tiếp.
 - **A4 Thông báo:** bảng `notifications` (tạo lúc khởi động bởi `NotificationTableInitializer`). Video công khai (lúc upload, hoặc chuyển sang công khai) báo cho người đăng ký còn bật thông báo, mỗi video một lần; trả lời bình luận báo người viết bình luận gốc; bình luận mới báo chủ video. Chuông trên thanh trên cùng: số chưa đọc (hỏi mỗi 60 giây), danh sách, đánh dấu đã đọc.
 - **A5 Bảng tin Đăng ký** (`/feed/subscribed`): video công khai mới nhất của các kênh đã đăng ký, cuộn vô hạn (`GET /api/feed/subscriptions`). Giao diện bong bóng kênh cũ (`VideoBubblePack`) vẫn còn trong code, không còn dùng ở trang này.
 
-**Đã kiểm tra:** biên dịch backend, kiểm tra kiểu + lint + `next build` client. **Chưa kiểm tra trên server / trình duyệt thật** cho tới khi deploy.
+**Đã kiểm tra:** deploy 2026-10-23 ~22:40, log không lỗi, các API mới trả 401 khi chưa đăng nhập, `/detail` có `resumeAt`, các trang trả 200. Anh đã thấy thanh đỏ hoạt động trên trình duyệt thật.
+
+### Gói 7: sửa sau khi anh test (commit `d72a347`, `35fe326`, `88b24f4`, deploy 2026-10-24 sáng)
+- **Thanh đỏ rơi xuống đáy trang:** `VideoOverlay` dùng `absolute` nhưng khung trong `VideoCard` không `relative`. Giờ `VideoThumbnail` nhận `progress` và tự vẽ thanh.
+- **Bấm lại video xem dở mà phát từ đầu:** RTK Query giữ cache `/detail` 60 giây (bản cũ không có `resumeAt`). Sửa: `keepUnusedDataFor: 0` cho `getVideoDetail`; trình phát ưu tiên vị trí trong `useWatchProgressStore` (trình duyệt) rồi mới tới `resumeAt`.
+- **Thẻ video kiểu YouTube** (`modules/home/ui/components/video/videoCard.tsx`): rê chuột ~0,6 giây thì phát xem trước không tiếng (từ chỗ đã xem), thanh đỏ chạy, thời gian đếm ngược, nút tắt/bật tiếng, nền xám nhạt quanh thẻ; link thật tới video và kênh; menu ⋮ (Xem sau, Lưu vào danh sách phát, Chia sẻ). Backend thêm `channelId` vào `RecommendVideoDto` và `VideoDocument` (Elasticsearch tự đồng bộ lại lúc khởi động).
+- **Trang bị thu hẹp khi mở menu / chuông:** Radix khoá cuộn và chèn `body[data-scroll-locked] { margin-right: … !important }`; thanh cuộn nằm ở `html` nên khoản bù đó thừa. Ghi đè bằng `html body[data-scroll-locked]` trong `globals.css`.
+- **Lỗi từ gói 5** (đã sửa): `html, body { overflow-y: scroll }` làm `body` chừa rãnh cuộn trống → chỉ còn `html`. `tw-animate-css` chưa được import (Tailwind v4 không đọc `tailwind.config.ts`) → đã import, drawer / dialog / dropdown có animation.
+- **Thanh chip trang chủ** (`components/filter-carousel.tsx`): chip sát mép trái, mũi tên + dải mờ chỉ hiện ở phía còn cuộn được, dời lên một chút. Sidebar: "Dịch vụ khác của WeTube" → "Thêm từ WeTube".
+
+**Chưa kiểm tra trên trình duyệt thật:** xem trước khi rê chuột, menu ⋮, thanh chip, hết thu hẹp trang (anh sẽ thử).
 
 ---
 
@@ -180,3 +190,7 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 - **Backup:** nên backup MySQL trước mỗi lần thay đổi schema.
 - **Cách nói chuyện:** tiếng Việt; nói rõ cái gì đã kiểm tra thật, cái gì chỉ đoán; sửa gộp rồi deploy một lần.
 - **Gradle wrapper trong máy đã bị đổi sang Gradle 9.7.1** (`gradle/wrapper/*`, `gradlew`, `gradlew.bat`, sửa lúc 19:23 ngày 23/10, không phải em đổi). Em chưa commit các file này. Docker build dùng Gradle 8.14 của image nên không bị ảnh hưởng. Biên dịch local cho giống production: dùng Gradle 8.14.3 trong `~/.gradle/wrapper/dists/gradle-8.14.3-bin/.../bin/gradle compileJava`.
+- **Kiểm tra client trước khi deploy:** `npx tsc --noEmit` (bỏ qua 12 lỗi TS7006 cũ), `npx eslint <file>`, `npx next build` (Vibe Host build với `ignoreBuildErrors: true`, nên lỗi kiểu không chặn build: phải tự chạy tsc). `node_modules` đã cài lại bằng `npm ci` ngày 23/10.
+- **Không có trình duyệt** trong session: chỉ kiểm tra được bằng curl / log; giao diện phải nhờ anh thử và gửi ảnh.
+- **Nếp làm việc đã thống nhất:** tính năng mới thì commit rồi hỏi anh trước khi push + deploy; sửa lỗi anh vừa báo trên tính năng đã deploy thì push + deploy luôn rồi báo. Mỗi xong một gói thì cập nhật file này.
+- **Bẫy CSS đã gặp:** Tailwind v4 chỉ đọc `globals.css` (không đọc `tailwind.config.ts`); thanh cuộn nằm ở `html`; phần tử `absolute` phải nằm trong khung `relative`.
