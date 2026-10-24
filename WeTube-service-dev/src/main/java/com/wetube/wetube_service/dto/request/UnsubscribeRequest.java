@@ -12,4 +12,6 @@ import java.util.UUID;
 public class UnsubscribeRequest {
     private UUID subscriberId;
     private UUID tierId;
+    /** Dùng khi không gửi tierId: huỷ đăng ký gói mặc định của kênh. */
+    private UUID channelId;
 }

@@ -67,8 +67,9 @@ public class SubScriptionServiceImpl implements SubscriptionService {
     public void subscribe(SubscriptionRequest req) {
         SubscriptionId subscriptionId = resolveSubscriptionId(req.getSubscriberId(), req.getChannelId(),req.getTierId());
 
+        // Bấm lại khi đã đăng ký (vd. hai tab): coi như xong, không báo lỗi
         if (subscriptionRepository.existsById(subscriptionId)) {
-            throw new IllegalStateException("User already subscribed this channel/tier");
+            return;
         }
 
         Subscription subscription = new Subscription(
@@ -85,20 +86,21 @@ public class SubScriptionServiceImpl implements SubscriptionService {
 
     @Override
     public void unsubscribe(UnsubscribeRequest req) {
-        AppUser subscriber = userRepository.findById(req.getSubscriberId())
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", req.getSubscriberId().toString()));
+        if (req.getTierId() == null && req.getChannelId() == null) {
+            throw new IllegalArgumentException("Thiếu channelId hoặc tierId");
+        }
+        // Client trang xem / trang kênh chỉ gửi channelId: huỷ gói mặc định của kênh
+        SubscriptionId subscriptionId = resolveSubscriptionId(req.getSubscriberId(), req.getChannelId(), req.getTierId());
 
-        MembershipTier tier = memberTierRepository.findById(req.getTierId())
-                .orElseThrow(() -> new ResourceNotFoundException("MembershipTier", "id", req.getTierId().toString()));
-
-        SubscriptionId subscriptionId = new SubscriptionId(subscriber, tier);
-
-        Subscription subscription = subscriptionRepository.findById(subscriptionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Subscription", "id", subscriptionId.toString()));
+        // Chưa đăng ký (vd. đã huỷ ở tab khác): coi như xong
+        Subscription subscription = subscriptionRepository.findById(subscriptionId).orElse(null);
+        if (subscription == null) {
+            return;
+        }
 
         subscriptionRepository.delete(subscription);
 
-        Channel channel = tier.getChannel();
+        Channel channel = subscriptionId.getTier().getChannel();
         channel.setTotalSubscribers(Math.max(0, channel.getTotalSubscribers() - 1));
         channelRepository.save(channel);
     }
