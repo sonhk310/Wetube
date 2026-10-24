@@ -10,6 +10,7 @@ import java.util.UUID;
 public class PlaylistVideoDetailDto {
     private UUID videoId;
     private String videoTitle;
+    private String channelName;
     private String videoUrl;
     private String thumbnailUrl;
     private String description;

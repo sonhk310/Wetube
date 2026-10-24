@@ -71,6 +71,7 @@ public interface PlaylistMapper {
 
     @Mapping(target = "videoId", source = "video.id")
     @Mapping(target = "videoTitle", source = "video.title")
+    @Mapping(target = "channelName", source = "video.user.channel.name")
     @Mapping(target = "videoUrl", source = "video.videoUrl")
     @Mapping(target = "thumbnailUrl", source = "video.thumbnailUrl")
     @Mapping(target = "description", source = "video.description")

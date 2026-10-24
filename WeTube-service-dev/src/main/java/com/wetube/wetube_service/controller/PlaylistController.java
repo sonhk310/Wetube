@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -145,6 +146,32 @@ public class PlaylistController {
             @AuthenticationPrincipal Jwt jwt) {
         requireSelf(userId, jwt);
         return ResponseEntity.ok(playlistService.addVideoToHistory(userId, videoId));
+    }
+
+    /** Xoá một video khỏi lịch sử xem của chính mình. */
+    @DeleteMapping("/me/history/{videoId}")
+    public ResponseEntity<Void> removeFromHistory(@PathVariable UUID videoId, @AuthenticationPrincipal Jwt jwt) {
+        playlistService.removeFromHistory(CurrentUser.id(jwt), videoId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Xoá toàn bộ lịch sử xem của chính mình. */
+    @DeleteMapping("/me/history")
+    public ResponseEntity<Void> clearHistory(@AuthenticationPrincipal Jwt jwt) {
+        playlistService.clearHistory(CurrentUser.id(jwt));
+        return ResponseEntity.noContent().build();
+    }
+
+    /** true nếu đang tạm dừng lưu lịch sử xem. */
+    @GetMapping("/me/history/paused")
+    public ResponseEntity<Boolean> isHistoryPaused(@AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(playlistService.isHistoryPaused(CurrentUser.id(jwt)));
+    }
+
+    @PutMapping("/me/history/paused")
+    public ResponseEntity<Boolean> setHistoryPaused(@RequestParam boolean paused, @AuthenticationPrincipal Jwt jwt) {
+        playlistService.setHistoryPaused(CurrentUser.id(jwt), paused);
+        return ResponseEntity.ok(paused);
     }
 
     /** Thêm / bỏ video khỏi playlist hệ thống của chính user (chỉ LIKED và WATCH_LATER). */

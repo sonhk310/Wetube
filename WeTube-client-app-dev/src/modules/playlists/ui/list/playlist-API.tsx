@@ -176,4 +176,25 @@ export const playlistService = {
   return res.json();
 },
 
+  removeFromHistory: async (videoId: string) => {
+    const res = await apiFetch(`${API_BASE}/me/history/${videoId}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Không xoá được video khỏi nhật ký xem");
+  },
+
+  clearHistory: async () => {
+    const res = await apiFetch(`${API_BASE}/me/history`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Không xoá được nhật ký xem");
+  },
+
+  getHistoryPaused: async (): Promise<boolean> => {
+    const res = await apiFetch(`${API_BASE}/me/history/paused`);
+    if (!res.ok) throw new Error("Không tải được cài đặt nhật ký xem");
+    return res.json();
+  },
+
+  setHistoryPaused: async (paused: boolean) => {
+    const res = await apiFetch(`${API_BASE}/me/history/paused?paused=${paused}`, { method: "PUT" });
+    if (!res.ok) throw new Error("Không đổi được cài đặt nhật ký xem");
+  },
+
 };

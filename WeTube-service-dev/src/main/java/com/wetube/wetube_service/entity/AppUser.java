@@ -47,6 +47,10 @@ public class AppUser {
     @Column(nullable = true)
     private String password;
 
+    /** Tạm dừng lưu lịch sử xem (trang Lịch sử). null ở dòng cũ = không tạm dừng. */
+    @Column(name = "history_paused")
+    private Boolean historyPaused;
+
     @OneToOne(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)
     @JoinColumn(name = "channel_id",unique = true)
     private Channel channel;

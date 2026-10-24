@@ -40,6 +40,9 @@ public class WatchProgressServiceImpl implements WatchProgressService {
 
     @Override
     public void record(UUID userId, UUID videoId, float seconds, boolean flush) {
+        if (playlistService.isHistoryPaused(userId)) {
+            return; // tạm dừng lưu lịch sử: không ghi lịch sử lẫn vị trí đang xem
+        }
         float position = Math.max(0f, seconds);
         redisService.set(WatchProgressService.redisKey(userId, videoId), Float.toString(position), REDIS_TTL);
 

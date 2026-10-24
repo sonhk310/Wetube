@@ -289,6 +289,11 @@ public List<PlaylistVideoDetailDto> addVideoToHistory(UUID userId, UUID videoId)
     }
     Playlist history = histories.get(0);
 
+    if (isHistoryPaused(userId)) {
+        return playlistMapper.toPlaylistVideoDetailDtoList(
+                playlistVideoRepo.findByPlaylist_IdOrderByUpdatedAtDesc(history.getId()));
+    }
+
     Video video = videoRepo.findById(videoId)
             .orElseThrow(() -> new ResourceNotFoundException("Video", "id", videoId.toString()));
 
@@ -310,6 +315,33 @@ public List<PlaylistVideoDetailDto> addVideoToHistory(UUID userId, UUID videoId)
 
     List<PlaylistVideo> playlistVideos = playlistVideoRepo.findByPlaylist_IdOrderByUpdatedAtDesc(history.getId());
     return playlistMapper.toPlaylistVideoDetailDtoList(playlistVideos);
+}
+
+@Override
+public void removeFromHistory(UUID userId, UUID videoId) {
+    playlistRepo.findByUser_IdAndPlaylistType(userId, PlaylistType.HISTORY).stream().findFirst()
+            .flatMap(h -> playlistVideoRepo.findByPlaylist_IdAndVideo_Id(h.getId(), videoId))
+            .ifPresent(playlistVideoRepo::delete);
+    redisService.delete(WatchProgressService.redisKey(userId, videoId));
+}
+
+@Override
+public void clearHistory(UUID userId) {
+    for (Playlist history : playlistRepo.findByUser_IdAndPlaylistType(userId, PlaylistType.HISTORY)) {
+        List<PlaylistVideo> entries = playlistVideoRepo.findByPlaylist_IdOrderByUpdatedAtDesc(history.getId());
+        playlistVideoRepo.deleteAllInBatch(entries);
+        entries.forEach(pv -> redisService.delete(WatchProgressService.redisKey(userId, pv.getVideo().getId())));
+    }
+}
+
+@Override
+public boolean isHistoryPaused(UUID userId) {
+    return userRepo.findHistoryPaused(userId).orElse(false);
+}
+
+@Override
+public void setHistoryPaused(UUID userId, boolean paused) {
+    userRepo.setHistoryPaused(userId, paused);
 }
 
 @Override

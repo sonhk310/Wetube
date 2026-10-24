@@ -48,6 +48,16 @@ public interface PlaylistService {
 
     List<PlaylistVideoDetailDto> addVideoToHistory(UUID userId, UUID videoId);
 
+    /** Xoá một video khỏi lịch sử xem (quên luôn vị trí đang xem). Không có thì thôi. */
+    void removeFromHistory(UUID userId, UUID videoId);
+
+    /** Xoá toàn bộ lịch sử xem của user. */
+    void clearHistory(UUID userId);
+
+    boolean isHistoryPaused(UUID userId);
+
+    void setHistoryPaused(UUID userId, boolean paused);
+
     /** Thêm video vào playlist hệ thống (LIKED, WATCH_LATER) của user; thêm lần nữa không tạo bản sao. */
     void addVideoToSystemPlaylist(UUID userId, UUID videoId, PlaylistType type);
 
