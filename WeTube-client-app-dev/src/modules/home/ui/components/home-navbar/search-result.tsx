@@ -3,8 +3,9 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import apiClient from "@/lib/apiClient"; 
-import { formatDuration } from "@/lib/utils";
+import { SlidersHorizontal, X } from "lucide-react";
+import apiClient from "@/lib/apiClient";
+import { cn, formatCompact, formatDuration } from "@/lib/utils";
 
 import { useAuth } from "@/contexts/auth-context";
 import { useSaveInteractionMutation } from "@/app/api/interactionApi";
@@ -32,6 +33,56 @@ interface VideoDto {
   };
 }
 
+interface ChannelResult {
+  id: string;
+  name: string;
+  picture: string | null;
+  description: string | null;
+  totalSubscribers: number;
+  totalVideos: number;
+}
+
+type FilterKey = "type" | "duration" | "uploaded" | "sort";
+
+// Giá trị gửi lên API (backend: SearchFilters) và nhãn như YouTube tiếng Việt
+const TYPE_CHIPS = [
+  { value: "", label: "Tất cả" },
+  { value: "video", label: "Video" },
+  { value: "short", label: "Shorts" },
+  { value: "channel", label: "Kênh" },
+];
+
+const FILTER_GROUPS: { key: FilterKey; title: string; options: { value: string; label: string }[] }[] = [
+  {
+    key: "duration",
+    title: "Thời lượng",
+    options: [
+      { value: "short", label: "Dưới 4 phút" },
+      { value: "medium", label: "4 - 20 phút" },
+      { value: "long", label: "Trên 20 phút" },
+    ],
+  },
+  {
+    key: "uploaded",
+    title: "Ngày tải lên",
+    options: [
+      { value: "today", label: "Hôm nay" },
+      { value: "week", label: "Tuần này" },
+      { value: "month", label: "Tháng này" },
+      { value: "year", label: "Năm nay" },
+    ],
+  },
+  {
+    key: "sort",
+    title: "Sắp xếp theo",
+    options: [
+      { value: "", label: "Mức độ liên quan" },
+      { value: "date", label: "Ngày tải lên" },
+      { value: "views", label: "Lượt xem" },
+    ],
+  },
+];
+
 interface VideoResult {
   id: string;
   title: string;
@@ -51,10 +102,38 @@ function SearchResultsContent() {
   const router = useRouter();
 
   const [results, setResults] = useState<VideoResult[]>([]);
+  const [channels, setChannels] = useState<ChannelResult[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const query = searchParams.get("query");
+  const type = searchParams.get("type") ?? "";
+  const duration = searchParams.get("duration") ?? "";
+  const uploaded = searchParams.get("uploaded") ?? "";
+  const sort = searchParams.get("sort") ?? "";
+  const isChannel = type === "channel";
+  const hasFilter = Boolean(duration || uploaded || sort);
+
+  /** Đổi một bộ lọc trên URL (chia sẻ / quay lại được); bấm lại lựa chọn đang chọn thì bỏ chọn. */
+  const setFilter = (key: FilterKey, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (!value || params.get(key) === value) params.delete(key);
+    else params.set(key, value);
+    if (key === "type" && value === "channel") {
+      // Kênh không lọc theo thời lượng / ngày / sắp xếp
+      ["duration", "uploaded", "sort"].forEach((k) => params.delete(k));
+      setPanelOpen(false);
+    }
+    router.replace(`/search?${params.toString()}`);
+  };
+
+  const clearFilters = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    ["duration", "uploaded", "sort"].forEach((k) => params.delete(k));
+    router.replace(`/search?${params.toString()}`);
+  };
 
   const { user } = useAuth();
   const [saveInteraction] = useSaveInteractionMutation();
@@ -64,10 +143,27 @@ function SearchResultsContent() {
       setLoading(true);
       const fetchResults = async () => {
         try {
+          if (isChannel) {
+            const response = await apiClient.get<ChannelResult[]>("/channels/search", {
+              params: { q: query },
+            });
+            setChannels(response.data);
+            setTotal(response.data.length);
+            setResults([]);
+            return;
+          }
           const response = await apiClient.get<PageResponse<VideoDto>>(
             "/videos/search/full",
             {
-              params: { title: query, page: 0, size: 20 },
+              params: {
+                title: query,
+                page: 0,
+                size: 20,
+                type: type || undefined,
+                duration: duration || undefined,
+                uploaded: uploaded || undefined,
+                sort: sort || undefined,
+              },
             }
           );
 
@@ -89,9 +185,13 @@ function SearchResultsContent() {
             }));
 
           setResults(mappedResults);
+          setChannels([]);
+          setTotal(response.data.totalElements ?? mappedResults.length);
         } catch (error) {
           console.error("Failed to fetch search results:", error);
           setResults([]);
+          setChannels([]);
+          setTotal(0);
         } finally {
           setLoading(false);
         }
@@ -99,9 +199,10 @@ function SearchResultsContent() {
       fetchResults();
     } else {
       setResults([]);
+      setChannels([]);
       setLoading(false);
     }
-  }, [query]);
+  }, [query, isChannel, type, duration, uploaded, sort]);
 
   const handleClick = async (videoId: string) => {
     try {
@@ -119,10 +220,77 @@ function SearchResultsContent() {
     }
   };
 
+  const filterBar = (
+    <div className="mb-4">
+      <div className="flex flex-wrap items-center gap-2">
+        {TYPE_CHIPS.map((chip) => (
+          <button
+            key={chip.value || "all"}
+            type="button"
+            onClick={() => setFilter("type", chip.value)}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+              type === chip.value ? "bg-black text-white" : "bg-gray-100 hover:bg-gray-200"
+            )}
+          >
+            {chip.label}
+          </button>
+        ))}
+        {!isChannel && (
+          <button
+            type="button"
+            onClick={() => setPanelOpen((o) => !o)}
+            aria-expanded={panelOpen}
+            className={cn(
+              "ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium hover:bg-gray-100",
+              (panelOpen || hasFilter) && "bg-gray-100"
+            )}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Bộ lọc
+          </button>
+        )}
+      </div>
+
+      {panelOpen && !isChannel && (
+        <div className="mt-3 grid grid-cols-1 gap-4 rounded-xl border bg-white p-4 sm:grid-cols-3">
+          {FILTER_GROUPS.map((group) => {
+            const current = { type, duration, uploaded, sort }[group.key];
+            return (
+              <div key={group.key}>
+                <p className="mb-2 border-b pb-2 text-xs font-semibold uppercase text-gray-500">{group.title}</p>
+                <div className="flex flex-col">
+                  {group.options.map((opt) => {
+                    const active = current === opt.value;
+                    return (
+                      <button
+                        key={opt.value || "default"}
+                        type="button"
+                        onClick={() => setFilter(group.key, opt.value)}
+                        className={cn(
+                          "flex items-center justify-between rounded-md px-2 py-1.5 text-left text-sm hover:bg-gray-100",
+                          active && "font-semibold"
+                        )}
+                      >
+                        {opt.label}
+                        {active && opt.value && <X className="h-3.5 w-3.5 text-gray-500" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   // --- Loading Skeleton ---
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6">
+        {filterBar}
         <div className="animate-pulse space-y-4">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex gap-4">
@@ -142,11 +310,55 @@ function SearchResultsContent() {
   // --- Render Results ---
   return (
     <main className="container mx-auto px-4 py-6">
-      <div className="mb-6">
+      {filterBar}
+      <div className="mb-6 flex flex-wrap items-center gap-3">
         <p className="text-gray-600">
-          Khoảng {results.length} kết quả cho <b>{query}</b>
+          Khoảng {total.toLocaleString("vi-VN")} kết quả cho <b>{query}</b>
         </p>
+        {hasFilter && !isChannel && (
+          <button type="button" onClick={clearFilters} className="text-sm font-medium text-blue-600 hover:underline">
+            Xoá bộ lọc
+          </button>
+        )}
       </div>
+      {!isChannel && results.length === 0 && (
+        <p className="py-10 text-center text-gray-600">
+          Không tìm thấy kết quả nào{hasFilter ? ". Thử bỏ bớt bộ lọc." : "."}
+        </p>
+      )}
+      {isChannel && (
+        <div className="space-y-2">
+          {channels.length === 0 && (
+            <p className="py-10 text-center text-gray-600">Không tìm thấy kênh nào.</p>
+          )}
+          {channels.map((ch) => (
+            <div
+              key={ch.id}
+              onClick={() => router.push(`/channel/${ch.id}`)}
+              className="flex cursor-pointer items-center gap-4 rounded-lg p-2 transition-colors hover:bg-gray-100 sm:gap-8"
+            >
+              <div className="flex w-24 shrink-0 justify-center sm:w-80">
+                <Image
+                  src={ch.picture || "/default-avatar.png"}
+                  alt={ch.name}
+                  width={136}
+                  height={136}
+                  className="h-24 w-24 rounded-full object-cover sm:h-[136px] sm:w-[136px]"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-medium">{ch.name}</h3>
+                <p className="text-sm text-gray-600">
+                  {formatCompact(ch.totalSubscribers)} người đăng ký • {ch.totalVideos} video
+                </p>
+                {ch.description && (
+                  <p className="mt-1 line-clamp-2 text-sm text-gray-600">{ch.description}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="space-y-4">
         {results.map((video) => (
           <div
