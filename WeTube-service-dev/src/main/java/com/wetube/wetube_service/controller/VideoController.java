@@ -118,6 +118,22 @@ public class VideoController {
         }
     }
 
+    /**
+     * Bước 1 của luồng tải lên: chọn tệp là tải lên ngay thành bản nháp (chỉ chủ video thấy).
+     * Chi tiết và chế độ hiển thị lưu sau bằng PUT /api/videos/{id}.
+     */
+    @PostMapping(value = "/drafts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<VideoDto> createDraft(
+            @RequestParam("videoFile") MultipartFile videoFile,
+            @RequestParam(value = "duration", required = false) Float duration,
+            @RequestParam(value = "width", required = false) Integer width,
+            @RequestParam(value = "height", required = false) Integer height,
+            @AuthenticationPrincipal Jwt jwt) {
+        VideoDto draft = videoService.createDraft(videoFile, duration, width, height, CurrentUser.id(jwt));
+        return ResponseEntity.status(HttpStatus.CREATED).body(draft);
+    }
+
     @GetMapping("/{id}/detail")
     public ResponseEntity<VideoDetailResponseDto> getDetail(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         UUID userId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;

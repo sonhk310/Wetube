@@ -17,6 +17,12 @@ import com.wetube.wetube_service.dto.video.VideoDto;
 public interface VideoService {
     VideoDto createVideo(MultipartFile videoFile, MultipartFile thumbnailFile, VideoDto videoDto, UUID authenticatedUserId) throws Exception;
 
+    /**
+     * Tải tệp lên và tạo bản nháp (DRAFT, tiêu đề = tên tệp). Chưa đưa vào tìm kiếm, chưa báo người đăng ký;
+     * đăng bằng updateVideo. duration / width / height do client đo, dùng khi Cloudinary không trả về.
+     */
+    VideoDto createDraft(MultipartFile videoFile, Float duration, Integer width, Integer height, UUID userId);
+
     List<VideoDto> getAllVideo();
 
     VideoDto addTags(UUID videoId, String hashtagText);

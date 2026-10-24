@@ -49,6 +49,7 @@ import com.wetube.wetube_service.service.VideoIndexer;
 import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.RedisService;
 import com.wetube.wetube_service.service.interaction.LikeService;
+import com.wetube.wetube_service.service.video.ShortsRule;
 import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.video.VideoSubtitleService;
 import com.wetube.wetube_service.service.video.WatchProgressService;
@@ -118,13 +119,14 @@ public VideoDto createVideo(MultipartFile videoFile,
     AppUser user = userRepository.findById(authenticatedUserId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + authenticatedUserId));
 
-    String videoUrl;
+    CloudinaryService.UploadedVideo uploaded;
     try {
-        videoUrl = cloudinaryService.uploadVideo(videoFile);
+        uploaded = cloudinaryService.uploadVideoWithMeta(videoFile);
     } catch (Exception e) {
         log.error("❌ Upload video lên Cloudinary thất bại: {}", e.getMessage(), e);
         throw new UploadFailedException("Upload video thất bại, vui lòng thử lại sau.", e);
     }
+    String videoUrl = uploaded.url();
 
     String thumbnailUrl = null;
     if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
@@ -141,7 +143,9 @@ public VideoDto createVideo(MultipartFile videoFile,
     entity.setVideoUrl(videoUrl);
     entity.setThumbnailUrl(thumbnailUrl);
     entity.setVideosStatus(visibility);
-    entity.setShort(false); // Task 2 thay bằng ShortsRule trên kích thước Cloudinary trả về
+    entity.setShort(ShortsRule.isShort(
+            uploaded.duration() != null ? uploaded.duration() : videoDto.getDuration(),
+            uploaded.width(), uploaded.height()));
 
     LocalDateTime now = LocalDateTime.now();
     if (entity.getCreatedAt() == null) entity.setCreatedAt(now);
@@ -175,6 +179,64 @@ public VideoDto createVideo(MultipartFile videoFile,
 
         throw new UploadFailedException("Lưu video thất bại, vui lòng thử lại.", e);
     }
+}
+
+@Override
+@Transactional(rollbackFor = Exception.class)
+public VideoDto createDraft(MultipartFile videoFile, Float duration, Integer width, Integer height, UUID userId) {
+    if (videoFile == null || videoFile.isEmpty()) {
+        throw new IllegalArgumentException("Video file is required");
+    }
+    AppUser user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+    CloudinaryService.UploadedVideo uploaded;
+    try {
+        uploaded = cloudinaryService.uploadVideoWithMeta(videoFile);
+    } catch (Exception e) {
+        log.error("❌ Upload video lên Cloudinary thất bại: {}", e.getMessage(), e);
+        throw new UploadFailedException("Upload video thất bại, vui lòng thử lại sau.", e);
+    }
+
+    // Số đo của Cloudinary đáng tin hơn số client gửi
+    Float realDuration = uploaded.duration() != null ? uploaded.duration() : duration;
+    Integer realWidth = uploaded.width() != null ? uploaded.width() : width;
+    Integer realHeight = uploaded.height() != null ? uploaded.height() : height;
+
+    Video entity = new Video();
+    entity.setUser(user);
+    entity.setTitle(draftTitle(videoFile.getOriginalFilename()));
+    entity.setVideoUrl(uploaded.url());
+    entity.setDuration(realDuration != null ? realDuration : 0f);
+    entity.setShort(ShortsRule.isShort(realDuration, realWidth, realHeight));
+    entity.setVideosStatus(ActiveStatus.DRAFT);
+    LocalDateTime now = LocalDateTime.now();
+    entity.setCreatedAt(now);
+    entity.setUpdatedAt(now);
+
+    try {
+        Video saved = videoRepository.save(entity);
+        addVideoToUserUploadedPlaylist(saved);
+        return videoMapper.toDto(saved);
+    } catch (Exception e) {
+        log.error("❌ Lỗi khi lưu bản nháp vào DB: {}", e.getMessage(), e);
+        try {
+            cloudinaryService.deleteVideo(uploaded.url());
+        } catch (Exception ex) {
+            log.warn("⚠️ Không thể xoá video trên Cloudinary sau khi DB rollback: {}", ex.getMessage());
+        }
+        throw new UploadFailedException("Lưu video thất bại, vui lòng thử lại.", e);
+    }
+}
+
+/** Tiêu đề bản nháp = tên tệp bỏ đuôi (như YouTube). */
+private static String draftTitle(String fileName) {
+    if (fileName == null || fileName.isBlank()) {
+        return "Video không có tiêu đề";
+    }
+    int dot = fileName.lastIndexOf('.');
+    String name = (dot > 0 ? fileName.substring(0, dot) : fileName).trim();
+    return name.isEmpty() ? "Video không có tiêu đề" : name;
 }
 
     private void indexToElasticsearch(Video video) {

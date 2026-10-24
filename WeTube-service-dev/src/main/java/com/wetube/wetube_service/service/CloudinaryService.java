@@ -17,7 +17,15 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
 
+    /** Video đã tải lên: link phát + kích thước / thời lượng Cloudinary đo được (null nếu không có). */
+    public record UploadedVideo(String url, Integer width, Integer height, Float duration) {
+    }
+
     public String uploadVideo(MultipartFile videoFile) {
+        return uploadVideoWithMeta(videoFile).url();
+    }
+
+    public UploadedVideo uploadVideoWithMeta(MultipartFile videoFile) {
         if (videoFile == null || videoFile.isEmpty()) {
             throw new IllegalArgumentException("File video is required");
         }
@@ -41,16 +49,26 @@ public class CloudinaryService {
         String publicId = publicIdObj.toString();
 
 
-        return cloudinary.url()
+        String url = cloudinary.url()
                 .resourceType("video")
                 .format("mp4")
                 .transformation(
                         new Transformation()
-                                .videoCodec("h264") 
+                                .videoCodec("h264")
                                 .quality("auto")
                 )
-                .secure(true) 
+                .secure(true)
                 .generate(publicId);
+        return new UploadedVideo(url, intOrNull(result.get("width")), intOrNull(result.get("height")),
+                floatOrNull(result.get("duration")));
+    }
+
+    private static Integer intOrNull(Object value) {
+        return value instanceof Number n ? n.intValue() : null;
+    }
+
+    private static Float floatOrNull(Object value) {
+        return value instanceof Number n ? n.floatValue() : null;
     }
 
     public String uploadThumbnail(MultipartFile thumbnailFile) {
