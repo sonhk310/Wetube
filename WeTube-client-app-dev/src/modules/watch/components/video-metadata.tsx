@@ -21,6 +21,7 @@ import {
 import { useGetLikeInfoQuery, useToggleLikeMutation } from "@/app/api/likeApi";
 import { useAuth } from "@/contexts/auth-context";
 import VideoMoreMenu from "./video-more-menu";
+import LinkifiedText from "./linkified-text";
 import ShareDialog from "./share-dialog";
 import SaveToPlaylistDialog from "./save-to-playlist-dialog";
 import { useToggleDislikeMutation } from "@/app/api/videoApi";
@@ -250,7 +251,7 @@ export default function VideoMetadata() {
         <p className="font-semibold">
           {totalView.toLocaleString("vi-VN")} lượt xem · {timeAgo(createAt)}
         </p>
-        <p>{description}</p>
+        {description && <LinkifiedText text={description} className="mt-1" />}
       </div>
     </section>
   );

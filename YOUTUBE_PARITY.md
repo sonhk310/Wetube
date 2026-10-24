@@ -107,7 +107,14 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Sửa sau đó (commit `84c2b08`, deploy client 2026-10-24 09:00):** Studio, mở lại video "Không công khai" / "Riêng tư" thì ô "Chế độ hiển thị" trống và nhãn đỏ. Nguyên nhân: Radix Select gọi `onValueChange("")` khi `form.reset()` đổi giá trị khỏi giá trị khởi tạo `ACTIVE`. Sửa: bỏ qua giá trị rỗng (`modules/studio/ui/sections/form-section.tsx`). **Anh đã thử trên trình duyệt: OK.**
 
-**Sửa hộp thoại Chia sẻ (commit `2b5b805`, deploy client 2026-10-24 10:20):** ô "Bắt đầu tại" bị khoá khi thời điểm là 0:00 (mở trước khi phát, hoặc từ menu ⋮ của thẻ video) → giờ luôn tick được và sửa được giờ (nhập `m:ss`, `h:mm:ss` hoặc số giây). Thêm hàng biểu tượng tròn kiểu YouTube: Facebook, WhatsApp, X, Telegram, LinkedIn, Email, và "Khác" (bảng chia sẻ của điện thoại, gồm Zalo / Messenger) khi trình duyệt hỗ trợ; mũi tên cuộn chỉ hiện khi còn cuộn được; ô link + nút "Sao chép" xanh. Chưa có "Nhúng" (cần trang `/embed`, mục F2). **Chưa thử trên trình duyệt.**
+**Sửa hộp thoại Chia sẻ (commit `2b5b805`, deploy client 2026-10-24 10:20):** ô "Bắt đầu tại" bị khoá khi thời điểm là 0:00 (mở trước khi phát, hoặc từ menu ⋮ của thẻ video) → giờ luôn tick được và sửa được giờ (nhập `m:ss`, `h:mm:ss` hoặc số giây). Thêm hàng biểu tượng tròn kiểu YouTube: Facebook, WhatsApp, X, Telegram, LinkedIn, Email, và "Khác" (bảng chia sẻ của điện thoại, gồm Zalo / Messenger) khi trình duyệt hỗ trợ; mũi tên cuộn chỉ hiện khi còn cuộn được; ô link + nút "Sao chép" xanh. Chưa có "Nhúng" (cần trang `/embed`, mục F2). Sau đó (commit `b64b242`, 10:26) sửa nội dung tràn khỏi hộp thoại: `DialogContent` là grid, cột tự rộng theo hàng biểu tượng → `grid-cols-[minmax(0,1fr)]`. **Chưa thử trên trình duyệt.**
+
+### Gói 9: F1 + B4 + sửa đếm playlist (24/10)
+- **Sửa đếm playlist** (commit `301c58d`, đã deploy backend 2026-10-24 10:01): danh sách playlist (`/api/playlists/{userId}`, `/created/{userId}`, `/{userId}/playlistType`, `/all/{userId}`) đếm số video và lấy ảnh bìa chỉ từ video người xem được thấy (`PlaylistServiceImpl.toVisibleDtos`). Đã kiểm tra: API trả 200, log không lỗi; chưa thử với playlist có video bị ẩn.
+- **F1 Thẻ chia sẻ** (CHƯA deploy): `app/watch/[videoId]/page.tsx` thành server component có `generateMetadata` (gọi `/detail` phía server, cache 5 phút): `<title>`, `og:title`, `og:description` (mô tả hoặc "Video của {kênh} trên WeTube"), `og:image` (thumbnail), `og:type=video.other`, canonical, thẻ Twitter. Phần giao diện chuyển sang `watch-page.tsx`. Root layout có `metadataBase` (`NEXT_PUBLIC_SITE_URL`, mặc định domain hiện tại). Backend: `/detail` trả thêm `thumbnailUrl`, `duration`. Video riêng tư / không tồn tại: chỉ có tiêu đề "WeTube".
+- **B4 Link và mốc thời gian bấm được** (CHƯA deploy) trong mô tả video và bình luận (`modules/watch/components/linkified-text.tsx`): link http(s) mở tab mới (`nofollow ugc`), mốc `m:ss` / `h:mm:ss` tua trình phát, phát tiếp và cuộn lên trình phát (sự kiện `wetube:seek`, `lib/watchSeek.ts`).
+
+**Đã kiểm tra:** biên dịch backend, `tsc`, eslint, `next build`; chạy bản build ở máy và đọc HTML trang xem: có `og:title`, `og:description`, `og:url`, canonical (chưa có `og:image` vì backend production chưa trả `thumbnailUrl`); regex nhận đúng `0:00`, `1:02:03`, link có dấu chấm / ngoặc ở cuối, bỏ qua `12:345`, `10:60`, `3:07pm`. **Chưa kiểm tra:** Facebook / Zalo hiện thẻ thật (sau deploy dùng Facebook Sharing Debugger), bấm mốc thời gian trên trình duyệt.
 
 ---
 
@@ -150,7 +157,7 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 | B1 | Chọn chất lượng (360p/720p/1080p, Tự động) | BE+FE | L | Cần Cloudinary tạo sẵn các bản hoặc phát HLS; video dài cần xử lý nền (eager/async) |
 | B2 | Ảnh xem trước khi rê trên thanh tua | FE | M | Cloudinary cắt được khung hình theo giây (`so_`) |
 | B3 | Chương (chapters) lấy từ mốc thời gian trong mô tả | FE | M | Thanh tua chia đoạn, tên chương |
-| B4 | Mốc thời gian / link trong mô tả bấm được | FE | S | |
+| B4 | ✅ Mốc thời gian / link trong mô tả bấm được | FE | S | Gói 9, cả trong bình luận |
 | B5 | Miniplayer khi rời trang xem (video vẫn chạy ở góc) | FE | L | Hiện chỉ có PiP của trình duyệt |
 | B6 | Phát theo playlist (`?list=`): hàng chờ, tự sang video sau, lặp / trộn | FE | M | |
 | B7 | Lặp video, chuột phải ra menu (sao chép link tại thời điểm…) | FE | S | |
@@ -183,7 +190,7 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 ### F. Nền tảng
 | # | Việc | Ở đâu | Cỡ | Ghi chú |
 |---|---|---|---|---|
-| F1 | Thẻ chia sẻ og:title / og:image, sitemap | FE | S | Link dán vào Facebook/Zalo hiện ảnh + tiêu đề |
+| F1 | ✅ Thẻ chia sẻ og:title / og:image (gói 9); sitemap chưa làm | FE | S | Link dán vào Facebook/Zalo hiện ảnh + tiêu đề |
 | F2 | Trang nhúng `/embed/{id}` + mã nhúng trong hộp thoại Chia sẻ | FE | M | |
 | F3 | Giao diện tối | FE | M | Anh chọn để dành |
 | F4 | Kiểm tra giao diện điện thoại toàn site | FE | M | Trình phát mới / drawer / chế độ rạp chưa thử trên máy thật |

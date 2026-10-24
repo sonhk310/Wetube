@@ -24,6 +24,7 @@ import { useControls, useTheater } from "@/hooks/use-controls";
 import { useSubtitles } from "@/hooks/use-subtitles";
 import { useViewCounter } from "@/lib/viewTracking";
 import { saveWatchProgress, useWatchProgressStore } from "@/lib/watchProgress";
+import { SEEK_EVENT } from "@/lib/watchSeek";
 import { useAuth } from "@/contexts/auth-context";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import ProgressBar from "./progress-bar";
@@ -242,6 +243,19 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     v.currentTime = t;
     setCurrentTime(t);
   }, []);
+
+  // Bấm mốc thời gian trong mô tả / bình luận (lib/watchSeek)
+  useEffect(() => {
+    const onSeek = (event: Event) => {
+      const time = (event as CustomEvent<number>).detail;
+      const v = videoRef.current;
+      if (!v || typeof time !== "number") return;
+      seekTo(time);
+      v.play().catch(() => {});
+    };
+    window.addEventListener(SEEK_EVENT, onSeek);
+    return () => window.removeEventListener(SEEK_EVENT, onSeek);
+  }, [seekTo]);
 
   const seekBy = useCallback(
     (delta: number) => {

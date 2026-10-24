@@ -79,6 +79,8 @@ export interface VideoDetailDto {
   title: string;
   description: string;
   videoUrl: string;
+  thumbnailUrl?: string | null;
+  duration?: number | null;
   createAt: string; // ISO, giờ UTC (…Z)
   totalView: number;
   name: string; // channel name

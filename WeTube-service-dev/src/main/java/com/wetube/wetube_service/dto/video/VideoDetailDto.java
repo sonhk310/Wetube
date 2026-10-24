@@ -21,6 +21,9 @@ public class VideoDetailDto {
     private String title;
     private String description;
     private String videoUrl;
+    /** Ảnh thu nhỏ, dùng cho thẻ chia sẻ (og:image). */
+    private String thumbnailUrl;
+    private Float duration;
     private LocalDateTime createAt;
     private Integer totalView;
     private String name;

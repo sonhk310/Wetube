@@ -33,6 +33,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ReportDialog from "@/modules/reports/report-dialog";
+import LinkifiedText from "../linkified-text";
 
 export interface Comment {
     id: string;
@@ -371,9 +372,7 @@ export const CommentComponent = ({
                         onCancel={() => setIsEditing(false)}
                     />
                 ) : (
-                    <p className="text-sm whitespace-pre-wrap break-words">
-                        {editedContent ?? comment.comment}
-                    </p>
+                    <LinkifiedText text={editedContent ?? comment.comment} className="text-sm" />
                 )}
 
                 <div className="flex justify-start items-center gap-3">

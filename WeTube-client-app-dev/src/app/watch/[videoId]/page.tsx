@@ -1,15 +1,72 @@
-"use client";
-import { ControlsProvider } from "@/contexts/controls-context";
-import App from "@/modules/watch/app";
-import { useParams } from "next/navigation";
+import type { Metadata } from "next";
+import { API_PREFIX } from "@/constants/appConstant";
+import WatchPage from "./watch-page";
 
-export default function Home() {
-    const params = useParams<{ videoId: string }>();
-    const videoId = params.videoId;
+/** Thẻ chia sẻ được làm mới tối đa sau chừng này giây (Facebook / Zalo cũng tự cache). */
+const METADATA_REVALIDATE_SECONDS = 300;
+const DESCRIPTION_MAX = 200;
 
-    return (
-        <ControlsProvider>
-            <App videoId={videoId} />
-        </ControlsProvider>
-    );
+interface ShareInfo {
+  title: string;
+  description?: string;
+  thumbnailUrl?: string;
+  name?: string;
+  createAt?: string;
+  duration?: number;
+}
+
+/** Thông tin video cho thẻ chia sẻ; null nếu video không tồn tại / không công khai với khách. */
+async function fetchShareInfo(videoId: string): Promise<ShareInfo | null> {
+  try {
+    const res = await fetch(`${API_PREFIX}/videos/${encodeURIComponent(videoId)}/detail`, {
+      next: { revalidate: METADATA_REVALIDATE_SECONDS },
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body?.detail ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ videoId: string }>;
+}): Promise<Metadata> {
+  const { videoId } = await params;
+  const video = await fetchShareInfo(videoId);
+  if (!video) return { title: "WeTube" };
+
+  const raw = video.description?.trim() || `Video của ${video.name ?? "WeTube"} trên WeTube`;
+  const description = raw.length > DESCRIPTION_MAX ? `${raw.slice(0, DESCRIPTION_MAX - 1)}…` : raw;
+  const url = `/watch/${videoId}`;
+  const images = video.thumbnailUrl ? [{ url: video.thumbnailUrl, alt: video.title }] : undefined;
+
+  return {
+    title: `${video.title} - WeTube`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "video.other",
+      siteName: "WeTube",
+      locale: "vi_VN",
+      url,
+      title: video.title,
+      description,
+      images,
+      ...(video.createAt ? { releaseDate: video.createAt } : {}),
+      ...(video.duration ? { duration: Math.round(video.duration) } : {}),
+    },
+    twitter: {
+      card: video.thumbnailUrl ? "summary_large_image" : "summary",
+      title: video.title,
+      description,
+      images: video.thumbnailUrl ? [video.thumbnailUrl] : undefined,
+    },
+  };
+}
+
+export default function Page() {
+  return <WatchPage />;
 }

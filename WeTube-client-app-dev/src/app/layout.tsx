@@ -21,8 +21,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Gốc cho các URL tương đối trong thẻ chia sẻ (og:url, canonical)
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://wetube.vibe.tinhgon.xyz"),
   title: "WeTube",
   description: "Xem và chia sẻ video thật dễ dàng",
+  openGraph: {
+    siteName: "WeTube",
+    locale: "vi_VN",
+    title: "WeTube",
+    description: "Xem và chia sẻ video thật dễ dàng",
+  },
   icons: {
     icon: [{ url: "/favicon.ico" }],
   },

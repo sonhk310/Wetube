@@ -357,6 +357,8 @@ public VideoDto createVideo(MultipartFile videoFile,
                 .title(video.getTitle())
                 .description(video.getDescription())
                 .videoUrl(video.getVideoUrl())
+                .thumbnailUrl(video.getThumbnailUrl())
+                .duration(video.getDuration())
                 .createAt(video.getCreatedAt())
                 .resumeAt(userId != null ? watchProgressService.get(userId, videoId) : null)
                 .totalView(video.getTotalView())
