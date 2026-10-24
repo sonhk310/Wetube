@@ -9,14 +9,14 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import { useState } from "react";
 import { AllowParticipationInfo } from "./allow-participation-info";
 import { Spinner } from "./spinner";
 import { apiFetch } from "@/lib/apiFetch";
 
 export function BroadcastDialog({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+  const router = useProgressRouter();
 
   const [loading, setLoading] = useState(false);
   const [roomName, setRoomName] = useState("");

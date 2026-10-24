@@ -9,8 +9,40 @@ import {useVideoStore } from "@/store/zustand/videoStore";
 import { useEffect } from "react";
 import { useTheater } from "@/hooks/use-controls";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 interface AppProps {
   videoId: string;
+}
+
+/** Khung chờ cùng lưới với trang xem: trình phát + tiêu đề + kênh bên trái, danh sách video bên phải. */
+function WatchSkeleton() {
+  return (
+    <div className="py-6 px-6 xxl:px-20 grid grid-cols-1 md:grid-cols-6 xxl:grid-cols-8 gap-x-6">
+      <div className="col-span-1 md:col-span-4 xxl:col-span-6">
+        <Skeleton className="w-full aspect-video rounded-xl" />
+        <Skeleton className="h-7 w-3/4 mt-4" />
+        <div className="flex items-center gap-3 mt-4">
+          <Skeleton className="size-10 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+        <Skeleton className="h-24 w-full mt-4 rounded-xl" />
+      </div>
+      <div className="col-span-1 md:col-span-2 flex flex-col gap-3 pt-6 md:pt-0">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex gap-2">
+            <Skeleton className="w-40 aspect-video rounded-lg shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-3 w-2/3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function App({ videoId }: AppProps) {
@@ -24,12 +56,7 @@ export default function App({ videoId }: AppProps) {
     return () => clearVideoDetail();
   }, [data, setVideoDetail, clearVideoDetail]);
 
-  if (isLoading)
-    return (
-        <div className="flex justify-center items-center py-10">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-    );
+  if (isLoading) return <WatchSkeleton />;
   if (isError) return <p>Đã có lỗi xảy ra.</p>;
 
   return (

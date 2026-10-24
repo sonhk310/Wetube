@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@radix-ui/react-tabs";
 import PlaylistCard, { Playlists } from "./playlist-card";
 import { playlistService } from "./playlist-API";
+import { Skeleton } from "@/components/ui/skeleton";
 import { get } from "http";
 
 export default function Playlistlist({ userId }: { userId: string }) {
   const [playlists, setPlaylists] = useState<Playlists[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPlaylists = async () => {
@@ -21,6 +23,8 @@ export default function Playlistlist({ userId }: { userId: string }) {
         setPlaylists(data);
       } catch (err) {
         console.error("Failed to fetch playlists:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -52,6 +56,23 @@ export default function Playlistlist({ userId }: { userId: string }) {
     }
     return filtered.filter((p) => (p.totalVideos ?? 0) > 0);
   };
+
+  if (loading) {
+    return (
+      <div className="flex-1 px-6">
+        <h1 className="text-2xl font-bold mb-6">Danh sách phát</h1>
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="aspect-video w-full rounded-lg" />
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 px-6">

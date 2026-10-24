@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import {
   FastForward,
   Loader2,
@@ -127,7 +127,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   // Khi chuyển video, store còn giữ video cũ một lúc: chỉ phát khi đúng video của trang
   const video = response?.detail.id === videoId ? response.detail : undefined;
   const upNext = video ? (response?.recommend?.video ?? []).filter((v) => v.id !== videoId) : [];
-  const router = useRouter();
+  const router = useProgressRouter();
   const subtitles = video?.subtitles ?? [];
   const { setSeek } = useControls();
   const { user } = useAuth();

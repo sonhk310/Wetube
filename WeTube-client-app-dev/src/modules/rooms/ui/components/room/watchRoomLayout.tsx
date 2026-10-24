@@ -4,7 +4,7 @@ import { useRoomStore } from "@/store/zustand/useRoomStore";
 import { useStompStore } from "@/store/zustand/useStompStore";
 import { MediaPlayerState, VideoRoom, WatchMember } from "@/types/room";
 import { MessageCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import { useEffect, useState } from "react";
 import VideoPlayer from "../video/videoPlayer";
 import MemberList from "./membersList";
@@ -12,7 +12,7 @@ import RoomChat from "./roomChat";
 import UpcomingList from "./upcomingList";
 
 export default function WatchRoomLayout() {
-  const router = useRouter();
+  const router = useProgressRouter();
   const [chatOpen, setChatOpen] = useState(false);
 
   const { room, myUsername, setMediaState, addSong, host, setMemberList } =

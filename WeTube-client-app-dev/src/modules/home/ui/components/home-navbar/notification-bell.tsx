@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { API_PREFIX } from "@/constants/appConstant";
 import { apiFetch } from "@/lib/apiFetch";
 import { cn, timeAgo } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 type NotificationType = "NEW_VIDEO" | "COMMENT_REPLY" | "VIDEO_COMMENT" | "COMMENT_HEART";
 
@@ -52,7 +53,7 @@ function message(n: NotificationItem) {
 
 /** Chuông thông báo trên thanh trên cùng (người đã đăng nhập). */
 export default function NotificationBell() {
-  const router = useRouter();
+  const router = useProgressRouter();
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -190,7 +191,11 @@ export default function NotificationBell() {
             </button>
           ))}
 
-          {loading && <p className="px-4 py-3 text-center text-sm text-gray-500">Đang tải…</p>}
+          {loading && (
+            <div className="flex justify-center px-4 py-3">
+              <Spinner />
+            </div>
+          )}
 
           {hasMore && !loading && (
             <button

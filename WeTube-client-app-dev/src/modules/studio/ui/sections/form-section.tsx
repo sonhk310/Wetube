@@ -31,7 +31,7 @@ import {
   useUpdateVideoDetailsMutation,
 } from "@/app/api/videoApi";
 import { ThumbnailSelector } from "@/components/ThumbnailSelector";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import { useDispatch } from "react-redux";
 import { playlistApi } from "@/app/api/playlistApi";
 import { useAuth } from "@/contexts/auth-context";
@@ -99,7 +99,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
   const [updateVideo, { isLoading: isUpdating }] =
     useUpdateVideoDetailsMutation();
 
-  const router = useRouter();
+  const router = useProgressRouter();
   const dispatch = useDispatch();
   
   // Thumbnail states

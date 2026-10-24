@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import {
   Clock,
   ListPlus,
@@ -48,7 +48,7 @@ const VideoCard = ({
   historyDuration,
   channelId,
 }: RecommendedVideoItem) => {
-  const router = useRouter();
+  const router = useProgressRouter();
   const { user } = useAuth();
   const [saveInteraction] = useSaveInteractionMutation();
   const watched = useWatchProgress(id) ?? historyDuration ?? 0;

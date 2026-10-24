@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/auth-context"; 
+import { useProgressRouter } from "@/hooks/use-progress-router";
+import { useAuth } from "@/contexts/auth-context";
+import { Spinner } from "@/components/ui/spinner";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
-  const router = useRouter();
+  const router = useProgressRouter();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -17,7 +18,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p>Đang tải...</p>
+        <Spinner className="size-8" />
       </div>
     );
   }

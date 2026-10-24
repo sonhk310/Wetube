@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 
 type PaymentStatus = {
   success: boolean;
@@ -10,7 +11,7 @@ type PaymentStatus = {
 
 export default function PaymentResult() {
   const params = useSearchParams();
-  const router = useRouter();
+  const router = useProgressRouter();
   const [status, setStatus] = useState<PaymentStatus | null>(null);
   const [loading, setLoading] = useState(true);
 

@@ -13,7 +13,7 @@ import { toastEmitter } from "@/lib/toastEmitter";
 import { useRoomStore } from "@/store/zustand/useRoomStore";
 import { useStompStore } from "@/store/zustand/useStompStore";
 import { Room } from "@/types/room";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import { useState } from "react";
 
 interface RoomProps {
@@ -24,7 +24,7 @@ interface RoomProps {
 export default function RoomModal({ open, onOpenChange }: RoomProps) {
   const [roomId, setRoomId] = useState("");
   const [username, setUsername] = useState("");
-  const router = useRouter();
+  const router = useProgressRouter();
   const { setRoom, setMyUsername } = useRoomStore();
   const { connect, publish, subscribe, unsubscribe } = useStompStore();
 

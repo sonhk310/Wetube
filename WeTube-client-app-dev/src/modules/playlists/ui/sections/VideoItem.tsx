@@ -16,7 +16,7 @@ import React, { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { playlistService } from "../list/playlist-API";
 import { useWatchProgress } from "@/lib/watchProgress";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 
 interface VideoItemProps {
   videoId: string;
@@ -48,7 +48,7 @@ export default function VideoItem({
   const [watchLaterClicked, setWatchLaterClicked] = useState(false);
   const [addedPlaylistClicked, setAddedPlaylistClicked] = useState(false);
   const { user } = useAuth();
-  const router = useRouter();
+  const router = useProgressRouter();
   const watched = useWatchProgress(videoId) ?? historyDuration;
 
   const resetState = () => {

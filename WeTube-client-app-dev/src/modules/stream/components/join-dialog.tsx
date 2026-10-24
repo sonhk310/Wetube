@@ -1,12 +1,12 @@
 "use client";
 
 import { Button, Dialog, Flex, Text, TextField } from "@radix-ui/themes";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import { useState } from "react";
 import { Spinner } from "./spinner";
 
 export function JoinDialog({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+  const router = useProgressRouter();
 
   const [roomName, setRoomName] = useState("");
   const [loading, setLoading] = useState(false);

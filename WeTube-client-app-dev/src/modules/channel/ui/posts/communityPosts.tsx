@@ -4,6 +4,7 @@ import PostCard from "@/modules/channel/ui/posts/postCard";
 import {useCreatePostMutation, useGetPostsByUserQuery} from "@/app/api/postApi";
 import CreatePostForm from "@/modules/channel/ui/posts/createPost";
 import {useAuth} from "@/contexts/auth-context";
+import {Skeleton} from "@/components/ui/skeleton";
 
 type Props = {
     /** Chủ kênh: bài đăng của người này được hiển thị. */
@@ -46,7 +47,25 @@ export default function CommunityPosts({ userId, ownerName, ownerPicture }: Prop
     };
 
 
-    if (isLoading) return <div className="p-4 text-gray-500">Đang tải...</div>;
+    if (isLoading) {
+        return (
+            <div className="flex flex-col gap-4 px-4 py-4">
+                {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="rounded-xl border p-4 space-y-3">
+                        <div className="flex items-center gap-3">
+                            <Skeleton className="size-10 rounded-full" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-32" />
+                                <Skeleton className="h-3 w-20" />
+                            </div>
+                        </div>
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                    </div>
+                ))}
+            </div>
+        );
+    }
     if (isError) return <div className="p-4 text-red-500">Không tải được bài đăng.</div>;
 
     const postsWithAuthor =

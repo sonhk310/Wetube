@@ -10,7 +10,8 @@ import { useRoomStore } from "@/store/zustand/useRoomStore";
 import { useStompStore } from "@/store/zustand/useStompStore";
 import { History, SearchIcon, SquarePlus, XIcon } from "lucide-react";
 import Image from 'next/image';
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import { Suspense, useEffect, useRef, useState } from "react";
 
 export const SearchInput = () => (
@@ -20,7 +21,7 @@ export const SearchInput = () => (
 );
 
 const SearchInputSuspense = () => {
-  const router = useRouter();
+  const router = useProgressRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const mode: "home" | "rooms" = pathname.includes("rooms") ? "rooms" : "home";

@@ -12,6 +12,25 @@ import {
   ReportView,
   reportsApi,
 } from "./reports-api";
+import { Skeleton } from "@/components/ui/skeleton";
+
+/** Khung chờ cùng hình với thẻ báo cáo: ảnh video bên trái, vài dòng chữ bên phải. */
+function ReportListSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="flex gap-4 border rounded-lg p-3">
+          <Skeleton className="w-40 aspect-video rounded shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const FILTERS: { label: string; value?: ReportStatus }[] = [
   { label: "Đang chờ", value: "OPEN" },
@@ -53,7 +72,13 @@ export default function AdminReportsView() {
     }
   };
 
-  if (isLoading) return <p className="p-6">Đang tải...</p>;
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <ReportListSkeleton />
+      </div>
+    );
+  }
   if (!isAdmin) return <p className="p-6">Trang này chỉ dành cho quản trị viên.</p>;
 
   return (
@@ -75,7 +100,7 @@ export default function AdminReportsView() {
       </div>
 
       {error && <p className="text-red-500">{error}</p>}
-      {reports === null && !error && <p>Đang tải...</p>}
+      {reports === null && !error && <ReportListSkeleton />}
       {reports && reports.length === 0 && <p className="text-gray-500">Không có báo cáo nào.</p>}
 
       <div className="space-y-3">

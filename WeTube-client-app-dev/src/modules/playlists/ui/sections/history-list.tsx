@@ -7,6 +7,7 @@ import VideoItem from "./VideoItem";
 import { useHistoryStore } from "@/store/zustand/useHistoryStore";
 import { useWatchProgressStore } from "@/lib/watchProgress";
 import { toastEmitter } from "@/lib/toastEmitter";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 
@@ -49,7 +50,25 @@ export default function HistoryList({ userId }: { userId: string }) {
   };
 
 
-  if (loading) return <p>Đang tải lịch sử...</p>;
+  if (loading) {
+    return (
+      <div className="max-w-4xl pl-12 pt-6">
+        <h1 className="text-4xl font-bold mb-3 text-black">Lịch sử xem</h1>
+        <div className="mt-8 space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex gap-3 py-2">
+              <Skeleton className="w-1/3 h-38 rounded-sm shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (!videos.length) return <p>Chưa có video nào trong lịch sử</p>;
 
   const q = query.trim().toLowerCase();

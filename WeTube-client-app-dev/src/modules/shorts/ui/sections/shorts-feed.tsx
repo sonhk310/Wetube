@@ -2,14 +2,23 @@
 "use client";
 import ShortsVideoCard from "../components/shorts-video-card";
 import { useShortsFeed } from "@/modules/shorts/hooks/useShortsFeed";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ShortsFeed() {
-  const { shorts, loadMore, loading, error } = useShortsFeed();
+  const { shorts, loadMore, loading, hasMore, error } = useShortsFeed();
 
   if (error && shorts.length === 0) {
     return <p className="p-6 text-center text-red-500">Không tải được Shorts.</p>;
   }
-  if (!loading && shorts.length === 0) {
+  // Chưa tải trang đầu (hasMore vẫn true) cũng là đang tải, không phải "chưa có Shorts"
+  if (shorts.length === 0 && (loading || hasMore)) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white">
+        <Skeleton className="h-[85vh] aspect-[9/16] rounded-xl" />
+      </div>
+    );
+  }
+  if (shorts.length === 0) {
     return (
       <p className="p-6 text-center text-gray-500">
         Chưa có Shorts nào. Video dài tối đa 60 giây sẽ tự xuất hiện ở đây.

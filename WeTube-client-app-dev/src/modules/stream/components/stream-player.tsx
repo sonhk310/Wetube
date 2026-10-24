@@ -24,6 +24,7 @@ import { useEffect, useRef, useState } from "react";
 import { MediaDeviceSettings } from "./media-device-settings";
 import { PresenceDialog } from "./presence-dialog";
 import { useAuthToken } from "./token-context";
+import { Spinner } from "@/components/ui/spinner";
 
 function ConfettiCanvas() {
   const [confetti, setConfetti] = useState<Confetti>();
@@ -199,7 +200,7 @@ export function StreamPlayer({ isHost = false }) {
                   {roomName} <CopyIcon />
                 </>
               ) : (
-                "Loading..."
+                <Spinner className="size-3 text-current" />
               )}
             </Button>
             {roomName && canHost && (

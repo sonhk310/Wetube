@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { playlistApi } from "@/app/api/playlistApi";
 import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
+import { Spinner } from "@/components/ui/spinner";
 
 interface PlaylistOption {
   playlistId: string;
@@ -117,7 +118,11 @@ export default function SaveToPlaylistDialog({
         ) : (
           <>
             <div className="max-h-60 overflow-y-auto flex flex-col gap-1">
-              {isLoading && <p className="text-sm text-gray-500">Đang tải...</p>}
+              {isLoading && (
+                <div className="flex justify-center py-3">
+                  <Spinner />
+                </div>
+              )}
               {!isLoading && playlists.length === 0 && (
                 <p className="text-sm text-gray-500">Bạn chưa có danh sách phát nào.</p>
               )}

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   REPORT_REASONS,
   REPORT_STATUS_LABELS,
@@ -42,7 +43,13 @@ const ReportStatus: React.FC = () => {
 
       {!isLoading && !user && <p>Vui lòng đăng nhập để xem nhật ký báo cáo.</p>}
       {error && <p className="text-red-500">Không tải được báo cáo: {error}</p>}
-      {user && !error && reports === null && <p>Đang tải...</p>}
+      {(isLoading || (user && !error && reports === null)) && (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      )}
       {reports && reports.length === 0 && <p className="text-gray-500">Bạn chưa báo cáo video nào.</p>}
 
       {reports && reports.length > 0 && (

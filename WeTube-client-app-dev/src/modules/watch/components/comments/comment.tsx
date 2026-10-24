@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ReportDialog from "@/modules/reports/report-dialog";
 import LinkifiedText from "../linkified-text";
+import { Spinner } from "@/components/ui/spinner";
 
 export interface Comment {
     id: string;
@@ -465,7 +466,7 @@ export const CommentComponent = ({
                 {isRepliesSectionOpen && (
                     <div className="flex flex-col justify-center items-start w-full gap-6 mt-2">
                         {replies.isLoading && !replies.loaded ? (
-                            <p className="text-xs text-gray-500">Đang tải phản hồi...</p>
+                            <Spinner />
                         ) : (
                             replies.replies.map((reply) => (
                                 <CommentComponent

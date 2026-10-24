@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useGetChannelInfoQuery } from "@/app/api/channelApi";
 import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
 import PlaylistCard, { PlaylistItem } from "@/modules/channel/ui/playlists/playListsCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const FALLBACK_THUMB = "https://placehold.co/600x340?text=Playlist";
 
@@ -34,7 +35,19 @@ export default function ChannelPlaylists() {
   }, [channel?.userId]);
 
   if (error) return <p className="p-4 text-red-500">Không tải được danh sách phát.</p>;
-  if (playlists === null) return <p className="p-4 text-gray-500">Đang tải...</p>;
+  if (playlists === null) {
+    return (
+      <div className="grid gap-6 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="w-[280px] space-y-2">
+            <Skeleton className="h-[160px] w-full rounded-lg" />
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    );
+  }
   if (playlists.length === 0) {
     return <p className="p-4 text-center text-gray-500">Kênh này chưa có danh sách phát công khai.</p>;
   }

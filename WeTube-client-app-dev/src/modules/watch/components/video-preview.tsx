@@ -1,6 +1,6 @@
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import { RecommendVideoDto } from "@/types/video";
 import { formatViews, timeAgo } from "@/lib/utils";
 import { useWatchProgress } from "@/lib/watchProgress";
@@ -11,7 +11,7 @@ const item = {
 };
 
 export default function VideoPreview({ video }: { video: RecommendVideoDto }) {
-  const router = useRouter();
+  const router = useProgressRouter();
   const watched = useWatchProgress(video.id) ?? 0;
   const handleClick = () => {
     router.push(`/watch/${video.id}`);

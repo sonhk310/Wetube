@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import PlaylistDetail from "../list/playlistdetail-list";
+import PlaylistDetail, { PlaylistDetailSkeleton } from "../list/playlistdetail-list";
 import { playlistService } from "../list/playlist-API";
 
 export default function Playlistliked() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [playlistId, setPlaylistId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user?.sub) {
-      setLoading(false);
+      // Chờ phiên đăng nhập xong, nếu không sẽ nháy "Không có playlist" trước khi tải
+      if (!authLoading) setLoading(false);
       return;
     }
 
@@ -36,9 +37,9 @@ export default function Playlistliked() {
     };
 
     fetchWatchLater();
-  }, [user?.sub]);
+  }, [user?.sub, authLoading]);
 
-  if (loading) return <p>Đang tải playlist liked...</p>;
+  if (loading) return <PlaylistDetailSkeleton />;
   if (!playlistId) return <p>Không có playlist Liked</p>;
 
   return <PlaylistDetail playlistId={playlistId} />;

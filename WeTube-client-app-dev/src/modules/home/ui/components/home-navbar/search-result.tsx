@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import Image from "next/image";
 import { SlidersHorizontal, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/lib/apiClient";
 import { cn, formatCompact, formatDuration } from "@/lib/utils";
 
@@ -98,9 +100,27 @@ interface VideoResult {
   description?: string;
 }
 
+/** Khung chờ của danh sách kết quả: ảnh bên trái, tiêu đề + thông tin bên phải. */
+function ResultsSkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex gap-4">
+          <Skeleton className="w-80 h-48 rounded-lg shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function SearchResultsContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useProgressRouter();
 
   const [results, setResults] = useState<VideoResult[]>([]);
   const [channels, setChannels] = useState<ChannelResult[]>([]);
@@ -308,18 +328,7 @@ function SearchResultsContent() {
     return (
       <div className="container mx-auto px-4 py-6">
         {filterBar}
-        <div className="animate-pulse space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex gap-4">
-              <div className="w-80 h-48 bg-gray-200 rounded-lg"></div>
-              <div className="flex-1 space-y-2">
-                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <ResultsSkeleton />
       </div>
     );
   }
@@ -445,7 +454,13 @@ function SearchResultsContent() {
 export default function SearchResults() {
   return (
     <div className="min-h-screen bg-gray-50 text-black">
-      <Suspense fallback={<div>Đang tải...</div>}>
+      <Suspense
+        fallback={
+          <div className="container mx-auto px-4 py-6">
+            <ResultsSkeleton />
+          </div>
+        }
+      >
         <SearchResultsContent />
       </Suspense>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 import Image from "next/image";
 import {
   Volume2,
@@ -30,7 +30,7 @@ export default function ShortsVideoCard({
   user: author,
   onReachEnd,
 }: ShortsVideoCardProps) {
-  const router = useRouter();
+  const router = useProgressRouter();
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

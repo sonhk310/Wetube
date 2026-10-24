@@ -5,6 +5,31 @@ import { MoreVertical, PlayCircle, Shuffle } from "lucide-react";
 import { playlistService } from "./playlist-API";
 import ColorThief from "colorthief";
 import Image from 'next/image';
+import { Skeleton } from "@/components/ui/skeleton";
+
+/** Khung chờ cùng bố cục với trang danh sách phát: thẻ bìa bên trái, các hàng video bên phải. */
+export function PlaylistDetailSkeleton() {
+  return (
+    <div className="w-full flex flex-col md:flex-row bg-white">
+      <div className="w-full md:w-96 p-6">
+        <Skeleton className="rounded-lg h-96 w-full" />
+      </div>
+      <div className="flex-1 space-y-4 p-6">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex gap-4 p-2">
+            <div className="w-8 flex-shrink-0" />
+            <Skeleton className="w-42 h-24 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-4 w-1/4" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
   const [playlist, setPlaylist] = useState<any>(null);
@@ -43,7 +68,7 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
     }
   }, [playlist]);
 
-  if (loading) return <p>Đang tải...</p>;
+  if (loading) return <PlaylistDetailSkeleton />;
   if (!playlist) return <p>Không tìm thấy playlist</p>;
 
   const firstVideo = playlist.videos?.[0];

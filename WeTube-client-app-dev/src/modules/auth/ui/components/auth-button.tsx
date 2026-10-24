@@ -9,11 +9,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { useRouter } from 'next/navigation';
+import { useProgressRouter } from "@/hooks/use-progress-router";
 
 const AuthButton = () => {
     const { user, isLoading, login, logout } = useAuth();
-    const router = useRouter();
+    const router = useProgressRouter();
 
     if (isLoading) {
         return <div className="h-10 w-24 bg-gray-200 rounded-full animate-pulse" />;

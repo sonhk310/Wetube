@@ -3,6 +3,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { API_PREFIX } from "@/constants/appConstant";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 
 type SubPack = {
   id: string;
@@ -43,7 +45,18 @@ export default function PremiumFeatures() {
     fetchSubPacks();
   }, []);
 
-  if (loading) return <p className="text-center">Đang tải...</p>;
+  if (loading) {
+    return (
+      <section className="py-20 px-4 bg-gray-50">
+        <Skeleton className="h-12 w-2/3 max-w-xl mx-auto mb-16" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-56 rounded-2xl" />
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   const handlePayment = async (subPackId: string) => {
     setPayLoading(subPackId);
@@ -116,7 +129,7 @@ export default function PremiumFeatures() {
               } disabled:opacity-50`}
             >
               {payLoading === plan.id
-                ? "Processing..."
+                ? <Spinner className="size-5 mx-auto text-current" />
                 : `Select ${plan.name}`}
             </button>
           </div>

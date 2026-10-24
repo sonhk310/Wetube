@@ -1,6 +1,7 @@
 "use client";
 
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+import { useProgressRouter } from "@/hooks/use-progress-router";
 
 const tabs = [
   { label: "Trang chủ", slug: "" },
@@ -11,7 +12,7 @@ const tabs = [
 
 export default function ChannelTabs() {
   const pathname = usePathname();
-  const router = useRouter();
+  const router = useProgressRouter();
   const { channelId } = useParams<{ channelId: string }>();
   const currentTab = pathname.split("/").pop();
 

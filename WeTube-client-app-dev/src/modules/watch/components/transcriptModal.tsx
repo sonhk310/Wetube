@@ -5,6 +5,7 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import axios from "axios";
 import { API_PREFIX } from "@/constants/appConstant";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function TranscriptModal({ videoId }: { videoId: string }) {
     const [loading, setLoading] = useState(false);
@@ -64,7 +65,9 @@ export default function TranscriptModal({ videoId }: { videoId: string }) {
                     </div>
 
                     {loading ? (
-                        <p className="text-gray-500">Đang tải bản ghi...</p>
+                        <div className="flex justify-center py-4">
+                            <Spinner />
+                        </div>
                     ) : transcript ? (
                         <p className="whitespace-pre-line text-sm">{transcript}</p>
                     ) : (

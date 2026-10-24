@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { API_PREFIX } from '@/constants/appConstant';
 import React, { useState } from 'react'
 import { apiFetch } from "@/lib/apiFetch";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function PaymentButton() {
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,7 @@ export default function PaymentButton() {
       disabled={loading}
       className="bg-blue-600 text-white text-lg font-medium px-6 py-3 rounded-full hover:bg-blue-700 transition disabled:opacity-50"
     >
-      {loading ? "Processing..." : "Try it for 1 month 0 VND"}
+      {loading ? <Spinner className="size-6 mx-auto text-current" /> : "Try it for 1 month 0 VND"}
     </button>
   );
 }
