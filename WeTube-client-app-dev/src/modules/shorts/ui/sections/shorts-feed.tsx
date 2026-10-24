@@ -21,7 +21,7 @@ export default function ShortsFeed() {
   if (shorts.length === 0) {
     return (
       <p className="p-6 text-center text-gray-500">
-        Chưa có Shorts nào. Video dài tối đa 60 giây sẽ tự xuất hiện ở đây.
+        Chưa có Shorts nào. Video dọc hoặc vuông dài tối đa 3 phút sẽ tự xuất hiện ở đây.
       </p>
     );
   }
