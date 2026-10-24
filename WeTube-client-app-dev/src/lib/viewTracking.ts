@@ -37,6 +37,18 @@ export async function registerView(videoId: string): Promise<void> {
 }
 
 /**
+ * Khách chưa đăng nhập: gửi vị trí đang xem để tính thời gian xem cho chủ kênh (không lưu lịch sử).
+ * Tham số trên URL để gửi được cả khi đóng tab (keepalive), giống saveWatchProgress.
+ */
+export function saveAnonWatchTime(videoId: string, seconds: number) {
+  const t = Math.max(0, Math.round(seconds * 10) / 10);
+  apiFetch(`${API_PREFIX}/videos/${videoId}/watch-time?t=${t}&anonId=${encodeURIComponent(getAnonId())}`, {
+    method: "POST",
+    keepalive: true,
+  }).catch((err) => console.error("Không gửi được thời gian xem:", err));
+}
+
+/**
  * Đếm 1 lượt xem sau khi video đã chạy liên tục `delayMs` mili giây (active=true).
  * Tạm dừng / chuyển video sẽ huỷ bộ đếm; mỗi video chỉ gửi tối đa một lần cho mỗi lần mở trang.
  */

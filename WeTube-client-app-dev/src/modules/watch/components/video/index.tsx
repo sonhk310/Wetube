@@ -22,7 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useControls, useTheater } from "@/hooks/use-controls";
 import { useSubtitles } from "@/hooks/use-subtitles";
-import { useViewCounter } from "@/lib/viewTracking";
+import { saveAnonWatchTime, useViewCounter } from "@/lib/viewTracking";
 import { saveWatchProgress, useWatchProgressStore } from "@/lib/watchProgress";
 import { SEEK_EVENT } from "@/lib/watchSeek";
 import { useAuth } from "@/contexts/auth-context";
@@ -211,12 +211,14 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   const reportProgress = useCallback((final: boolean) => {
     const v = videoRef.current;
     const p = progressRef.current;
-    if (!v || !p.userId || !p.videoId || scrubState.current) return;
+    if (!v || !p.videoId || scrubState.current) return;
     const t = v.ended ? v.duration : v.currentTime;
     if (!Number.isFinite(t) || t < MIN_PROGRESS_SECONDS) return;
     if (Math.abs(t - p.lastSent) < 1) return;
     p.lastSent = t;
-    saveWatchProgress(p.videoId, t, final);
+    // Chưa đăng nhập: chỉ gửi để tính thời gian xem cho chủ kênh
+    if (p.userId) saveWatchProgress(p.videoId, t, final);
+    else saveAnonWatchTime(p.videoId, t);
   }, []);
 
   const track = subtitleIndex >= 0 ? subtitles[subtitleIndex] : undefined;
