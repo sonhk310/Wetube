@@ -15,6 +15,22 @@ interface FailedRequest {
   reject: (reason?: Error) => void;
 }
 
+let refreshing: Promise<boolean> | null = null;
+
+/**
+ * Làm mới access token (sống 1 giờ) bằng refresh token trong cookie. Dùng chung cho axios và apiFetch:
+ * nhiều request cùng gặp 401 chỉ gửi một lần làm mới. Trả về false nếu phiên đã hết.
+ */
+export function refreshSession(): Promise<boolean> {
+  refreshing ??= apiClient
+    .post("/auth/refresh-login")
+    .then(() => true, () => false)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
 let isRefreshing = false;
 let failedQueue: FailedRequest[] = [];
 
@@ -47,7 +63,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await apiClient.post("/auth/refresh-login");
+        if (!(await refreshSession())) throw new Error("Phiên đăng nhập đã hết hạn");
         processQueue(null);
         return apiClient(originalRequest);
       } catch (refreshError) {
