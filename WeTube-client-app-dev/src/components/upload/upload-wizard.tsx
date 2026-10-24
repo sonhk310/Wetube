@@ -32,8 +32,8 @@ const STEPS: { id: StepId; label: string }[] = [
 ];
 
 const MAX_THUMBNAIL_BYTES = 5 * 1024 * 1024;
-// Giữ quy tắc thẻ của form cũ: "#the1 #the2"
-const TAGS_PATTERN = /^(#\w+(\s+#\w+)*)$/;
+// Giữ quy tắc thẻ của form cũ: "#the1 #the2"; nhận chữ có dấu (#âmnhạc)
+const TAGS_PATTERN = /^(#[\p{L}\p{N}_]+(\s+#[\p{L}\p{N}_]+)*)$/u;
 
 function validate(form: WizardForm): FormErrors {
   const errors: FormErrors = {};

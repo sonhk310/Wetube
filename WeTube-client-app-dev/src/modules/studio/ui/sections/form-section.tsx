@@ -55,7 +55,7 @@ const formSchema = z.object({
   tags: z
     .string()
     .max(200, { message: "Thẻ tối đa 200 ký tự." })
-    .refine((value) => value === "" || /^(#\w+(\s+#\w+)*)$/.test(value), {
+    .refine((value) => value === "" || /^(#[\p{L}\p{N}_]+(\s+#[\p{L}\p{N}_]+)*)$/u.test(value), {
       message: 'Thẻ phải có dạng "#the1 #the2"',
     })
     .optional(),
