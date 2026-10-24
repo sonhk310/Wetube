@@ -88,11 +88,22 @@ class VideoDraftTest {
     }
 
     @Test
-    void cloudinarySizeWinsOverClientSize() throws Exception {
+    void clientSizeWinsOverCloudinarySize() throws Exception {
+        // Video quay dọc có cờ xoay: Cloudinary có thể báo khung gốc nằm ngang, trình duyệt hiện dọc
+        when(cloudinaryService.uploadVideoWithMeta(file))
+                .thenReturn(new CloudinaryService.UploadedVideo("https://x/v.mp4", 1920, 1080, 45f));
+
+        videoService.createDraft(file, 45f, 1080, 1920, userId);
+
+        assertThat(savedVideo().isShort()).isTrue();
+    }
+
+    @Test
+    void cloudinarySizeIsUsedWhenClientHasNone() throws Exception {
         when(cloudinaryService.uploadVideoWithMeta(file))
                 .thenReturn(new CloudinaryService.UploadedVideo("https://x/v.mp4", 1080, 1920, 45f));
 
-        videoService.createDraft(file, 45f, 1920, 1080, userId);
+        videoService.createDraft(file, null, null, null, userId);
 
         assertThat(savedVideo().isShort()).isTrue();
     }

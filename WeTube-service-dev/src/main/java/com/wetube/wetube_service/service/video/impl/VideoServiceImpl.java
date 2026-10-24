@@ -198,10 +198,14 @@ public VideoDto createDraft(MultipartFile videoFile, Float duration, Integer wid
         throw new UploadFailedException("Upload video thất bại, vui lòng thử lại sau.", e);
     }
 
-    // Số đo của Cloudinary đáng tin hơn số client gửi
+    // Thời lượng: lấy của Cloudinary. Kích thước: ưu tiên số trình duyệt đo (đã xoay theo metadata, đúng khung
+    // người đăng nhìn thấy); video quay dọc có cờ xoay có thể bị Cloudinary báo khung gốc nằm ngang.
     Float realDuration = uploaded.duration() != null ? uploaded.duration() : duration;
-    Integer realWidth = uploaded.width() != null ? uploaded.width() : width;
-    Integer realHeight = uploaded.height() != null ? uploaded.height() : height;
+    boolean clientHasSize = width != null && height != null && width > 0 && height > 0;
+    Integer realWidth = clientHasSize ? width : uploaded.width();
+    Integer realHeight = clientHasSize ? height : uploaded.height();
+    log.info("Bản nháp {}: client {}x{}, Cloudinary {}x{}, {}s", videoFile.getOriginalFilename(),
+            width, height, uploaded.width(), uploaded.height(), realDuration);
 
     Video entity = new Video();
     entity.setUser(user);
