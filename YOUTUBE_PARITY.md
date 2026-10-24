@@ -184,6 +184,12 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-studio-analytics-design.md`; k�
 **Đã kiểm tra:** test backend `ViewStatsTest` (3), `WatchTimeTrackerTest` (4), `StudioAnalyticsServiceTest` (6: khoảng ngày sai → 400, đủ ngày, chia ngày giờ VN, tổng, `trackingSince`, chưa có kênh → 0), cả bộ xanh (10 lớp); client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build` (có route `/studio/analytics`). Sau deploy: log không có Exception / cảnh báo ghi số liệu; `GET /api/studio/analytics` 401 khi chưa đăng nhập; `POST /watch-time?t=5` 204 (em gọi thử với anonId `claude-check`, đã cộng 5 giây vào video `be49c4b5…`), `t=-1` 400, video không tồn tại 404; `/studio/analytics` 200. **Chưa kiểm tra:** giao diện trên trình duyệt, số liệu khi đã đăng nhập.
 - **Anh đã thử trên trình duyệt: OK (24/10).**
 - **Còn để ý:** khách có thể đổi `anonId` liên tục để thổi phồng thời gian xem (bị chặn ở 60 lần/phút/IP × 35 giây).
+### Gói 14: C1 Bộ lọc tìm kiếm (commit `55b0056`, `f69b1b3`, **chưa push, chờ anh duyệt**)
+- **Trang `/search`:** hàng nút Tất cả / Video / Shorts / Kênh; nút "Bộ lọc" mở bảng 3 cột: Thời lượng (dưới 4 phút / 4–20 / trên 20), Ngày tải lên (hôm nay / tuần này / tháng này / năm nay = 1 / 7 / 30 / 365 ngày gần nhất), Sắp xếp theo (mức độ liên quan / ngày tải lên / lượt xem). Bộ lọc nằm trên URL (`?query=&type=&duration=&uploaded=&sort=`), bấm lại lựa chọn đang chọn là bỏ; có "Xoá bộ lọc". "Khoảng N kết quả" giờ là tổng của Elasticsearch (trước là số dòng trên trang).
+- **Backend:** `GET /api/videos/search/full` nhận thêm `type` (video | short), `duration`, `uploaded`, `sort` (`search/SearchFilters.java`, giá trị lạ → 400); câu truy vấn thêm `minimumShouldMatch("1")` để filter không làm should thành tuỳ chọn. Chỉ mục ES có thêm `isShort` (đồng bộ lại lúc khởi động). Mới: `GET /api/channels/search?q=` (tối đa 20 kênh, theo số người đăng ký, bỏ kênh bị ẩn / xoá).
+
+**Đã kiểm tra:** test `SearchFiltersTest` (6), `ChannelSearchServiceTest` (2), cả bộ backend xanh (12 lớp); client `tsc` (12 lỗi cũ), eslint, `next build`. **Chưa kiểm tra:** câu truy vấn Elasticsearch thật (máy không có ES; kiểm sau deploy bằng curl), giao diện trên trình duyệt.
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
@@ -233,7 +239,7 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 ### C. Khám phá & tìm kiếm
 | # | Việc | Ở đâu | Cỡ | Ghi chú |
 |---|---|---|---|---|
-| C1 | Bộ lọc tìm kiếm: thời lượng, ngày đăng, loại (video/Shorts/kênh), sắp xếp | BE+FE | M | |
+| C1 | ✅ Bộ lọc tìm kiếm: thời lượng, ngày đăng, loại (video/Shorts/kênh), sắp xếp | BE+FE | M | Gói 14 |
 | C2 | ✅ Lịch sử tìm kiếm trong ô gợi ý (xoá từng mục) | BE+FE | S | |
 | C3 | Gợi ý dùng cả lịch sử xem, ẩn video đã xem hết, nút "Không quan tâm" | BE+FE | M | Hiện chỉ dựa vào điểm tag |
 | C4 | Trang Khám phá (Âm nhạc, Thể thao, Tin tức, Trò chơi) dùng dữ liệu thật | BE+FE | M | Chưa xem kỹ: các trang này có banner, có thể còn dữ liệu mẫu |
