@@ -164,8 +164,8 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-upload-flow-design.md`; kế ho
   - Xoá file trên Cloudinary: **đã có sẵn** từ trước (`deleteVideo` xoá file video + ảnh sau khi DB commit; log 20:21 "Xoá video thành công trên Cloudinary"). Dòng trong CSDL vẫn giữ trạng thái DELETED vì bình luận / báo cáo / lịch sử còn trỏ tới.
   - Sửa lỗi (commit `8ee867a`, deploy backend 20:38): đăng bản nháp thì ngày đăng = lúc đăng (trước là lúc tải lên). `isShort` không cần tính lại (tính từ file, file không đổi). Test `VideoPublishTest`.
   - Sửa lỗi (commit `2099442`, deploy client 20:42): thẻ nhận chữ có dấu (`#âmnhạc`), regex `\p{L}` ở `upload-wizard.tsx` và `form-section.tsx`. Backend vốn nhận sẵn.
-  - Tính năng (commit `337d131`, **chưa push, chờ anh duyệt**): job `DraftCleanupJob` 03:00 giờ VN mỗi đêm xoá bản nháp không sửa quá 30 ngày (theo `updatedAt`), xoá cả file Cloudinary qua `deleteVideo`. Test `DraftCleanupJobTest`.
-  - Tính năng (commit `7b45b6b`, **chưa push, chờ anh duyệt**): thẻ Studio hiện số bình luận (gồm trả lời) cạnh lượt xem; `commentCount` trong API chi tiết playlist theo id, đếm bằng một truy vấn `GROUP BY`. Test trong `PlaylistDetailTest`.
+  - Tính năng (commit `337d131`, anh duyệt, deploy backend 20:54): job `DraftCleanupJob` 03:00 giờ VN mỗi đêm xoá bản nháp không sửa quá 30 ngày (theo `updatedAt`), xoá cả file Cloudinary qua `deleteVideo`. Test `DraftCleanupJobTest`.
+  - Tính năng (commit `7b45b6b`, anh duyệt, deploy backend 20:54, client 20:57): thẻ Studio hiện số bình luận (gồm trả lời) cạnh lượt xem; `commentCount` trong API chi tiết playlist theo id, đếm bằng một truy vấn `GROUP BY`. Test trong `PlaylistDetailTest`.
   - Số liệu phân tích (E1): để gói riêng, cần thiết kế; hiện chỉ lưu tổng lượt xem, chưa có dữ liệu theo ngày.
 - **Phát hiện thêm:** nút AI cũ gọi `/api/ai/description` bằng axios không kèm cookie nên nhiều khả năng luôn 401 (chưa kiểm chứng); nút mới dùng `apiFetch`.
 
