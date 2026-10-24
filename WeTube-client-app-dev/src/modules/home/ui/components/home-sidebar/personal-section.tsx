@@ -13,11 +13,13 @@ import {
   Clock3,
   HistoryIcon,
   ListVideoIcon,
+  SquareUserRound,
   ThumbsUpIcon,
   Youtube,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
 
 const items = [
   {
@@ -54,12 +56,16 @@ const items = [
 
 export const PersonalSection = () => {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const visibleItems = user?.channelId
+    ? [{ title: "Kênh của bạn", url: `/channel/${user.channelId}`, icon: SquareUserRound, auth: true }, ...items]
+    : items;
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Bạn</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item, index) => (
+          {visibleItems.map((item, index) => (
             <SidebarMenuItem key={index}>
               <SidebarMenuButton
                 tooltip={item.title}

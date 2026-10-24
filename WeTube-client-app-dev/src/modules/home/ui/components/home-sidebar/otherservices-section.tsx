@@ -2,7 +2,7 @@
 
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { pageUrls } from "@/lib/enums/page-urls";
-import { Crown, Clapperboard} from "lucide-react";
+import { Crown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,11 +11,6 @@ const items = [
         title: "WeTube Premium",
         url: pageUrls.PREMIUM,
         icon: Crown ,
-    },
-    {
-        title: "WeTube Studio",
-        url: "/studio",
-        icon: Clapperboard ,
     }
 ];
 
@@ -23,7 +18,7 @@ export const OtherServices = () => {
     const pathname = usePathname();
     return (
         <SidebarGroup>
-            <SidebarGroupLabel>Thêm từ WeTube</SidebarGroupLabel>
+            <SidebarGroupLabel>Dịch vụ khác của WeTube</SidebarGroupLabel>
             <SidebarGroupContent>
                 <SidebarMenu>
                     {items.map((item, index) => (
