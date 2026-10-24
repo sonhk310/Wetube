@@ -138,6 +138,6 @@ Anh thử OK thì ghi "Anh đã thử trên trình duyệt: OK".
 - **RTK Query:**
   - Cache có thể làm dữ liệu cũ (`getVideoDetail` đã đặt `keepUnusedDataFor: 0`).
   - API backend trả chữ thường (không phải JSON) thì phải thêm `responseHandler: "text"`, nếu không `unwrap()` sẽ báo lỗi dù server đã làm xong.
-- **Toast:** có cả `react-toastify` (`lib/toastEmitter.ts`) lẫn `react-hot-toast`. Cả hai đều đã được gắn trong `app/layout.tsx`, nhưng code mới nên dùng `toastEmitter`.
+- **Toast:** dùng toast của shadcn (Sonner) ở giữa cạnh dưới; gọi qua `lib/toastEmitter.ts` (hoặc `toast` của `sonner`). Đã bỏ `react-toastify` và `react-hot-toast`.
 - **Rate limit** (`security/RateLimiter.java`): vượt giới hạn thì trả 429 kèm `message` tiếng Việt. Client hiện lỗi bằng `lib/apiError.ts`.
 - **Redis** chỉ dùng làm cache. Mọi key ghi qua `RedisService` đều có TTL; Redis lỗi thì code tự chạy tiếp không cần Redis.
