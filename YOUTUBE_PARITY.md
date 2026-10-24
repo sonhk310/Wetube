@@ -215,7 +215,7 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 - `JWT_PRIVATE_KEY` và `JWT_PUBLIC_KEY` đang **không** được đánh dấu secret trong Vibe Host. Khoá riêng nên đánh dấu secret.
 - Xác nhận chữ ký MoMo với giao dịch sandbox thật (chưa từng thử).
 - ~~Số đếm video trong playlist tính cả video đã bị ẩn~~: đã sửa 24/10 (số video và ảnh bìa ở danh sách playlist chỉ tính video người xem được thấy, `PlaylistServiceImpl.toVisibleDtos`).
-- Quyết định với Gradle wrapper 9.7.1 trong máy (xem mục 4).
+- ~~Quyết định với Gradle wrapper 9.7.1 trong máy~~: 24/10 anh chọn trả về bản gốc (8.14.3), đã `git restore`.
 - Test hết `TEST_CHECKLIST.md` mục 1–15 (mục 2.1).
 
 ---
@@ -227,7 +227,7 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 - **Schema DB:** `application-prod.yml` ghi `ddl-auto: update`, và Vibe Host có biến `SPRING_JPA_HIBERNATE_DDL_AUTO` ghi đè (không đọc được giá trị). 24/10: 3 cột của gói 8 đã có trước khi runner chạy, tức Hibernate tự thêm lúc khởi động, nên thực tế gần như chắc là `update` (không phải `none` như ghi trước đây). Hibernate `update` chỉ thêm bảng / cột, không đổi kiểu cột (vd. ENUM) và không thêm index, nên vẫn giữ nếp viết runner idempotent lúc khởi động (mẫu: `job/VideoSchemaInitializer.java`, `job/ReportTableInitializer.java`). Cột `videos_status` là ENUM, chỉ nối thêm giá trị vào cuối.
 - **Backup:** nên backup MySQL trước mỗi lần thay đổi schema.
 - **Cách nói chuyện:** tiếng Việt; nói rõ cái gì đã kiểm tra thật, cái gì chỉ đoán; sửa gộp rồi deploy một lần.
-- **Gradle wrapper trong máy đã bị đổi sang Gradle 9.7.1** (`gradle/wrapper/*`, `gradlew`, `gradlew.bat`, sửa lúc 19:23 ngày 23/10, không phải em đổi). Em chưa commit các file này. Docker build dùng Gradle 8.14 của image nên không bị ảnh hưởng. Biên dịch local cho giống production: dùng Gradle 8.14.3 trong `~/.gradle/wrapper/dists/gradle-8.14.3-bin/.../bin/gradle compileJava`.
+- **Gradle:** wrapper trong máy đã trả về 8.14.3 (24/10), giống production: biên dịch bằng `./gradlew --no-daemon compileJava compileTestJava -q`.
 - **Kiểm tra client trước khi deploy:** `npx tsc --noEmit` (bỏ qua 12 lỗi TS7006 cũ), `npx eslint <file>`, `npx next build` (Vibe Host build với `ignoreBuildErrors: true`, nên lỗi kiểu không chặn build: phải tự chạy tsc). `node_modules` đã cài lại bằng `npm ci` ngày 23/10.
 - **Không có trình duyệt** trong session: chỉ kiểm tra được bằng curl / log; giao diện phải nhờ anh thử và gửi ảnh.
 - **Nếp làm việc đã thống nhất:** tính năng mới thì commit rồi hỏi anh trước khi push + deploy; sửa lỗi anh vừa báo trên tính năng đã deploy thì push + deploy luôn rồi báo. Mỗi xong một gói thì cập nhật file này.
