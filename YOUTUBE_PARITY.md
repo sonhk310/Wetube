@@ -6,7 +6,7 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 - Backend: https://wetube-service.vibe.tinhgon.xyz
 - Vibe Host: backend `cmvkfhypr07ra0i5f5b51wed1`, client `cmvkg1ilo084w0i5fhrmxxz90`
 - Tài liệu liên quan: `PRD.md` (yêu cầu gốc), `TEST_CHECKLIST.md` (việc cần tự test khi đăng nhập)
-- Quy tắc làm việc: sửa gộp một lượt rồi deploy một lần (backend trước, client sau); biên dịch backend bằng `./gradlew compileJava -q --offline`, kiểm tra client bằng `npx tsc --noEmit` (bỏ qua lỗi TS7006 cũ).
+- Quy tắc làm việc: sửa gộp một lượt rồi deploy một lần (backend trước, client sau); biên dịch backend bằng Gradle 8.14.3 (xem mục 4, không dùng `./gradlew`), kiểm tra client bằng `npx tsc --noEmit` (bỏ qua lỗi TS7006 cũ).
 
 ---
 
@@ -120,7 +120,7 @@ Làm theo `TEST_CHECKLIST.md` mục **11–15**, dùng 2 tài khoản (A và B):
 Nếu có lỗi: ghi giờ + màn hình, em tra log (`get_runtime_logs`).
 
 ### 2.2 Redis: phần còn lại
-- Code đã xong (xem gói 3 ở trên). Cấu hình Redis trên Vibe Host đề xuất: 0,25 core (tối đa 0,5), RAM 64–128 MB, `maxmemory-policy allkeys-lru`, tắt lưu đĩa (chỉ dùng làm cache). Em chưa kiểm tra Redis đang chạy với cấu hình nào.
+- Code đã xong (xem gói 3 ở trên). Cấu hình Redis trên Vibe Host đề xuất: 0,25 core (tối đa 0,5), RAM 64–128 MB, `maxmemory-policy allkeys-lru`, tắt lưu đĩa (chỉ dùng làm cache). 24/10: Redis là CSDL `redis-instance` do Vibe Host quản lý (đang chạy); công cụ không cho xem `maxmemory` / chính sách xoá key, anh xem trong giao diện nếu cần. Mọi key mình ghi đều có TTL (`RedisService` chỉ có hàm ghi kèm TTL), nên Redis không phình dù cấu hình thế nào.
 - Sau này nếu cần: gộp lượt xem rồi ghi MySQL theo lô; lưu trạng thái phòng xem chung vào Redis.
 
 ---
@@ -187,10 +187,10 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 | F4 | Kiểm tra giao diện điện thoại toàn site | FE | M | Trình phát mới / drawer / chế độ rạp chưa thử trên máy thật |
 
 ### G. Dọn dẹp / kỹ thuật
-- Xoá project wetube-admin trên Vibe Host (không còn dùng; anh làm trong giao diện).
+- ~~Xoá project wetube-admin~~: 24/10 Vibe Host chỉ còn 2 project (wetube, wetube-service), đã xong.
 - `JWT_PRIVATE_KEY` và `JWT_PUBLIC_KEY` đang **không** được đánh dấu secret trong Vibe Host. Khoá riêng nên đánh dấu secret.
 - Xác nhận chữ ký MoMo với giao dịch sandbox thật (chưa từng thử).
-- Số đếm video trong playlist vẫn tính cả video đã bị ẩn (danh sách thì đã lọc đúng).
+- ~~Số đếm video trong playlist tính cả video đã bị ẩn~~: đã sửa 24/10 (số video và ảnh bìa ở danh sách playlist chỉ tính video người xem được thấy, `PlaylistServiceImpl.toVisibleDtos`).
 - Quyết định với Gradle wrapper 9.7.1 trong máy (xem mục 4).
 - Test hết `TEST_CHECKLIST.md` mục 1–15 (mục 2.1).
 
@@ -200,7 +200,7 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 
 - **Deploy:** `git push` lên `main`, rồi `redeploy_project` (backend `cmvkfhypr...`, client `cmvkg1ilo...`), chờ job xong, đọc log. Chờ 60–90 giây nếu báo cooldown. Backend khởi động mất khoảng 30 giây.
 - **Quyền:** bộ phân quyền tự động chặn `redeploy_project` cho tới khi anh nói rõ trong chat. Muốn khỏi phải nói: thêm `"mcp__vibehost__redeploy_project"` vào `permissions.allow` trong `.claude/settings.local.json`.
-- **Schema DB:** production chạy `ddl-auto=none`, nên mọi thay đổi bảng phải làm bằng runner lúc khởi động (mẫu: `job/VideoSchemaInitializer.java`, `job/ReportTableInitializer.java`). Cột `videos_status` là ENUM, chỉ nối thêm giá trị vào cuối.
+- **Schema DB:** `application-prod.yml` ghi `ddl-auto: update`, và Vibe Host có biến `SPRING_JPA_HIBERNATE_DDL_AUTO` ghi đè (không đọc được giá trị). 24/10: 3 cột của gói 8 đã có trước khi runner chạy, tức Hibernate tự thêm lúc khởi động, nên thực tế gần như chắc là `update` (không phải `none` như ghi trước đây). Hibernate `update` chỉ thêm bảng / cột, không đổi kiểu cột (vd. ENUM) và không thêm index, nên vẫn giữ nếp viết runner idempotent lúc khởi động (mẫu: `job/VideoSchemaInitializer.java`, `job/ReportTableInitializer.java`). Cột `videos_status` là ENUM, chỉ nối thêm giá trị vào cuối.
 - **Backup:** nên backup MySQL trước mỗi lần thay đổi schema.
 - **Cách nói chuyện:** tiếng Việt; nói rõ cái gì đã kiểm tra thật, cái gì chỉ đoán; sửa gộp rồi deploy một lần.
 - **Gradle wrapper trong máy đã bị đổi sang Gradle 9.7.1** (`gradle/wrapper/*`, `gradlew`, `gradlew.bat`, sửa lúc 19:23 ngày 23/10, không phải em đổi). Em chưa commit các file này. Docker build dùng Gradle 8.14 của image nên không bị ảnh hưởng. Biên dịch local cho giống production: dùng Gradle 8.14.3 trong `~/.gradle/wrapper/dists/gradle-8.14.3-bin/.../bin/gradle compileJava`.

@@ -15,13 +15,14 @@ import com.wetube.wetube_service.enumeration.PlaylistType;
 public interface PlaylistService {
     UserPlaylistDto createPlaylist(CreatePlaylistRequest dto);
 
-    List<UserPlaylistDto> getAllPlaylistByUserId(UUID userId);
+    // viewerId / admin: số video và ảnh bìa chỉ tính các video người xem được thấy
+    List<UserPlaylistDto> getAllPlaylistByUserId(UUID userId, UUID viewerId, boolean admin);
 
-    List<UserPlaylistDto> getUserPlaylistById(UUID userId);
+    List<UserPlaylistDto> getUserPlaylistById(UUID userId, UUID viewerId, boolean admin);
 
-    List<UserPlaylistDto> getUserCreatedPlaylistById(UUID userId);
+    List<UserPlaylistDto> getUserCreatedPlaylistById(UUID userId, UUID viewerId, boolean admin);
 
-    List<UserPlaylistDto> getAllPlaylistByTypeUserId(UUID userId, PlaylistType playlistType);
+    List<UserPlaylistDto> getAllPlaylistByTypeUserId(UUID userId, PlaylistType playlistType, UUID viewerId, boolean admin);
 
     /** Video không được phép xem (riêng tư, bị ẩn, đã xoá...) bị lọc khỏi kết quả theo người xem. */
     PlaylistDetailDto getPlaylistDetailedById(UUID playlistId, UUID viewerId, boolean admin);

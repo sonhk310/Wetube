@@ -67,17 +67,17 @@ public class PlaylistServiceImpl implements PlaylistService {
     }
 
     @Override
-    public List<UserPlaylistDto> getAllPlaylistByUserId(UUID userId) {
+    public List<UserPlaylistDto> getAllPlaylistByUserId(UUID userId, UUID viewerId, boolean admin) {
         List<Playlist> playlists = playlistRepo.findByUser_Id(userId);
 
         if (!userRepo.existsById(userId)) {
             throw new ResourceNotFoundException("userId", "id", userId.toString());
         }
-        return playlistMapper.toDtoList(playlists);
+        return toVisibleDtos(playlists, viewerId, admin);
     }
 
     @Override
-    public List<UserPlaylistDto> getUserPlaylistById(UUID userId) {
+    public List<UserPlaylistDto> getUserPlaylistById(UUID userId, UUID viewerId, boolean admin) {
         List<Playlist> playlists = playlistRepo.findByUser_Id(userId);
 
         // Remove USER_UPLOADED
@@ -85,26 +85,38 @@ public class PlaylistServiceImpl implements PlaylistService {
                 .filter(p -> p.getPlaylistType() != PlaylistType.USER_UPLOADED)
                 .toList();
 
-        return playlistMapper.toDtoList(filtered);
+        return toVisibleDtos(filtered, viewerId, admin);
     }
      @Override
-    public List<UserPlaylistDto> getAllPlaylistByTypeUserId(UUID userId, PlaylistType playlistType) {
+    public List<UserPlaylistDto> getAllPlaylistByTypeUserId(UUID userId, PlaylistType playlistType, UUID viewerId,
+            boolean admin) {
         List<Playlist> playlists = playlistRepo.findByUser_IdAndPlaylistType(userId, playlistType);
         if (playlists.isEmpty()) {
             throw new ResourceNotFoundException("userId exists or playlistType error", "id", userId.toString());
         }
-        return playlistMapper.toDtoList(playlists);
+        return toVisibleDtos(playlists, viewerId, admin);
     }
 
     @Override
-    public List<UserPlaylistDto> getUserCreatedPlaylistById(UUID userId) {
+    public List<UserPlaylistDto> getUserCreatedPlaylistById(UUID userId, UUID viewerId, boolean admin) {
         List<Playlist> playlists = playlistRepo.findByUser_Id(userId);
 
         List<Playlist> filtered = playlists.stream()
                 .filter(p -> p.getPlaylistType() == PlaylistType.USER_PLAYLIST)
                 .toList();
 
-        return playlistMapper.toDtoList(filtered);
+        return toVisibleDtos(filtered, viewerId, admin);
+    }
+
+    /** Như toDtoList nhưng số video và ảnh bìa (video thêm sau cùng) chỉ tính video người xem được thấy. */
+    private List<UserPlaylistDto> toVisibleDtos(List<Playlist> playlists, UUID viewerId, boolean admin) {
+        return playlists.stream().map(playlist -> {
+            UserPlaylistDto dto = playlistMapper.toDto(playlist);
+            List<PlaylistVideo> visible = visibleVideos(playlist, viewerId, admin);
+            dto.setTotalVideos(visible.size());
+            dto.setThumbnailUrl(visible.isEmpty() ? null : visible.get(visible.size() - 1).getVideo().getThumbnailUrl());
+            return dto;
+        }).toList();
     }
 
     @Override

@@ -48,17 +48,17 @@ public class PlaylistController {
     @Deprecated
     @GetMapping("/all/{userId}")
     public ResponseEntity<List<UserPlaylistDto>> getAllPlaylistsByUser(@PathVariable UUID userId, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(visibleTo(playlistService.getAllPlaylistByUserId(userId), userId, jwt));
+        return ResponseEntity.ok(visibleTo(playlistService.getAllPlaylistByUserId(userId, viewer(jwt), CurrentUser.isAdmin(jwt)), userId, jwt));
     }
 
     @GetMapping("/{userId}")
     public ResponseEntity<List<UserPlaylistDto>> getUserPlaylistsById(@PathVariable UUID userId, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(visibleTo(playlistService.getUserPlaylistById(userId), userId, jwt));
+        return ResponseEntity.ok(visibleTo(playlistService.getUserPlaylistById(userId, viewer(jwt), CurrentUser.isAdmin(jwt)), userId, jwt));
     }
 
     @GetMapping("/created/{userId}")
     public ResponseEntity<List<UserPlaylistDto>> getUserCreatedPlaylistsById(@PathVariable UUID userId, @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(visibleTo(playlistService.getUserCreatedPlaylistById(userId), userId, jwt));
+        return ResponseEntity.ok(visibleTo(playlistService.getUserCreatedPlaylistById(userId, viewer(jwt), CurrentUser.isAdmin(jwt)), userId, jwt));
     }
 
     @GetMapping("/detail/{playlistId}")
@@ -77,7 +77,8 @@ public class PlaylistController {
             requireSelf(userId, jwt);
         }
 
-        return ResponseEntity.ok(playlistService.getAllPlaylistByTypeUserId(userId, playlistType));
+        return ResponseEntity.ok(playlistService.getAllPlaylistByTypeUserId(
+                userId, playlistType, viewer(jwt), CurrentUser.isAdmin(jwt)));
     }
 
     @GetMapping("/detail")
@@ -183,6 +184,10 @@ public class PlaylistController {
             return playlists;
         }
         return playlists.stream().filter(p -> OwnershipGuard.isPublicPlaylist(p.getPlaylistType(), p.getPrivacy())).toList();
+    }
+
+    private static UUID viewer(Jwt jwt) {
+        return jwt != null ? CurrentUser.id(jwt) : null;
     }
 
     /** Dữ liệu riêng tư (lịch sử, đã thích): chỉ chủ tài khoản được xem hoặc ghi. */
