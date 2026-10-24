@@ -6,7 +6,7 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 - Backend: https://wetube-service.vibe.tinhgon.xyz
 - Vibe Host: backend `cmvkfhypr07ra0i5f5b51wed1`, client `cmvkg1ilo084w0i5fhrmxxz90`
 - Tài liệu liên quan: `PRD.md` (yêu cầu gốc), `TEST_CHECKLIST.md` (việc cần tự test khi đăng nhập)
-- Quy tắc làm việc: sửa gộp một lượt rồi deploy một lần (backend trước, client sau); biên dịch backend bằng Gradle 8.14.3 (xem mục 4, không dùng `./gradlew`), kiểm tra client bằng `npx tsc --noEmit` (bỏ qua lỗi TS7006 cũ).
+- Quy tắc làm việc: sửa gộp một lượt rồi deploy một lần (backend trước, client sau); biên dịch backend bằng `./gradlew --no-daemon compileJava compileTestJava -q` (wrapper 8.14.3, giống production; xem mục 4), kiểm tra client bằng `npx tsc --noEmit` (bỏ qua lỗi TS7006 cũ).
 
 ---
 

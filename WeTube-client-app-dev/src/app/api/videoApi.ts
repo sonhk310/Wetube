@@ -1,7 +1,7 @@
 // app/store/services/videoApi.ts
 import { apiFetch } from "@/lib/apiFetch";
 import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
-import {Video as VideoListItem, VideoDetailResponseDto, VideoFormDetail, Video} from "@/types/video";
+import {VideoDetailResponseDto, VideoFormDetail} from "@/types/video";
 import {API_PREFIX} from "@/constants/appConstant";
 import type {LikeInfo} from "@/app/api/likeApi";
 
