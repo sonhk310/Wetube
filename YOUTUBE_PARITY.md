@@ -107,6 +107,8 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Sửa sau đó (commit `84c2b08`, deploy client 2026-10-24 09:00):** Studio, mở lại video "Không công khai" / "Riêng tư" thì ô "Chế độ hiển thị" trống và nhãn đỏ. Nguyên nhân: Radix Select gọi `onValueChange("")` khi `form.reset()` đổi giá trị khỏi giá trị khởi tạo `ACTIVE`. Sửa: bỏ qua giá trị rỗng (`modules/studio/ui/sections/form-section.tsx`). **Anh đã thử trên trình duyệt: OK.**
 
+**Sửa hộp thoại Chia sẻ (commit `2b5b805`, deploy client 2026-10-24 10:20):** ô "Bắt đầu tại" bị khoá khi thời điểm là 0:00 (mở trước khi phát, hoặc từ menu ⋮ của thẻ video) → giờ luôn tick được và sửa được giờ (nhập `m:ss`, `h:mm:ss` hoặc số giây). Thêm hàng biểu tượng tròn kiểu YouTube: Facebook, WhatsApp, X, Telegram, LinkedIn, Email, và "Khác" (bảng chia sẻ của điện thoại, gồm Zalo / Messenger) khi trình duyệt hỗ trợ; mũi tên cuộn chỉ hiện khi còn cuộn được; ô link + nút "Sao chép" xanh. Chưa có "Nhúng" (cần trang `/embed`, mục F2). **Chưa thử trên trình duyệt.**
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
