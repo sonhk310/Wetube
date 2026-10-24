@@ -214,6 +214,8 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-search-relevance-design.md`.
 - **Lỗi cùng chỗ:** Đã thích / Xem sau nháy "Không có playlist" trước khi phiên đăng nhập tải xong; Shorts nháy "Chưa có Shorts nào" trước khi tải trang đầu. Lỗi em tự phát hiện (`45c7083`, commit riêng): chữ trang Shorts trống còn ghi "tối đa 60 giây" (quy tắc gói 12: dọc / vuông, ≤ 3 phút).
 - **Thấy nhưng chưa đụng:** `videoCard.tsx` đưa khách sang `/login` nhưng không có trang `/login` (404); 2 file `VideoBubblePack` (`modules/subscription/`, `modules/subscribe/ui/components/video-bubble-pack.tsx`) không còn ai dùng; nút Premium còn chữ tiếng Anh ("Select …", "Duration: … days", "Try it for 1 month 0 VND").
 
+- **Sửa lỗi anh báo 25/10: video ngắn không phát tiếp, luôn về 0** dù thanh đỏ ở đúng chỗ dừng. Nguyên nhân: `resumePosition` (`video/index.tsx`) chỉ phát tiếp khi `5 < vị trí < độ dài − max(10 giây, 5%)`; video "view" dài 12 giây → cần `5 < vị trí < 2`, không bao giờ đúng. Giờ hai ngưỡng tối đa 20% độ dài (video 12 giây: phát tiếp nếu vị trí trong 2,4–9,6 giây). Video từ 50 giây trở lên giữ nguyên quy tắc cũ (so bằng script: 0 trường hợp khác nhau từ 50 giây tới 2 giờ). Backend vốn trả vị trí thô, không cần sửa. Log backend không có lỗi `/progress`.
+
 **Đã kiểm tra:** backend `compileJava compileTestJava`; client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint các file đã sửa (0 lỗi, 8 cảnh báo có từ trước), `next build`; HTML dựng sẵn của mọi trang tĩnh không còn chữ "Đang tải" (chỉ còn `aria-label` của spinner). **Chưa kiểm tra:** thanh đỏ và skeleton trên trình duyệt thật.
 
 ---
