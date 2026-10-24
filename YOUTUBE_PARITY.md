@@ -131,6 +131,14 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Đã kiểm tra:** biên dịch backend, `tsc`, eslint, `next build`; sau deploy: log không có lỗi tạo bảng `search_history` / Exception, 3 API `/api/search-history` trả 401 khi chưa đăng nhập, các trang client trả 200. **Chưa kiểm tra:** lưu / xoá lịch sử khi đã đăng nhập (em không có tài khoản), giao diện trên trình duyệt.
 
+### Gói 11: D1 quản lý lịch sử xem (commit `46591f7`, `7ecc951`, deploy 2026-10-24 backend 14:07, client 14:10 giờ VN)
+- **API mới (cần đăng nhập):** `DELETE /api/playlists/me/history/{videoId}` (xoá 1 mục), `DELETE /api/playlists/me/history` (xoá hết), `GET` / `PUT /api/playlists/me/history/paused?paused=`. Xoá thì xoá luôn vị trí đang xem trong Redis (`wp:`).
+- **Tạm dừng lưu:** cột `users.history_paused` (`AppUser.historyPaused`, null = không tạm dừng; runner `job/UserSchemaInitializer.java`, `@Order(0)`). Đang tạm dừng thì `WatchProgressServiceImpl.record` và `addVideoToHistory` không ghi gì.
+- **Trang Lịch sử** (`history-list.tsx`, `SideBar.tsx`, zustand `store/zustand/useHistoryStore.ts`): ô tìm lọc theo tiêu đề / tên kênh; nút "Xóa tất cả nhật ký xem" (hỏi lại); nút "Tạm dừng / Bật lưu nhật ký xem"; nút "Xóa khỏi nhật ký xem" trước đây hỏng (gọi `/playlists/history/{id}`), giờ dùng API mới. DTO lịch sử có thêm `channelName` (trước hiện "Unknown"). Các nút "Quản lý toàn bộ nhật ký hoạt động", "Bình luận", "Bài đăng", "Trò chuyện trực tiếp" vẫn là nút chết, chưa động tới.
+- **Sự cố deploy:** lần deploy backend đầu (13:52 giờ VN, job `cmvm1jvl…`) bị crash-loop, Vibe Host giữ bản cũ. Em cho runner chạy trước `AdminSeeder` (`@Order(0)`), deploy lại thì chạy. Nhưng log lần sau không có dòng "Đã thêm cột", tức cột đã có sẵn (có lẽ Hibernate thêm ở lần hỏng), nên **nguyên nhân thật của lần crash đầu chưa xác nhận** (log health check bị cắt mất dòng lỗi).
+
+**Đã kiểm tra:** `./gradlew compileJava compileTestJava`; test tạm trên H2 cho 2 truy vấn mới của `UserRepository` (đã xoá test); khởi động cả app trên H2 ở máy (context lên được, chỉ hỏng ở SQL riêng MySQL của `VideoSchemaInitializer`, không liên quan); `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`. Sau deploy: log backend không có Exception, 4 API mới trả 401 khi chưa đăng nhập, `/`, `/playlists/history`, `/watch/…` trả 200. **Chưa kiểm tra:** các thao tác khi đã đăng nhập, giao diện trên trình duyệt.
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
@@ -189,7 +197,7 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 ### D. Lịch sử, playlist, Shorts
 | # | Việc | Ở đâu | Cỡ | Ghi chú |
 |---|---|---|---|---|
-| D1 | Lịch sử xem: xoá từng mục, xoá hết, tạm dừng ghi, tìm trong lịch sử | BE+FE | M | |
+| D1 | ✅ Lịch sử xem: xoá từng mục, xoá hết, tạm dừng ghi, tìm trong lịch sử | BE+FE | M | Gói 11 |
 | D2 | Playlist: kéo thả sắp xếp, đặt ảnh bìa, sửa tên / mô tả | BE+FE | M | |
 | D3 | Shorts: bình luận ngay trong Shorts, vuốt lên/xuống, nhớ âm lượng | FE | M | Hiện nút bình luận mở trang xem |
 
