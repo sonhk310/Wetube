@@ -1,6 +1,7 @@
 package com.wetube.wetube_service.repository.video;
 
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +40,8 @@ public interface VideoRepository extends JpaRepository<Video, UUID> {
     Optional<Video> findByIdWithTags(@Param("id") UUID id);
 
     List<Video> findAllByVideosStatusOrderByCreatedAtDesc(ActiveStatus status);
+
+    List<Video> findByVideosStatusAndUpdatedAtBefore(ActiveStatus status, LocalDateTime before);
 
     List<Video> findByTitleContainingIgnoreCase(String title);
 
