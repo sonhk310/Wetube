@@ -8,7 +8,6 @@ import { formatDuration } from "@/lib/utils";
 
 import { useAuth } from "@/contexts/auth-context";
 import { useSaveInteractionMutation } from "@/app/api/interactionApi";
-import { useAddVideoToPlaylistMutation } from "@/app/api/playlistApi";
 
 interface PageResponse<T> {
   content: T[];
@@ -59,12 +58,6 @@ function SearchResultsContent() {
 
   const { user } = useAuth();
   const [saveInteraction] = useSaveInteractionMutation();
-  const [addVideoToPlaylist] = useAddVideoToPlaylistMutation();
-
-  const historyPlaylist = user?.playlists.find(
-    (pl) => pl.playlistType === "HISTORY"
-  );
-  const playlistID = historyPlaylist?.playlistId;
 
   useEffect(() => {
     if (query) {
@@ -118,16 +111,9 @@ function SearchResultsContent() {
           videoId,
           type: "VIEW",
         }).unwrap();
-
-        if (playlistID) {
-          await addVideoToPlaylist({
-            playlistId: playlistID,
-            videoId,
-          }).unwrap();
-        }
       }
     } catch (err) {
-      console.error("❌ Failed to save interaction or add to history:", err);
+      console.error("❌ Failed to save interaction:", err);
     } finally {
       router.push(`/watch/${videoId}`);
     }
