@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import com.wetube.wetube_service.dto.video.VideoDto;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.repository.video.VideoRepository;
+import com.wetube.wetube_service.search.SearchFilters;
 import com.wetube.wetube_service.search.VideoDocument;
 import com.wetube.wetube_service.security.VideoAccess;
 
@@ -99,17 +101,43 @@ public class VideoSearchService {
         // ================== SEARCH TRẢ VỀ VIDEO DTO (LOAD FULL TỪ MYSQL)
         // ==================
 
-        public Page<VideoDto> searchByTitleFull(String text, int page, int size) {
+        public Page<VideoDto> searchByTitleFull(String text, SearchFilters filters, int page, int size) {
                 Instant start = Instant.now();
-                Pageable pageable = PageRequest.of(page, size);
+                Pageable pageable = switch (filters.sort()) {
+                        case DATE -> PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+                        case VIEWS -> PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "totalView"));
+                        case RELEVANCE -> PageRequest.of(page, size);
+                };
 
                 NativeQuery query = new NativeQueryBuilder()
-                                .withQuery(bool(b -> b
-                                                .should(wildcard(w -> w.field("title").value(text.toLowerCase() + "*")))
-                                                .should(multiMatch(m -> m
-                                                                .fields("title", "description")
-                                                                .query(text)
-                                                                .fuzziness("AUTO")))))
+                                .withQuery(bool(b -> {
+                                        b.should(wildcard(w -> w.field("title").value(text.toLowerCase() + "*")))
+                                                        .should(multiMatch(m -> m
+                                                                        .fields("title", "description")
+                                                                        .query(text)
+                                                                        .fuzziness("AUTO")))
+                                                        // Có filter thì should thành tuỳ chọn: bắt buộc khớp ít nhất 1
+                                                        .minimumShouldMatch("1");
+                                        if (filters.shortsOnly() != null) {
+                                                b.filter(term(t -> t.field("isShort").value(filters.shortsOnly())));
+                                        }
+                                        if (filters.minDurationSeconds() != null || filters.maxDurationSeconds() != null) {
+                                                b.filter(range(r -> r.number(n -> {
+                                                        n.field("duration");
+                                                        if (filters.minDurationSeconds() != null) {
+                                                                n.gte(filters.minDurationSeconds());
+                                                        }
+                                                        if (filters.maxDurationSeconds() != null) {
+                                                                n.lt(filters.maxDurationSeconds());
+                                                        }
+                                                        return n;
+                                                })));
+                                        }
+                                        if (filters.uploadedSince() != null) {
+                                                b.filter(range(r -> r.date(d -> d.field("createdAt").gte(filters.uploadedSince()))));
+                                        }
+                                        return b;
+                                }))
                                 .withPageable(pageable)
                                 .build();
 
@@ -124,8 +152,8 @@ public class VideoSearchService {
                                 .filter(Objects::nonNull)
                                 .toList();
 
-                log.info("[ELASTIC+MYSQL] Search full by title='{}' found {} results in {}ms",
-                                text, videos.size(), Duration.between(start, Instant.now()).toMillis());
+                log.info("[ELASTIC+MYSQL] Search full by title='{}' {} found {} results in {}ms",
+                                text, filters, videos.size(), Duration.between(start, Instant.now()).toMillis());
 
                 return new PageImpl<>(videos, pageable, hits.getTotalHits());
         }

@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface ChannelRepository extends CrudRepository<Channel, UUID> {
     @Query("SELECT c FROM Channel c WHERE c.categories IS EMPTY")
     List<Channel> findChannelsWithoutCategories();
+
+    List<Channel> findTop20ByNameContainingIgnoreCaseOrderByTotalSubscribersDesc(String name);
 }

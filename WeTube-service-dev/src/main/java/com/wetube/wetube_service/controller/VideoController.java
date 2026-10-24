@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wetube.wetube_service.dto.video.VideoDetailResponseDto;
 import com.wetube.wetube_service.dto.video.VideoDto;
+import com.wetube.wetube_service.search.SearchFilters;
 import com.wetube.wetube_service.search.VideoDocument;
 import com.wetube.wetube_service.service.VideoSearchService;
 import com.wetube.wetube_service.service.AI.SubtitleAiService;
@@ -207,8 +208,13 @@ public class VideoController {
     @GetMapping("/search/full")
     public Page<VideoDto> searchByTitleFull(@RequestParam String title,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return searchService.searchByTitleFull(title, page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String duration,
+            @RequestParam(required = false) String uploaded,
+            @RequestParam(required = false) String sort) {
+        return searchService.searchByTitleFull(title, SearchFilters.of(type, duration, uploaded, sort),
+                page, Math.min(size, 50));
     }
 
     // Suggest autocomplete

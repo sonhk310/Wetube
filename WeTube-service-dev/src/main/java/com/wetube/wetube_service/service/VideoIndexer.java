@@ -48,6 +48,7 @@ public class VideoIndexer {
         doc.setVideoUrl(v.getVideoUrl());
         doc.setTotalView(v.getTotalView());
         doc.setDuration(v.getDuration());
+        doc.setIsShort(v.isShort());
         doc.setName(v.getUser().getName());
         doc.setPicture(v.getUser().getPicture());
         return doc;

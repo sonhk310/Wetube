@@ -53,6 +53,10 @@ public class VideoDocument {
     @Field(type = FieldType.Float)
     private Float duration;
 
+    /** Cờ Shorts, để trang tìm kiếm lọc Video / Shorts. */
+    @Field(type = FieldType.Boolean)
+    private Boolean isShort;
+
     @Field(type = FieldType.Text)
     private String name;
 
