@@ -123,6 +123,7 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 - Dưới tên kênh hiện "N người đăng ký" (số gọn kiểu "1,2 N"), đổi ngay khi bấm; video của chính mình thì hiện "Chỉnh sửa video" thay cho Đăng ký; khách bấm Đăng ký thì báo cần đăng nhập.
 - Số lượt thích đổi ngay khi bấm (optimistic) và tự cập nhật khi quay lại tab + mỗi 30 giây (`setupListeners` để `refetchOnFocus` chạy toàn app).
 - Không làm thông báo cho chủ video khi có người thích video (YouTube cũng không có).
+- **Anh đã thử trên trình duyệt: OK (24/10).**
 
 ### Gói 10: C2 + B7 (commit `559d8e4`, deploy backend 2026-10-24 11:53, client 11:56)
 - **C2 Lịch sử tìm kiếm:** bảng `search_history` (`job/SearchHistoryTableInitializer.java`, không có entity JPA; `service/SearchHistoryService.java` dùng SQL thẳng). Mỗi người một dòng cho mỗi từ khoá (tìm lại thì đưa lên đầu), giữ 100 từ khoá gần nhất. API (cần đăng nhập): `GET /api/search-history?prefix=&limit=`, `POST /api/search-history {query}`, `DELETE /api/search-history?query=` hoặc `?all=true`. Khách: lưu trong trình duyệt (`localStorage`, 20 mục). Ô tìm kiếm (`lib/searchHistory.ts`, `search-input.tsx`): ô trống thì hiện 10 từ khoá gần nhất, đang gõ thì 3 từ khoá khớp đứng trước gợi ý (biểu tượng đồng hồ, chữ tím, nút "Xoá"); ghi lịch sử khi bấm tìm hoặc bấm gợi ý. Bỏ khung debug (`value=… open=… fetching=…`) đã lọt lên production.
