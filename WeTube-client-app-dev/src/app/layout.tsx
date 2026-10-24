@@ -57,7 +57,7 @@ export default function RootLayout({
               </Suspense>
               {children}
               {/* Toast của shadcn (Sonner), giữa cạnh dưới; gọi qua lib/toastEmitter hoặc toast của "sonner" */}
-              <Toaster position="bottom-center" richColors closeButton />
+              <Toaster position="bottom-center" richColors />
             </Providers>
           </AuthProvider>
         </LoadingBarProvider>

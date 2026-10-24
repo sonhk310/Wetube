@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,29 @@ interface ContentRowProps {
 export function ContentRow({ title, videos, vertical, emptyText, onDelete }: ContentRowProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
+  // Đã cuộn tới đầu / cuối hàng thì tắt mũi tên bên đó
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const updateArrows = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 1);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el || expanded) return;
+    updateArrows();
+    el.addEventListener("scroll", updateArrows, { passive: true });
+    const observer = new ResizeObserver(updateArrows);
+    observer.observe(el);
+    return () => {
+      el.removeEventListener("scroll", updateArrows);
+      observer.disconnect();
+    };
+  }, [expanded, videos.length, updateArrows]);
 
   const scroll = (dir: 1 | -1) =>
     scrollerRef.current?.scrollBy({ left: dir * scrollerRef.current.clientWidth * 0.8, behavior: "smooth" });
@@ -34,11 +57,23 @@ export function ContentRow({ title, videos, vertical, emptyText, onDelete }: Con
             </Button>
             {!expanded && (
               <>
-                <Button variant="outline" size="icon" className="rounded-full" onClick={() => scroll(-1)}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full"
+                  onClick={() => scroll(-1)}
+                  disabled={!canLeft}
+                >
                   <ChevronLeft className="h-4 w-4" />
                   <span className="sr-only">Trước</span>
                 </Button>
-                <Button variant="outline" size="icon" className="rounded-full" onClick={() => scroll(1)}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full"
+                  onClick={() => scroll(1)}
+                  disabled={!canRight}
+                >
                   <ChevronRight className="h-4 w-4" />
                   <span className="sr-only">Sau</span>
                 </Button>
@@ -53,7 +88,7 @@ export function ContentRow({ title, videos, vertical, emptyText, onDelete }: Con
         <div
           ref={scrollerRef}
           className={cn(
-            "flex gap-4",
+            "-mx-2 flex gap-2",
             expanded ? "flex-wrap" : "no-scrollbar overflow-x-auto scroll-smooth pb-2"
           )}
         >
