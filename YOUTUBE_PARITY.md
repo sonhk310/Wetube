@@ -116,13 +116,13 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Đã kiểm tra:** biên dịch backend, `tsc`, eslint, `next build`; chạy bản build ở máy và đọc HTML trang xem: có `og:title`, `og:description`, `og:url`, canonical (chưa có `og:image` vì backend production chưa trả `thumbnailUrl`); regex nhận đúng `0:00`, `1:02:03`, link có dấu chấm / ngoặc ở cuối, bỏ qua `12:345`, `10:60`, `3:07pm`. Sau deploy: HTML trang xem trên production (giả làm bot Facebook) có đủ `og:title`, `og:description`, `og:image` 1200x630 (ảnh tải được, 200 `image/jpeg`), `og:url`, canonical, `twitter:card=summary_large_image`; video không tồn tại chỉ có tiêu đề "WeTube"; log backend không có Exception. **Anh đã thử trên trình duyệt và duyệt (24/10).**
 
-**Sửa thông báo không hiện (commit `2098a78`, deploy client 2026-10-24 ~11:40):** Studio, upload, nút Lưu playlist, nút thích video và hộp thoại Chia sẻ gọi `react-hot-toast` nhưng chưa có `<Toaster>` nào được gắn, nên các thông báo đó không bao giờ hiện. Đã gắn `<Toaster position="top-center" />` ở `app/layout.tsx`; hộp thoại Chia sẻ chuyển sang `toastEmitter`.
+**Sửa thông báo không hiện (commit `2098a78`, deploy client 2026-10-24 11:44):** Studio, upload, nút Lưu playlist, nút thích video và hộp thoại Chia sẻ gọi `react-hot-toast` nhưng chưa có `<Toaster>` nào được gắn, nên các thông báo đó không bao giờ hiện. Đã gắn `<Toaster position="top-center" />` ở `app/layout.tsx`; hộp thoại Chia sẻ chuyển sang `toastEmitter`.
 
-### Gói 10: C2 + B7 (CHƯA deploy)
+### Gói 10: C2 + B7 (commit `559d8e4`, deploy backend 2026-10-24 11:53, client 11:56)
 - **C2 Lịch sử tìm kiếm:** bảng `search_history` (`job/SearchHistoryTableInitializer.java`, không có entity JPA; `service/SearchHistoryService.java` dùng SQL thẳng). Mỗi người một dòng cho mỗi từ khoá (tìm lại thì đưa lên đầu), giữ 100 từ khoá gần nhất. API (cần đăng nhập): `GET /api/search-history?prefix=&limit=`, `POST /api/search-history {query}`, `DELETE /api/search-history?query=` hoặc `?all=true`. Khách: lưu trong trình duyệt (`localStorage`, 20 mục). Ô tìm kiếm (`lib/searchHistory.ts`, `search-input.tsx`): ô trống thì hiện 10 từ khoá gần nhất, đang gõ thì 3 từ khoá khớp đứng trước gợi ý (biểu tượng đồng hồ, chữ tím, nút "Xoá"); ghi lịch sử khi bấm tìm hoặc bấm gợi ý. Bỏ khung debug (`value=… open=… fetching=…`) đã lọt lên production.
 - **B7 Lặp lại + menu chuột phải:** chuột phải trên trình phát mở menu "Lặp lại" / "Sao chép URL video" / "Sao chép URL video tại m:ss" (`video/context-menu.tsx`); chuột phải lần nữa thì ra menu của trình duyệt (như YouTube). "Lặp lại" cũng có trong menu Cài đặt (công tắc). Lặp dùng thuộc tính `loop` của thẻ video, nên hết video không hiện màn hình kết thúc / không tự sang video sau; sang video khác thì tắt lặp.
 
-**Đã kiểm tra:** biên dịch backend, `tsc`, eslint, `next build`. **Chưa kiểm tra:** API lịch sử tìm kiếm trên server (chưa deploy), giao diện trên trình duyệt.
+**Đã kiểm tra:** biên dịch backend, `tsc`, eslint, `next build`; sau deploy: log không có lỗi tạo bảng `search_history` / Exception, 3 API `/api/search-history` trả 401 khi chưa đăng nhập, các trang client trả 200. **Chưa kiểm tra:** lưu / xoá lịch sử khi đã đăng nhập (em không có tài khoản), giao diện trên trình duyệt.
 
 ---
 
