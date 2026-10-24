@@ -46,6 +46,8 @@ import com.wetube.wetube_service.entity.video.Tag;
 import com.wetube.wetube_service.repository.channel.CategoryVideoRepository;
 import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.VideoIndexer;
+import com.wetube.wetube_service.service.analytics.AnalyticsTime;
+import com.wetube.wetube_service.service.analytics.VideoStatsStore;
 import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.RedisService;
 import com.wetube.wetube_service.service.interaction.LikeService;
@@ -83,6 +85,7 @@ public class VideoServiceImpl implements VideoService {
     private final RedisService redisService;
     private final WatchProgressService watchProgressService;
     private final NotificationService notificationService;
+    private final VideoStatsStore videoStatsStore;
 
     private static final String ID_NOT_FOUND = "Video not found with id: ";
     private static final String VIDEO = "video";
@@ -669,6 +672,11 @@ private static String draftTitle(String fileName) {
             videoRepository.incrementTotalView(videoId);
             total = videoRepository.findTotalViewById(videoId).orElse(total + 1);
             videoIndexer.updateTotalView(videoId, total);
+            try {
+                videoStatsStore.add(videoId, video.getUser().getId(), AnalyticsTime.today(), 1, 0L);
+            } catch (Exception e) {
+                log.warn("Không ghi được lượt xem theo ngày {}: {}", videoId, e.getMessage());
+            }
         }
         return Map.of("counted", counted, "totalView", total);
     }
