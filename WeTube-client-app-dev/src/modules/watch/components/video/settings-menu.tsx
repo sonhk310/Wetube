@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type RefObject } from "react";
-import { Check, ChevronLeft, ChevronRight, Gauge, Settings, Subtitles } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Gauge, Repeat, Settings, Subtitles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { VideoSubtitleDto } from "@/types/videoSubtitleDto";
 
@@ -24,6 +24,8 @@ interface SettingsMenuProps {
   rootRef: RefObject<HTMLDivElement | null>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  loop: boolean;
+  onLoop: () => void;
   rate: number;
   onRate: (rate: number) => void;
   subtitles: VideoSubtitleDto[];
@@ -40,6 +42,8 @@ export default function SettingsMenu({
   rootRef,
   open,
   onOpenChange,
+  loop,
+  onLoop,
   rate,
   onRate,
   subtitles,
@@ -76,6 +80,23 @@ export default function SettingsMenu({
         >
           {page === "main" && (
             <>
+              <button type="button" role="menuitemcheckbox" aria-checked={loop} className={row} onClick={onLoop}>
+                <Repeat size={20} />
+                <span className="flex-1">Lặp lại</span>
+                <span
+                  className={cn(
+                    "relative h-3.5 w-8 rounded-full transition-colors",
+                    loop ? "bg-white/70" : "bg-white/30"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute -top-[3px] size-5 rounded-full shadow transition-all",
+                      loop ? "left-3 bg-white" : "left-0 bg-neutral-300"
+                    )}
+                  />
+                </span>
+              </button>
               <button type="button" role="menuitem" className={row} onClick={() => setPage("rate")}>
                 <Gauge size={20} />
                 <span className="flex-1">Tốc độ phát</span>

@@ -4,9 +4,11 @@ import { useSearchSuggestQuery, useSearchVideosFullQuery } from "@/app/api/searc
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toastEmitter } from "@/lib/toastEmitter";
+import { recordSearch, useSearchHistory } from "@/lib/searchHistory";
+import { useAuth } from "@/contexts/auth-context";
 import { useRoomStore } from "@/store/zustand/useRoomStore";
 import { useStompStore } from "@/store/zustand/useStompStore";
-import { SearchIcon, SquarePlus, XIcon } from "lucide-react";
+import { History, SearchIcon, SquarePlus, XIcon } from "lucide-react";
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -32,6 +34,15 @@ const SearchInputSuspense = () => {
 
   const { publish } = useStompStore();
   const { room } = useRoomStore();
+  const { user } = useAuth();
+  const loggedIn = !!user?.sub;
+
+  // Lịch sử tìm kiếm (trang chủ): ô trống thì hiện các từ khoá gần nhất, đang gõ thì vài từ khoá khớp
+  const { items: history, remove: removeHistory } = useSearchHistory(
+    value,
+    loggedIn,
+    mode === "home" && isOpen
+  );
 
   // ✅ gọi suggest; chỉ skip khi rỗng hoàn toàn
   const {
@@ -61,9 +72,22 @@ const SearchInputSuspense = () => {
     url.searchParams.set("query", newQuery);
     if (categoryId) url.searchParams.set("categoryId", categoryId);
     setValue(newQuery);
+    if (mode === "home") recordSearch(newQuery, loggedIn);
     router.push(url.toString());
     setIsOpen(false);
   };
+
+  // Bấm một gợi ý / mục lịch sử
+  const searchFor = (text: string) => {
+    setValue(text);
+    recordSearch(text, loggedIn);
+    router.push(`/search?query=${encodeURIComponent(text)}`);
+    setIsOpen(false);
+  };
+
+  const historyLower = new Set(history.map((h) => h.toLocaleLowerCase("vi")));
+  const otherSuggestions = suggestions.filter((t) => !historyLower.has(t.toLocaleLowerCase("vi")));
+  const showDropdown = isOpen && (value.length > 0 || (mode === "home" && history.length > 0));
 
   // đóng dropdown khi click ngoài
   useEffect(() => {
@@ -121,9 +145,32 @@ const SearchInputSuspense = () => {
       </form>
 
       {/* Dropdown */}
-      {isOpen && value.length > 0 && (
-        <div className="absolute z-[9999] mt-1 w-full bg-white border rounded shadow max-h-72 overflow-y-auto">
-          {isFetching && (
+      {showDropdown && (
+        <div className="absolute z-[9999] mt-1 w-full bg-white border rounded-xl shadow-lg py-2 max-h-96 overflow-y-auto">
+          {mode === "home" &&
+            history.map((text) => (
+              <div key={`h-${text}`} className="group flex items-center hover:bg-gray-100">
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => searchFor(text)}
+                  className="flex min-w-0 flex-1 items-center gap-3 px-4 py-1.5 text-left font-semibold text-purple-800"
+                >
+                  <History className="size-4 shrink-0 text-gray-500" />
+                  <span className="truncate">{text}</span>
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => removeHistory(text)}
+                  className="mr-2 shrink-0 rounded-full px-2 py-1 text-xs text-blue-600 hover:underline"
+                >
+                  Xoá
+                </button>
+              </div>
+            ))}
+
+          {value.length > 0 && isFetching && (
             <div className="p-2 text-sm text-gray-500">Đang tìm...</div>
           )}
 
@@ -162,30 +209,28 @@ const SearchInputSuspense = () => {
               </button>
             ))} */}
 
-          {!isFetching && (
+          {value.length > 0 && !isFetching && (
             <>
               {/* Giao diện cho chế độ "home" */}
               {mode === "home" &&
-                (suggestions.length > 0 ? (
-                  suggestions.map((text, i) => (
+                (otherSuggestions.length > 0 ? (
+                  otherSuggestions.map((text, i) => (
                     <button
                       key={`${text}-${i}`}
                       type="button"
-                      onClick={() => {
-                        router.push(
-                          `/search?query=${encodeURIComponent(text)}`
-                        );
-                        setIsOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-left hover:bg-gray-100"
+                      onClick={() => searchFor(text)}
+                      className="flex w-full items-center gap-3 px-4 py-1.5 text-left hover:bg-gray-100"
                     >
-                      {text}
+                      <SearchIcon className="size-4 shrink-0 text-gray-500" />
+                      <span className="truncate">{text}</span>
                     </button>
                   ))
                 ) : (
-                  <div className="p-2 text-sm text-gray-400">
-                    Không có gợi ý
-                  </div>
+                  history.length === 0 && (
+                    <div className="px-4 py-2 text-sm text-gray-400">
+                      Không có gợi ý
+                    </div>
+                  )
                 ))}
 
               {/* Giao diện cho chế độ "rooms" */}
@@ -231,11 +276,6 @@ const SearchInputSuspense = () => {
             </>
           )}
 
-          {/* 🔍 Debug panel: xóa nếu không cần */}
-          <div className="border-t mt-1 p-1 text-[11px] text-gray-500 bg-gray-50">
-            {`value="${value}"`} · open={String(isOpen)} · fetching=
-            {String(isFetching)} · len={suggestions.length}
-          </div>
         </div>
       )}
     </div>

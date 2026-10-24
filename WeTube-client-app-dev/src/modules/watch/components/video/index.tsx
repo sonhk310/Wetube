@@ -29,6 +29,9 @@ import { useAuth } from "@/contexts/auth-context";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import ProgressBar from "./progress-bar";
 import SettingsMenu, { PLAYBACK_RATES } from "./settings-menu";
+import PlayerContextMenu, { CONTEXT_MENU_SIZE } from "./context-menu";
+import { useCopyToClipboard } from "@/lib/clipboard";
+import { toastEmitter } from "@/lib/toastEmitter";
 import EndScreen from "./end-screen";
 import { formatTime } from "./format-time";
 
@@ -154,12 +157,51 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   const [scrubbing, setScrubbing] = useState(false);
   const [flash, setFlash] = useState<Flash | null>(null);
   const [autoplayNext, setAutoplayNext] = useState(true);
+  // Lặp lại video (thuộc tính loop của thẻ video: hết video thì phát lại, không hiện màn hình kết thúc)
+  const [loop, setLoop] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const [, copy] = useCopyToClipboard();
 
   const idleTimer = useRef<number | undefined>(undefined);
   const startApplied = useRef(false);
   const scrubState = useRef<{ wasPlaying: boolean; lastSeek: number } | null>(null);
   const lastSubtitleIndex = useRef(0);
   const swallowTap = useRef(false);
+
+  // Sang video khác: tắt lặp lại, đóng menu chuột phải (như YouTube)
+  useEffect(() => {
+    setLoop(false);
+    setMenuPos(null);
+  }, [videoId]);
+
+  // ---------- menu chuột phải ----------
+  const openContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Menu đang mở mà chuột phải lần nữa: nhường cho menu của trình duyệt (giống YouTube)
+    if (menuPos) {
+      setMenuPos(null);
+      return;
+    }
+    const box = containerRef.current?.getBoundingClientRect();
+    if (!box) return;
+    e.preventDefault();
+    setSettingsOpen(false);
+    const x = Math.min(e.clientX - box.left, box.width - CONTEXT_MENU_SIZE.width - 8);
+    const y = Math.min(e.clientY - box.top, box.height - CONTEXT_MENU_SIZE.height - 8);
+    setMenuPos({ x: Math.max(8, x), y: Math.max(8, y) });
+  };
+
+  const closeContextMenu = useCallback((target?: EventTarget | null) => {
+    setMenuPos(null);
+    // Bấm lên video để đóng menu thì không dừng / phát video
+    if (target && target === surfaceRef.current) swallowTap.current = true;
+  }, []);
+
+  const copyVideoUrl = async (withTime: boolean) => {
+    const t = Math.floor(videoRef.current?.currentTime ?? 0);
+    const url = `${window.location.origin}/watch/${videoId}${withTime && t > 0 ? `?t=${t}` : ""}`;
+    if (await copy(url)) toastEmitter.success("Đã sao chép liên kết");
+    else toastEmitter.error("Không sao chép được, hãy chép thủ công");
+  };
 
   // ---------- lưu vị trí đang xem (lịch sử + phát tiếp) ----------
   const progressRef = useRef<{ userId?: string; videoId?: string; lastSent: number }>({ lastSent: -1 });
@@ -599,12 +641,14 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
         window.clearTimeout(idleTimer.current);
         setActive(false);
       }}
+      onContextMenu={openContextMenu}
     >
       <video
         ref={videoRef}
         src={video.videoUrl}
         poster={posterFor(video.videoUrl)}
         playsInline
+        loop={loop}
         preload="auto"
         className="h-full w-full object-contain"
         onLoadedMetadata={handleLoadedMetadata}
@@ -830,6 +874,8 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
             rootRef={settingsRef}
             open={settingsOpen}
             onOpenChange={setSettingsOpen}
+            loop={loop}
+            onLoop={() => setLoop((prev) => !prev)}
             rate={rate}
             onRate={changeRate}
             subtitles={subtitles}
@@ -859,6 +905,19 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
           </IconButton>
         </div>
       </div>
+
+      {menuPos && (
+        <PlayerContextMenu
+          x={menuPos.x}
+          y={menuPos.y}
+          loop={loop}
+          timeLabel={formatTime(currentTime)}
+          onToggleLoop={() => setLoop((prev) => !prev)}
+          onCopyUrl={() => void copyVideoUrl(false)}
+          onCopyUrlAtTime={() => void copyVideoUrl(true)}
+          onClose={closeContextMenu}
+        />
+      )}
     </div>
   );
 }
