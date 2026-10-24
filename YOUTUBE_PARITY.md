@@ -172,6 +172,8 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-upload-flow-design.md`; kế ho
 **Đã kiểm tra:** test backend `ShortsRuleTest` (3) và `VideoDraftTest` (3) qua, cả bộ test backend xanh; `tsc` (chỉ 12 lỗi TS7006 cũ), eslint các tệp đã sửa, `next build`. Sau deploy: log backend không có Exception, ENUM `videos_status` đã có `DRAFT`, `POST /api/videos/drafts` trả 401 khi chưa đăng nhập, `/api/videos/shorts` trả 200 (rỗng: video công khai duy nhất không đạt quy tắc Shorts mới), các trang `/`, `/studio`, `/shorts`, `/playlists/history` trả 200. **Chưa kiểm tra:** thử trên trình duyệt (tải lên thật, tiến trình, Shorts, danh sách phát, phụ đề AI).
 
 
+- **Lỗi em tự phát hiện (commit `d1b11c5`, deploy client 21:45):** bấm kết quả tìm kiếm thì video vào ngay Nhật ký xem qua API thêm-vào-playlist chung, bỏ qua quy tắc 3 giây và "tạm dừng lưu nhật ký" của gói 11. Bỏ đoạn đó; trình phát vẫn tự ghi lịch sử đúng quy tắc.
+
 ### Gói 13: E1 Số liệu phân tích (commit `aa1b7ae`…`8073a1d`, anh duyệt, deploy backend 21:29, client 21:34 giờ VN)
 Thiết kế: `docs/superpowers/specs/2026-10-24-studio-analytics-design.md`; kế hoạch: `docs/superpowers/plans/2026-10-24-studio-analytics.md`.
 - **Trang `/studio/analytics`** (mục "Số liệu phân tích" ở thanh bên Studio): 4 ô số (Lượt xem, Thời gian xem (giờ), Người đăng ký mới, Bình luận), bấm ô nào thì biểu đồ đường theo ngày vẽ số đó; chọn 7 / 28 / 90 ngày (mặc định 28). Chart của shadcn (`components/ui/chart.tsx`, `recharts` 2.15.4). Lượt xem / thời gian xem có vùng xám + chú thích "Chưa ghi dữ liệu trước …".
