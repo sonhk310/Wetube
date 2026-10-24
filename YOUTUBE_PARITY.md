@@ -196,6 +196,15 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-studio-analytics-design.md`; k�
 
 **Đã kiểm tra:** test `SearchFiltersTest` (6), `ChannelSearchServiceTest` (2), cả bộ backend xanh (12 lớp); client `tsc` (12 lỗi cũ), eslint, `next build`. Sau deploy: ES đồng bộ không lỗi (trường `isShort` được nhận); curl từng bộ lọc trên production khớp với video công khai duy nhất ("view": ngang, ngắn, đăng trong năm): Tất cả / Video / dưới 4 phút / năm nay / sắp xếp ngày / lượt xem = 1, Shorts / trên 20 phút / hôm nay = 0, `type=movie` → 400; `/api/channels/search` trả kênh; các trang `/search?...` trả 200. **Chưa kiểm tra:** giao diện trên trình duyệt.
 
+### Gói 15: tìm kiếm "rộng" như YouTube (mở rộng C1; commit `22b1cd6`, `90007ab`, **chưa push, chờ anh duyệt**)
+Thiết kế: `docs/superpowers/specs/2026-10-24-search-relevance-design.md`.
+- **Chỉ mục mới do backend tự quản** (`search/SearchIndexes.java`, cấu hình ở `resources/elastic/`): `videos_v2` và `channels`, tạo lúc khởi động nếu chưa có rồi đồng bộ từ MySQL. Mỗi tên (tiêu đề, tên kênh) được ghi theo 3 cách: bỏ dấu (`folded`), mẩu 3 chữ sau khi bỏ khoảng trắng (`compact`: viết dính, thiếu ký tự), tiền tố (`autocomplete`: gợi ý). Chỉ mục cũ `videos` để nguyên; không tạo được `videos_v2` thì quay về `videos`, không tạo được `channels` thì tìm kênh bằng MySQL.
+- **Video** có thêm tên kênh + thẻ để tìm; câu truy vấn: khớp cả cụm (boost 6) → khớp từ chịu sai 1–2 ký tự (`title^3`, `channelName^2`, `tags.text^2`, `description`) → khớp mẩu 3 chữ ≥ 60% ở tiêu đề / tên kênh. Bộ lọc C1 giữ nguyên.
+- **Kênh**: `GET /api/channels/search?q=&limit=&strict=`; tab "Tất cả" (khi chưa lọc) hiện tối đa 2 kênh khớp chặt ở đầu, tab "Kênh" tối đa 20 kênh khớp rộng. Dữ liệu hiển thị lấy từ MySQL. Kênh mới được ghi vào chỉ mục khi tạo (`initiateChannel`).
+- **Code chết thấy được (chưa đụng):** `events/VideoSearchSyncListener` nghe các sự kiện video không ai phát, vẫn ghi vào chỉ mục cũ `videos`.
+
+**Đã kiểm tra:** test `SearchIndexesTest` (4: tạo chỉ mục với đủ analyzer, dùng lại chỉ mục có sẵn, lỗi thì quay về `videos`), `ChannelSearchServiceTest` (5: ES giữ thứ tự + lấy dữ liệu MySQL, ES lỗi → MySQL, ẩn kênh bị ẩn, limit), `VideoIndexerTest` (2), cả bộ backend xanh (14 lớp); client tsc / eslint / `next build`. **Chưa kiểm tra:** Elasticsearch thật (máy không có) — kiểm sau deploy bằng log tạo chỉ mục + curl các ca không dấu / sai chính tả / dính chữ / tên kênh.
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
