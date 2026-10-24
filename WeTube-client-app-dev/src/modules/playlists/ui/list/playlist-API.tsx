@@ -28,6 +28,26 @@ export const playlistService = {
   },
 
 
+  /** Tạo danh sách phát của người dùng; trả id của danh sách mới. */
+  createUserPlaylist: async (userId: string, title: string, privacy: "private" | "public") => {
+    const res = await apiFetch(`${API_BASE}/create`, {
+      method: "POST",
+      headers: jsonHeaders(),
+      body: JSON.stringify({ userId, title, type: "USER_PLAYLIST", privacy }),
+    });
+    if (!res.ok) {
+      let message = "Không tạo được danh sách phát";
+      try {
+        const body = await res.json();
+        if (body?.message) message = body.message;
+      } catch {
+        /* giữ thông báo mặc định */
+      }
+      throw new Error(message);
+    }
+    return (await res.json()) as { playlistId: string };
+  },
+
   getByUser: async (userId: string) => {
     if (!userId) throw new Error("Thiếu userId");
 

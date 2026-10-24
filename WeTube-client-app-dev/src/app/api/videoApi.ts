@@ -69,18 +69,6 @@ export const videoApi = createApi({
         getPopularTags: builder.query<PopularTag[], void>({
             query: () => `/tags/popular?limit=12`,
         }),
-
-        uploadVideo: builder.mutation<
-            { message: string; videoId?: string },
-            FormData
-        >({
-            query: (formData) => ({
-                url: "/videos/uploadFile",
-                method: "POST",
-                body: formData,
-            }),
-            invalidatesTags: ["VideoList", "Playlist"],
-        }),
     }),
 });
 
@@ -88,7 +76,6 @@ export const {
     useGetVideoDetailQuery,
     useGetVideoFormDetailsQuery,
     useUpdateVideoDetailsMutation,
-    useUploadVideoMutation,
     useDeleteVideoMutation,
     useToggleDislikeMutation,
     useGetPopularTagsQuery,

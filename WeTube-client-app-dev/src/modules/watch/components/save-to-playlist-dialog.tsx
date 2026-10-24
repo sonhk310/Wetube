@@ -13,8 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { playlistApi } from "@/app/api/playlistApi";
-import { API_PREFIX } from "@/constants/appConstant";
-import { apiFetch } from "@/lib/apiFetch";
 import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
 
 interface PlaylistOption {
@@ -93,7 +91,7 @@ export default function SaveToPlaylistDialog({
     if (!user?.sub || !title) return;
     setIsCreating(true);
     try {
-      const res = await fetchCreate(user.sub, title, newPrivacy);
+      const res = await playlistService.createUserPlaylist(user.sub, title, newPrivacy);
       await playlistService.addVideo(res.playlistId, videoId);
       setNewTitle("");
       toast.success(`Đã lưu vào "${title}"`);
@@ -171,23 +169,4 @@ export default function SaveToPlaylistDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-async function fetchCreate(userId: string, title: string, privacy: "private" | "public") {
-  const res = await apiFetch(`${API_PREFIX}/playlists/create`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, title, type: "USER_PLAYLIST", privacy }),
-  });
-  if (!res.ok) {
-    let message = "Không tạo được danh sách phát";
-    try {
-      const body = await res.json();
-      if (body?.message) message = body.message;
-    } catch {
-      /* giữ thông báo mặc định */
-    }
-    throw new Error(message);
-  }
-  return (await res.json()) as { playlistId: string };
 }

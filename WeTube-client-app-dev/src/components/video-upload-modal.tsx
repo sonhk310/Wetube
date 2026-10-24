@@ -1,50 +1,74 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import Lottie from "lottie-react";
 import uploadAnimation from "@/../public/icons/upload.json";
-import { VideoDetailsModal } from "@/components/video-details-modal";
+import { UploadWizard } from "@/components/upload/upload-wizard";
+import { MAX_UPLOAD_BYTES } from "@/lib/uploadDraft";
+import { toastEmitter } from "@/lib/toastEmitter";
+import { cn } from "@/lib/utils";
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+/** Thời gian chờ tối đa cho animation trước khi sang 4 bước (phòng khi Lottie không báo xong). */
+const ANIMATION_FALLBACK_MS = 1200;
+
 export const VideoUploadModal: React.FC<UploadModalProps> = ({
   isOpen,
   onClose,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
+  // Tệp đã chọn: icon chạy animation một lượt, xong mới sang 4 bước
+  const [pickedFile, setPickedFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const fallbackTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!isOpen) {
       setTimeout(() => {
         setIsDragOver(false);
+        setPickedFile(null);
         setVideoFile(null);
       }, 300);
     }
   }, [isOpen]);
 
-  const onFileSelect = (files: FileList | File[]) => {
-    if (files && files.length > 0) {
+  useEffect(() => () => window.clearTimeout(fallbackTimer.current), []);
+
+  const showWizard = useCallback((file: File) => {
+    window.clearTimeout(fallbackTimer.current);
+    setVideoFile((current) => current ?? file);
+  }, []);
+
+  const onFileSelect = useCallback(
+    (files: FileList | File[]) => {
+      if (!files || files.length === 0) return;
       const file = files[0];
-      if (file.type.startsWith("video/")) {
-        console.log("Selected file:", file);
-        setVideoFile(file);
-      } else {
-        alert("Vui lòng chọn tệp video hợp lệ.");
+      if (!file.type.startsWith("video/")) {
+        toastEmitter.error("Vui lòng chọn tệp video.");
+        return;
       }
-    }
-  };
+      if (file.size > MAX_UPLOAD_BYTES) {
+        toastEmitter.error("Tệp quá lớn, tối đa 100MB.");
+        return;
+      }
+      setIsDragOver(false);
+      setPickedFile(file);
+      fallbackTimer.current = window.setTimeout(() => showWizard(file), ANIMATION_FALLBACK_MS);
+    },
+    [showWizard]
+  );
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     onFileSelect(acceptedFiles);
-  }, []);
+  }, [onFileSelect]);
 
   const {
     getRootProps,
@@ -71,17 +95,7 @@ export const VideoUploadModal: React.FC<UploadModalProps> = ({
   };
 
   if (videoFile) {
-    return (
-      <VideoDetailsModal
-        file={videoFile}
-        onClose={() => {
-          setVideoFile(null);
-        }}
-        onUploadComplete={() => {
-          onClose();
-        }}
-      />
-    );
+    return <UploadWizard file={videoFile} onClose={onClose} />;
   }
 
   return (
@@ -100,7 +114,6 @@ export const VideoUploadModal: React.FC<UploadModalProps> = ({
           </Button>
         </DialogClose>
       </DialogHeader>
-      {/* <div className="p-8"> */}
       <div className="p-8 flex-grow flex flex-col justify-center">
         <div
           {...getRootProps()}
@@ -116,12 +129,23 @@ export const VideoUploadModal: React.FC<UploadModalProps> = ({
           />
           <button
             onClick={openFileDialog}
-            className="w-30 h-30 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center
-                            justify-center cursor-pointer border-none p-0 appearance-none"
+            disabled={!!pickedFile}
+            className={cn(
+              "w-30 h-30 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center cursor-pointer border-none p-0 appearance-none transition-transform",
+              pickedFile && "scale-110 bg-blue-100"
+            )}
           >
-            {/* <Upload size={90} className="text-black"/>
-                        <span className="sr-only">Chọn tệp video</span> */}
-            {isDragOver ? (
+            {pickedFile ? (
+              // Đã có tệp: chạy animation một lượt rồi sang 4 bước
+              <Lottie
+                key="picked"
+                animationData={uploadAnimation}
+                loop={false}
+                autoplay
+                onComplete={() => showWizard(pickedFile)}
+                className="w-28 h-28"
+              />
+            ) : isDragOver ? (
               <Lottie
                 animationData={uploadAnimation}
                 loop={true}
@@ -137,15 +161,18 @@ export const VideoUploadModal: React.FC<UploadModalProps> = ({
             )}
           </button>
           <h3 className="text-gray-900 text-xl mb-2 font-medium">
-            {isDragOver
-              ? "Thả tệp video vào đây"
-              : "Kéo và thả tệp video để tải lên"}
+            {pickedFile
+              ? `Đang chuẩn bị "${pickedFile.name}"…`
+              : isDragOver
+                ? "Thả tệp video vào đây"
+                : "Kéo và thả tệp video để tải lên"}
           </h3>
           <p className="text-gray-600 mb-8 text-sm">
-            Video của bạn sẽ ở chế độ riêng tư cho đến khi bạn công khai.
+            Video sẽ được lưu dưới dạng bản nháp cho đến khi bạn đăng.
           </p>
           <Button
             onClick={handleChooseFiles}
+            disabled={!!pickedFile}
             className="bg-gray-200 hover:bg-gray-300 text-black px-6 py-2 rounded-sm"
             type="button"
           >
