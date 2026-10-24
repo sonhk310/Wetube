@@ -89,6 +89,7 @@ public class SecurityConfig {
 
                         // Ghi nhận lượt xem: khách chưa đăng nhập cũng được tính
                         .requestMatchers(HttpMethod.POST, "/api/videos/*/view").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/videos/*/watch-time").permitAll()
 
                         // Xem livestream không cần đăng nhập
                         .requestMatchers(HttpMethod.POST, "/api/livekit/join-stream").permitAll()

@@ -34,6 +34,7 @@ import com.wetube.wetube_service.service.VideoSearchService;
 import com.wetube.wetube_service.service.AI.SubtitleAiService;
 import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.video.WatchProgressService;
+import com.wetube.wetube_service.service.analytics.WatchTimeTracker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +53,7 @@ public class VideoController {
     private final VideoAccess videoAccess;
     private final RateLimiter rateLimiter;
     private final WatchProgressService watchProgressService;
+    private final WatchTimeTracker watchTimeTracker;
 
     private static final PolicyFactory SANITIZER_POLICY = Sanitizers.FORMATTING.and(Sanitizers.LINKS);
 
@@ -300,8 +302,32 @@ public class VideoController {
         if (!Float.isFinite(seconds) || seconds < 0) {
             throw new IllegalArgumentException("Thời điểm không hợp lệ");
         }
-        videoAccess.requireViewable(id, jwt);
+        UUID ownerId = videoAccess.requireViewable(id, jwt);
+        // Thời gian xem cho chủ kênh: tính cả khi người xem tạm dừng lưu lịch sử
+        watchTimeTracker.record("u:" + userId, id, ownerId, seconds);
         watchProgressService.record(userId, id, seconds, flush);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Trình phát của khách chưa đăng nhập báo vị trí đang xem: chỉ để tính thời gian xem cho chủ kênh
+     * (không lưu lịch sử). Tham số trên URL để gửi được bằng fetch keepalive khi đóng tab.
+     */
+    @PostMapping("/{id}/watch-time")
+    public ResponseEntity<Void> watchTime(
+            @PathVariable UUID id,
+            @RequestParam("t") float seconds,
+            @RequestParam(value = "anonId", required = false) String anonId,
+            HttpServletRequest request) {
+        rateLimiter.check(RateLimiter.Limit.PROGRESS, clientIp(request));
+        if (!Float.isFinite(seconds) || seconds < 0) {
+            throw new IllegalArgumentException("Thời điểm không hợp lệ");
+        }
+        UUID ownerId = videoAccess.requireViewable(id, null);
+        String viewerKey = (anonId != null && !anonId.isBlank() && anonId.length() <= 64)
+                ? "a:" + anonId.trim()
+                : "ip:" + clientIp(request);
+        watchTimeTracker.record(viewerKey, id, ownerId, seconds);
         return ResponseEntity.noContent().build();
     }
 

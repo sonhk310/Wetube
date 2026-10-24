@@ -55,9 +55,9 @@ public class VideoAccess {
         return isListed(video.getVideosStatus()) || admin || isOwner(video, viewerId);
     }
 
-    /** 404 nếu người gọi không được xem video (không lộ sự tồn tại của video riêng tư). */
+    /** 404 nếu người gọi không được xem video (không lộ sự tồn tại của video riêng tư). Trả về id chủ video. */
     @Transactional(readOnly = true)
-    public void requireViewable(UUID videoId, Jwt jwt) {
+    public UUID requireViewable(UUID videoId, Jwt jwt) {
         List<Object[]> rows = em.createQuery(
                         "select v.videosStatus, v.user.id from Video v where v.id = :id", Object[].class)
                 .setParameter("id", videoId).setMaxResults(1).getResultList();
@@ -70,12 +70,13 @@ public class VideoAccess {
             throw notFound();
         }
         if (isListed(status) || status == ActiveStatus.UNLISTED) {
-            return;
+            return ownerId;
         }
         boolean allowed = jwt != null && (CurrentUser.isAdmin(jwt) || ownerId.toString().equals(jwt.getSubject()));
         if (!allowed) {
             throw notFound();
         }
+        return ownerId;
     }
 
     private static ResponseStatusException notFound() {
