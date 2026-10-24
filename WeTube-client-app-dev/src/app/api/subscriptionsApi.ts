@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_PREFIX } from "@/constants/appConstant";
 
@@ -23,7 +24,7 @@ export interface UnsubscribeRequest {
 
 export const subscriptionsApi = createApi({
     reducerPath: "subscriptionsApi",
-    baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/subscriptions`, credentials: "include" }),
+    baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/subscriptions`, credentials: "include", fetchFn: apiFetch }),
     endpoints: (builder) => ({
         getSubscribedChannels: builder.query<Channel[], string>({
             query: (userId) => `/${userId}`,

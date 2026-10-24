@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { API_PREFIX } from "@/constants/appConstant";
 import { PlaylistDetail, PlaylistSummary, VideoFromApi } from "@/types/playlistSummary";
 
@@ -5,7 +6,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const playlistApi = createApi({
   reducerPath: "playlistApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/playlists`, credentials: "include" }),
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/playlists`, credentials: "include", fetchFn: apiFetch }),
   tagTypes: ["Playlist"],
   endpoints: (builder) => ({
     // 🔹 Lấy tất cả playlist theo user

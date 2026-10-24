@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { Post } from "@/types/post";
 import { API_PREFIX } from "@/constants/appConstant";
@@ -28,7 +29,7 @@ export interface UploadResponse {
 
 export const postsApi = createApi({
   reducerPath: "postsApi",
-  baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}`, credentials: "include" }),
+  baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}`, credentials: "include", fetchFn: apiFetch }),
   tagTypes: ["Post"],
   endpoints: (builder) => ({
     getPostsByUser: builder.query<Post[], string>({

@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { API_PREFIX } from "@/constants/appConstant";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
@@ -17,7 +18,7 @@ export const interactionApi = createApi({
   reducerPath: "interactionApi",
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_PREFIX}/interactions`,
-    credentials: "include",
+    credentials: "include", fetchFn: apiFetch,
   }),
   endpoints: (builder) => ({
     saveInteraction: builder.mutation<SaveInteractionResponse, SaveInteractionRequest>({

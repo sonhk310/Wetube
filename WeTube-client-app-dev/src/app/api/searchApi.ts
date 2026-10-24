@@ -1,4 +1,5 @@
 // src/app/api/searchApi.ts
+import { apiFetch } from "@/lib/apiFetch";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_PREFIX } from "@/constants/appConstant";
 import { SearchVideoItem } from "@/types/video";
@@ -11,7 +12,7 @@ export const searchApi = createApi({
   reducerPath: "searchApi",
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_PREFIX}/videos/search`,
-    credentials: "include",
+    credentials: "include", fetchFn: apiFetch,
   }),
   endpoints: (builder) => ({
     searchVideosFull: builder.query<

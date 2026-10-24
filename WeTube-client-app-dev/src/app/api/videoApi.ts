@@ -1,4 +1,5 @@
 // app/store/services/videoApi.ts
+import { apiFetch } from "@/lib/apiFetch";
 import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 import {Video as VideoListItem, VideoDetailResponseDto, VideoFormDetail, Video} from "@/types/video";
 import {API_PREFIX} from "@/constants/appConstant";
@@ -17,7 +18,7 @@ export const videoApi = createApi({
     reducerPath: "videoApi",
     baseQuery: fetchBaseQuery({
         baseUrl: `${API_PREFIX}`,
-        credentials: "include",
+        credentials: "include", fetchFn: apiFetch,
     }),
     tagTypes: ["VideoList", "VideoDetail", "Playlist"],
     endpoints: (builder) => ({

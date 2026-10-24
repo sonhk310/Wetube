@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_PREFIX } from "@/constants/appConstant";
 
@@ -48,7 +49,7 @@ export interface UpdateCommentRequest {
 
 export const commentApi = createApi({
     reducerPath: "commentApi",
-    baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/comments`, credentials: "include" }),
+    baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/comments`, credentials: "include", fetchFn: apiFetch }),
     tagTypes: ["Comment"],
     endpoints: (builder) => ({
         getCommentsByTarget: builder.query<Comment[], { targetId: string; targetType: TargetType; sort?: CommentSort }>({

@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/apiFetch";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_PREFIX } from "@/constants/appConstant";
 import { ChannelInfo, ChannelVideo } from "@/types/channel";
@@ -7,7 +8,7 @@ export const channelApi = createApi({
   reducerPath: "channelApi",
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_PREFIX}`,
-    credentials: "include",
+    credentials: "include", fetchFn: apiFetch,
   }),
   tagTypes: ["ChannelInfo"],
   endpoints: (builder) => ({
