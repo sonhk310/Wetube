@@ -143,6 +143,7 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
   - Tên kênh trong lịch sử bấm được (DTO thêm `channelId`, `VideoItem` có `Link` tới `/channel/{id}`).
   - Sidebar: thêm "Kênh của bạn" (đầu mục "Bạn", `/channel/{user.channelId}`), bỏ "WeTube Studio", "Thêm từ WeTube" thành "Dịch vụ khác của WeTube".
   - "Hỗ trợ" trỏ nhầm `/otherservices/reportdiary` nên sáng cùng "Nhật ký báo cáo"; "Cài đặt" trỏ `/playlists/history`. Các trang hỗ trợ / phản hồi / cài đặt chưa có, anh chọn **ẩn "Cài đặt", "Hỗ trợ", "Gửi phản hồi"** cho tới khi có trang thật (commit `cd266c0`, deploy client 14:40).
+- **Anh đã thử trên trình duyệt: OK (24/10).**
 
 **Đã kiểm tra:** `./gradlew compileJava compileTestJava`; test tạm trên H2 cho 2 truy vấn mới của `UserRepository` (đã xoá test); khởi động cả app trên H2 ở máy (context lên được, chỉ hỏng ở SQL riêng MySQL của `VideoSchemaInitializer`, không liên quan); `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`. Sau deploy: log backend không có Exception, 4 API mới trả 401 khi chưa đăng nhập, `/`, `/playlists/history`, `/watch/…` trả 200. **Chưa kiểm tra:** các thao tác khi đã đăng nhập, giao diện trên trình duyệt.
 
