@@ -143,7 +143,8 @@ export default function StudioNavbar() {
             <DialogContent
               showCloseButton={false}
               //   className="bg-white rounded-4xl border-gray-200 text-black sm:max-w-4xl p-0"
-              className="bg-white rounded-lg p-0 sm:max-w-4xl h-[90vh]"
+              // DialogContent là grid: minmax(0,1fr) để tiêu đề dài không kéo rộng modal
+              className="bg-white rounded-lg p-0 sm:max-w-4xl h-[90vh] grid-cols-[minmax(0,1fr)]"
               onPointerDownOutside={(e) => e.preventDefault()}
               onEscapeKeyDown={(e) => e.preventDefault()}
             >

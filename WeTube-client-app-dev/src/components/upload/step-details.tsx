@@ -16,6 +16,7 @@ interface StepDetailsProps extends StepProps {
   errors: FormErrors;
   thumbnailPreview: string;
   generatingThumbnail: boolean;
+  isShort: boolean;
 }
 
 /** Gộp thẻ AI gợi ý vào thẻ đã có, bỏ trùng (không phân biệt hoa thường). */
@@ -36,7 +37,14 @@ function FieldError({ message }: { message?: string }) {
   return message ? <p className="mt-1 text-sm text-red-600">{message}</p> : null;
 }
 
-export function StepDetails({ form, setForm, errors, thumbnailPreview, generatingThumbnail }: StepDetailsProps) {
+export function StepDetails({
+  form,
+  setForm,
+  errors,
+  thumbnailPreview,
+  generatingThumbnail,
+  isShort,
+}: StepDetailsProps) {
   const [suggesting, setSuggesting] = useState(false);
 
   const suggestTags = async () => {
@@ -124,6 +132,7 @@ export function StepDetails({ form, setForm, errors, thumbnailPreview, generatin
           thumbnailPreview={thumbnailPreview}
           onThumbnailChange={(file) => setForm({ thumbnailFile: file })}
           isGenerating={generatingThumbnail}
+          vertical={isShort}
         />
         <FieldError message={errors.thumbnailFile} />
       </div>

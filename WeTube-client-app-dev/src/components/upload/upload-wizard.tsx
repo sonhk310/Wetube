@@ -84,6 +84,8 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
   const [updateVideoDetails] = useUpdateVideoDetailsMutation();
 
   const [step, setStep] = useState<StepId>("details");
+  // Bước xa nhất đã tới: chỉ được bấm tới các bước này (như YouTube)
+  const [maxReached, setMaxReached] = useState(0);
   const [form, setFormState] = useState<WizardForm>(() => ({
     title: file.name.replace(/\.[^/.]+$/, "").slice(0, 100),
     description: "",
@@ -264,6 +266,17 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
 
   const stepIndex = STEPS.findIndex((s) => s.id === step);
   const isLast = stepIndex === STEPS.length - 1;
+  const canOpen = (index: number) => index <= maxReached && (index === 0 || !detailsHasError);
+
+  const goNext = () => {
+    if (step === "details" && detailsHasError) {
+      toastEmitter.error("Vui lòng sửa các lỗi ở bước Chi tiết trước.");
+      return;
+    }
+    const next = stepIndex + 1;
+    setStep(STEPS[next].id);
+    setMaxReached((m) => Math.max(m, next));
+  };
   const waitingToPublish = publishRequested && upload.phase !== "done";
 
   return (
@@ -279,9 +292,9 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
       </div>
 
       <UploadStepper
-        steps={STEPS.map((s) => ({ ...s, error: s.id === "details" && detailsHasError }))}
+        steps={STEPS.map((s, i) => ({ ...s, error: s.id === "details" && detailsHasError, disabled: !canOpen(i) }))}
         current={step}
-        onSelect={setStep}
+        onSelect={(id) => canOpen(STEPS.findIndex((s) => s.id === id)) && setStep(id)}
       />
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-y-auto p-6 lg:grid-cols-3">
@@ -293,6 +306,7 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
               errors={errors}
               thumbnailPreview={thumbnailPreview}
               generatingThumbnail={generatingThumbnail}
+              isShort={isShort}
             />
           )}
           {step === "elements" && <StepElements form={form} setForm={setForm} />}
@@ -309,7 +323,13 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
           {step === "visibility" && <StepVisibility form={form} setForm={setForm} />}
         </div>
         <div className="lg:col-span-1">
-          <UploadPreview src={previewUrl} isShort={isShort} reason={reason} fileName={file.name} />
+          <UploadPreview
+            src={previewUrl}
+            isShort={isShort}
+            reason={reason}
+            fileName={file.name}
+            videoId={upload.phase === "done" ? upload.videoId : undefined}
+          />
         </div>
       </div>
 
@@ -357,7 +377,7 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
             {upload.phase === "done" ? "Đăng" : "Đăng khi tải lên xong"}
           </Button>
         ) : (
-          <Button onClick={() => setStep(STEPS[stepIndex + 1].id)} className="bg-blue-600 text-white hover:bg-blue-700">
+          <Button onClick={goNext} className="bg-blue-600 text-white hover:bg-blue-700">
             Tiếp
           </Button>
         )}

@@ -10,6 +10,8 @@ interface ThumbnailSelectorProps {
   onThumbnailChange: (file: File) => void;
   isGenerating?: boolean;
   disabled?: boolean;
+  /** Shorts: khung dọc 9:16 thay cho 16:9. */
+  vertical?: boolean;
 }
 
 export const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({
@@ -17,7 +19,9 @@ export const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({
   onThumbnailChange,
   isGenerating = false,
   disabled = false,
+  vertical = false,
 }) => {
+  const aspect = vertical ? "aspect-[9/16]" : "aspect-video";
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleButtonClick = () => {
@@ -59,7 +63,7 @@ export const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({
         )}
       </label>
 
-      <div className="flex-1">
+      <div className={vertical ? "w-36" : "flex-1"}>
         <button
           type="button"
           onClick={handleButtonClick}
@@ -74,10 +78,10 @@ export const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({
               alt="Ảnh thu nhỏ"
               width={1280}
               height={720}
-              className="w-full h-auto aspect-video object-cover rounded-lg border transition-all pointer-events-none"
+              className={`w-full h-auto ${aspect} object-cover rounded-lg border transition-all pointer-events-none`}
             />
           ) : (
-            <div className="w-full aspect-video bg-gray-200 rounded-lg border flex items-center justify-center">
+            <div className={`w-full ${aspect} bg-gray-200 rounded-lg border flex items-center justify-center`}>
               {isGenerating ? (
                 <div className="flex items-center gap-2 text-gray-500">
                   <Loader2 className="w-5 h-5 animate-spin" />

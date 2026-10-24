@@ -5,7 +5,8 @@ import { cn } from "@/lib/utils";
 import type { StepId } from "./types";
 
 interface UploadStepperProps {
-  steps: { id: StepId; label: string; error: boolean }[];
+  /** disabled: chưa được tới bước này (chưa qua các bước trước, hoặc bước Chi tiết còn lỗi). */
+  steps: { id: StepId; label: string; error: boolean; disabled: boolean }[];
   current: StepId;
   onSelect: (id: StepId) => void;
 }
@@ -23,12 +24,19 @@ export function UploadStepper({ steps, current, onSelect }: UploadStepperProps) 
             key={step.id}
             type="button"
             onClick={() => onSelect(step.id)}
-            className="group flex min-w-0 flex-1 flex-col items-center gap-2"
+            disabled={step.disabled}
+            className="group flex min-w-0 flex-1 flex-col items-center gap-2 disabled:cursor-not-allowed"
           >
             <span
               className={cn(
                 "max-w-full truncate px-1 text-sm",
-                step.error ? "text-red-600" : active ? "font-medium text-black" : "text-gray-500 group-hover:text-black"
+                step.error
+                  ? "text-red-600"
+                  : active
+                    ? "font-medium text-black"
+                    : step.disabled
+                      ? "text-gray-400"
+                      : "text-gray-500 group-hover:text-black"
               )}
             >
               {step.label}
