@@ -444,7 +444,8 @@ export default function FormSection({ videoId }: FormSectionProps) {
                   <FormItem>
                     <FormLabel className="font-semibold">Chế độ hiển thị</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      // Radix gọi onValueChange("") khi form.reset() đổi giá trị (UNLISTED/PRIVATE) lúc trang mới tải: bỏ qua
+                      onValueChange={(value) => value && field.onChange(value)}
                       value={field.value}
                       disabled={isUpdating || field.value === "INACTIVE"}
                     >
