@@ -22,7 +22,7 @@ export default function HomeView({categoryId }: HomeViewProps) {
 
   return (
     <div>
-      <div className="p-6">
+      <div className="px-6 pt-3 pb-5">
         <FilterCarousel
           value={selectedCategory}
           onSelect={(value) => setSelectedCategory(value)}

@@ -23,7 +23,7 @@ export const OtherServices = () => {
     const pathname = usePathname();
     return (
         <SidebarGroup>
-            <SidebarGroupLabel>Dịch vụ khác của WeTube</SidebarGroupLabel>
+            <SidebarGroupLabel>Thêm từ WeTube</SidebarGroupLabel>
             <SidebarGroupContent>
                 <SidebarMenu>
                     {items.map((item, index) => (
