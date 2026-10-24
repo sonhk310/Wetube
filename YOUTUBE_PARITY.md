@@ -92,7 +92,7 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Chưa kiểm tra trên trình duyệt thật:** xem trước khi rê chuột, menu ⋮, thanh chip, hết thu hẹp trang (anh sẽ thử).
 
-### Gói 8: A6 + A7, bình luận kiểu YouTube (commit, CHƯA deploy)
+### Gói 8: A6 + A7, bình luận kiểu YouTube (commit `c876b45`, deploy 2026-10-24 07:52 backend, 07:56 client giờ VN)
 - **Sắp xếp** "Bình luận hàng đầu" (thích + trả lời nhiều trước) / "Mới nhất xếp trước": `GET /api/comments/VIDEO/{id}?sort=top|newest` (mặc định `top`). Bình luận đã ghim luôn ở đầu. Số bình luận tính cả phản hồi.
 - **Ghim** (chủ video, chỉ bình luận gốc, mỗi video 1 cái): `POST|DELETE /api/comments/{id}/pin`. Hiện "📌 Đã ghim bởi {kênh}".
 - **Tim của chủ kênh**: `POST|DELETE /api/comments/{id}/heart`. Hiện ảnh kênh kèm tim đỏ; người viết nhận thông báo `COMMENT_HEART` (mỗi bình luận một lần).
@@ -103,7 +103,7 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 - **A7**: lỗi khi gửi bình luận / phản hồi / sửa / xoá / ghim / tim hiện toast (lấy `message` của backend, vd. 429 "Bạn bình luận quá nhanh..."), chữ vẫn giữ trong ô (`lib/apiError.ts`).
 - Schema: `job/CommentSchemaInitializer.java` thêm `comments.pinned`, `comments.hearted`, `reports.comment_id` nếu chưa có (mỗi câu một transaction riêng).
 
-**Đã kiểm tra:** biên dịch backend (Gradle 8.14.3), `tsc` (chỉ còn 12 lỗi TS7006 cũ), eslint, `next build`. **Chưa kiểm tra:** chạy thật trên server (chưa deploy), giao diện trên trình duyệt.
+**Đã kiểm tra:** biên dịch backend, `tsc`, eslint, `next build`; trên server: log không có ERROR, `GET /api/comments/VIDEO/{id}?sort=top|newest` trả 200 (câu SQL có cột `pinned`, `hearted` nên các cột đã có; runner không ghi log nghĩa là cả 3 cột có sẵn từ trước), pin / heart / báo cáo bình luận trả 401 khi chưa đăng nhập, các trang client trả 200. **Chưa kiểm tra:** giao diện trên trình duyệt và luồng có đăng nhập (ghim, tim, báo cáo, admin xoá bình luận).
 
 ---
 
