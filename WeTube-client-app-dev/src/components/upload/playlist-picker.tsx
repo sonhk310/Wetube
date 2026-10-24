@@ -96,6 +96,7 @@ export function PlaylistPicker({ value, onChange }: PlaylistPickerProps) {
             type="button"
             size="sm"
             variant="secondary"
+            className="rounded-full"
             disabled={!newTitle.trim() || creating}
             onClick={handleCreate}
           >

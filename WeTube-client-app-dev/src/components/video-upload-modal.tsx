@@ -160,20 +160,17 @@ export const VideoUploadModal: React.FC<UploadModalProps> = ({
               />
             )}
           </button>
-          <h3 className="text-gray-900 text-xl mb-2 font-medium">
-            {pickedFile
-              ? `Đang chuẩn bị "${pickedFile.name}"…`
-              : isDragOver
-                ? "Thả tệp video vào đây"
-                : "Kéo và thả tệp video để tải lên"}
+          {/* Đã có tệp: làm mờ chữ để biết đang mở bước tiếp theo */}
+          <h3 className={cn("text-gray-900 text-xl mb-2 font-medium transition-opacity", pickedFile && "opacity-40")}>
+            {isDragOver ? "Thả tệp video vào đây" : "Kéo và thả tệp video để tải lên"}
           </h3>
-          <p className="text-gray-600 mb-8 text-sm">
+          <p className={cn("text-gray-600 mb-8 text-sm transition-opacity", pickedFile && "opacity-40")}>
             Video sẽ được lưu dưới dạng bản nháp cho đến khi bạn đăng.
           </p>
           <Button
             onClick={handleChooseFiles}
             disabled={!!pickedFile}
-            className="bg-gray-200 hover:bg-gray-300 text-black px-6 py-2 rounded-sm"
+            className="bg-gray-200 hover:bg-gray-300 text-black px-6 py-2 rounded-full"
             type="button"
           >
             Chọn tệp

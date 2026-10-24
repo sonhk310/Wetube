@@ -42,6 +42,7 @@ export interface VideoFromPlaylist {
   totalView: number;
   /** Chế độ hiển thị: ACTIVE, UNLISTED, PRIVATE, INACTIVE (bị admin ẩn)... */
   videoStatus?: string;
+  isShort?: boolean;
   createdAt: string;
   updatedAt: string;
 }

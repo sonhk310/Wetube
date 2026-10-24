@@ -118,7 +118,7 @@ export function StepDetails({
             placeholder="#the1 #the2"
             className={errors.tags ? "border-red-500" : ""}
           />
-          <Button type="button" variant="secondary" onClick={suggestTags} disabled={suggesting}>
+          <Button type="button" variant="secondary" className="rounded-full" onClick={suggestTags} disabled={suggesting}>
             {suggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             Gợi ý thẻ bằng AI
           </Button>

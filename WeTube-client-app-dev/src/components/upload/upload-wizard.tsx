@@ -293,7 +293,7 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
         <DialogTitle className="truncate pr-4 text-xl font-medium text-black">
           {form.title.trim() || "Tải video lên"}
         </DialogTitle>
-        <Button variant="ghost" size="icon" onClick={handleClose} disabled={publishing}>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={handleClose} disabled={publishing}>
           <X className="h-6 w-6" />
           <span className="sr-only">Đóng</span>
         </Button>
@@ -331,7 +331,8 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
           )}
           {step === "visibility" && <StepVisibility form={form} setForm={setForm} />}
         </div>
-        <div className="lg:col-span-1">
+        {/* Khung xem trước đứng yên khi cột trái cuộn */}
+        <div className="lg:sticky lg:top-0 lg:col-span-1 lg:self-start">
           <UploadPreview
             src={previewUrl}
             isShort={isShort}
@@ -350,7 +351,7 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
           onRetry={() => startUpload(meta)}
         />
         {stepIndex > 0 && (
-          <Button variant="ghost" onClick={() => setStep(STEPS[stepIndex - 1].id)} disabled={publishing}>
+          <Button variant="ghost" className="rounded-full" onClick={() => setStep(STEPS[stepIndex - 1].id)} disabled={publishing}>
             Quay lại
           </Button>
         )}
@@ -358,13 +359,13 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
           <Button
             onClick={handlePublish}
             disabled={publishing || waitingToPublish}
-            className="bg-blue-600 text-white hover:bg-blue-700"
+            className="rounded-full bg-blue-600 px-5 text-white hover:bg-blue-700"
           >
             {publishing || waitingToPublish ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {upload.phase === "done" ? "Đăng" : "Đăng khi tải lên xong"}
           </Button>
         ) : (
-          <Button onClick={goNext} className="bg-blue-600 text-white hover:bg-blue-700">
+          <Button onClick={goNext} className="rounded-full bg-blue-600 px-5 text-white hover:bg-blue-700">
             Tiếp
           </Button>
         )}
