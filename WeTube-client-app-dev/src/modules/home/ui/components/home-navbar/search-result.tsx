@@ -153,6 +153,14 @@ function SearchResultsContent() {
             setResults([]);
             return;
           }
+          // Tab "Tất cả" (chưa lọc gì): thêm tối đa 2 kênh khớp chặt ở đầu, như YouTube
+          const channelsPromise =
+            type === "" && !hasFilter
+              ? apiClient
+                  .get<ChannelResult[]>("/channels/search", { params: { q: query, limit: 2, strict: true } })
+                  .then((r) => r.data)
+                  .catch(() => [] as ChannelResult[])
+              : Promise.resolve([] as ChannelResult[]);
           const response = await apiClient.get<PageResponse<VideoDto>>(
             "/videos/search/full",
             {
@@ -186,7 +194,7 @@ function SearchResultsContent() {
             }));
 
           setResults(mappedResults);
-          setChannels([]);
+          setChannels(await channelsPromise);
           setTotal(response.data.totalElements ?? mappedResults.length);
         } catch (error) {
           console.error("Failed to fetch search results:", error);
@@ -203,7 +211,7 @@ function SearchResultsContent() {
       setChannels([]);
       setLoading(false);
     }
-  }, [query, isChannel, type, duration, uploaded, sort]);
+  }, [query, isChannel, type, duration, uploaded, sort, hasFilter]);
 
   const handleClick = async (videoId: string) => {
     try {
@@ -330,14 +338,14 @@ function SearchResultsContent() {
           </button>
         )}
       </div>
-      {!isChannel && results.length === 0 && (
+      {!isChannel && results.length === 0 && channels.length === 0 && (
         <p className="py-10 text-center text-gray-600">
           Không tìm thấy kết quả nào{hasFilter ? ". Thử bỏ bớt bộ lọc." : "."}
         </p>
       )}
-      {isChannel && (
-        <div className="space-y-2">
-          {channels.length === 0 && (
+      {(isChannel || channels.length > 0) && (
+        <div className="mb-4 space-y-2">
+          {isChannel && channels.length === 0 && (
             <p className="py-10 text-center text-gray-600">Không tìm thấy kênh nào.</p>
           )}
           {channels.map((ch) => (
