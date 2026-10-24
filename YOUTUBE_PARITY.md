@@ -105,6 +105,8 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Đã kiểm tra:** biên dịch backend, `tsc`, eslint, `next build`; trên server: log không có ERROR, `GET /api/comments/VIDEO/{id}?sort=top|newest` trả 200 (câu SQL có cột `pinned`, `hearted` nên các cột đã có; runner không ghi log nghĩa là cả 3 cột có sẵn từ trước), pin / heart / báo cáo bình luận trả 401 khi chưa đăng nhập, các trang client trả 200. **Chưa kiểm tra:** giao diện trên trình duyệt và luồng có đăng nhập (ghim, tim, báo cáo, admin xoá bình luận).
 
+**Sửa sau đó (commit `84c2b08`, deploy client 2026-10-24 09:00):** Studio, mở lại video "Không công khai" / "Riêng tư" thì ô "Chế độ hiển thị" trống và nhãn đỏ. Nguyên nhân: Radix Select gọi `onValueChange("")` khi `form.reset()` đổi giá trị khỏi giá trị khởi tạo `ACTIVE`. Sửa: bỏ qua giá trị rỗng (`modules/studio/ui/sections/form-section.tsx`). **Anh đã thử trên trình duyệt: OK.**
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
