@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS video_daily_stats (
 
 ### Cách tính thời gian xem
 - Trình phát báo vị trí khoảng mỗi 15 giây (lần đầu ở giây thứ 3, và khi dừng / rời trang).
-- Mỗi lần báo: lấy vị trí lần báo trước từ Redis key riêng `wt:{người xem}:{videoId}` (TTL 1 ngày; người xem = `u:{userId}`, hoặc `a:{anonId}` với khách, không có `anonId` thì `ip:{IP}` — cùng cách đặt khoá như `registerView`), `delta = vị trí mới − vị trí trước`. Chỉ cộng khi `0 < delta ≤ 20` giây; tua tới / tua lui / xem lại từ đầu thì lần đó cộng 0. Chưa có vị trí trước thì cộng `min(vị trí, 20)`.
+- Mỗi lần báo: lấy vị trí lần báo trước từ Redis key riêng `wt:{người xem}:{videoId}` (TTL 1 ngày; người xem = `u:{userId}`, hoặc `a:{anonId}` với khách, không có `anonId` thì `ip:{IP}` — cùng cách đặt khoá như `registerView`), `delta = vị trí mới − vị trí trước`. Chỉ cộng khi `0 < delta ≤ 35` giây (35 = 15 giây ở tốc độ tối đa 2x, cộng dư cho độ trễ); tua tới / tua lui / xem lại từ đầu thì lần đó cộng 0. Chưa có vị trí trước thì cộng `min(vị trí, 35)`.
 - Key riêng, không dùng key `wp:` của lịch sử, và cộng **trước** kiểm tra "tạm dừng lịch sử": người tạm dừng lịch sử vẫn được tính thời gian xem cho chủ kênh (không lưu gì gắn với họ ngoài key Redis tạm).
 - Redis lỗi: lần đó cộng 0 (không chặn việc xem).
 
