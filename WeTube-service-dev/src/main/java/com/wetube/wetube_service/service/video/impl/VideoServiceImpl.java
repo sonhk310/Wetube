@@ -552,6 +552,10 @@ private static String draftTitle(String fileName) {
             throw new ResourceNotFoundException(VIDEO, "id", videoId.toString());
         }
         boolean wasListed = VideoAccess.isListed(video.getVideosStatus());
+        // Đăng bản nháp: ngày đăng là lúc đăng, không phải lúc tải lên
+        if (video.getVideosStatus() == ActiveStatus.DRAFT) {
+            video.setCreatedAt(LocalDateTime.now());
+        }
         // Video bị admin ẩn (INACTIVE): chủ video vẫn sửa được nội dung nhưng không tự bỏ ẩn được
         if (video.getVideosStatus() != ActiveStatus.INACTIVE) {
             video.setVideosStatus(parseVisibility(updateDto.getStatus()));
