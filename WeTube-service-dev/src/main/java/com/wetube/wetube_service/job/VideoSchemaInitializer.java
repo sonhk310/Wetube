@@ -21,7 +21,7 @@ import java.util.List;
 @Order(0)
 public class VideoSchemaInitializer implements CommandLineRunner {
 
-    private static final List<String> REQUIRED_STATUSES = List.of("PRIVATE", "UNLISTED", "DELETED");
+    private static final List<String> REQUIRED_STATUSES = List.of("PRIVATE", "UNLISTED", "DELETED", "DRAFT");
 
     @PersistenceContext
     private EntityManager em;

@@ -82,14 +82,12 @@ public interface VideoRepository extends JpaRepository<Video, UUID> {
     @Query("SELECT v.totalView FROM Video v WHERE v.id = :id")
     Optional<Integer> findTotalViewById(@Param("id") UUID id);
 
-    /** Shorts: video được đánh dấu isShort, hoặc video cũ dài không quá maxSeconds. */
+    /** Shorts: video được đánh dấu isShort (xem ShortsRule). */
     @Query("""
                 SELECT v FROM Video v
                 WHERE v.videosStatus = :status
-                  AND (v.isShort = true OR (v.duration > 0 AND v.duration <= :maxSeconds))
+                  AND v.isShort = true
             """)
-    Page<Video> findShorts(@Param("status") ActiveStatus status,
-                           @Param("maxSeconds") float maxSeconds,
-                           Pageable pageable);
+    Page<Video> findShorts(@Param("status") ActiveStatus status, Pageable pageable);
 
 }

@@ -61,9 +61,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class VideoServiceImpl implements VideoService {
 
-    /** Video dài không quá 60 giây được coi là Shorts. */
-    private static final float SHORT_MAX_SECONDS = 60f;
-
     private final VideoRepository videoRepository;
     private final TagRepository tagRepository;
     private final VideoTagRepository videoTagRepository;
@@ -144,7 +141,7 @@ public VideoDto createVideo(MultipartFile videoFile,
     entity.setVideoUrl(videoUrl);
     entity.setThumbnailUrl(thumbnailUrl);
     entity.setVideosStatus(visibility);
-    entity.setShort(entity.getDuration() > 0 && entity.getDuration() <= SHORT_MAX_SECONDS);
+    entity.setShort(false); // Task 2 thay bằng ShortsRule trên kích thước Cloudinary trả về
 
     LocalDateTime now = LocalDateTime.now();
     if (entity.getCreatedAt() == null) entity.setCreatedAt(now);
@@ -275,7 +272,7 @@ public VideoDto createVideo(MultipartFile videoFile,
     @Transactional(readOnly = true)
     public CustomPageResponse<VideoDto> getShorts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Video> shorts = videoRepository.findShorts(ActiveStatus.ACTIVE, SHORT_MAX_SECONDS, pageable);
+        Page<Video> shorts = videoRepository.findShorts(ActiveStatus.ACTIVE, pageable);
         return new CustomPageResponse<>(shorts.map(videoMapper::toDto));
     }
 

@@ -9,6 +9,8 @@ public enum ActiveStatus {
     // Thêm sau cùng: cột videos_status trong MySQL là ENUM, chỉ có thể nối thêm giá trị vào cuối.
     PRIVATE,
     UNLISTED,
-    DELETED
+    DELETED,
+    // Bản nháp: đã tải tệp lên nhưng chưa đăng; chỉ chủ video thấy
+    DRAFT
 
 }
