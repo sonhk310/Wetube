@@ -11,6 +11,7 @@ import {
 import VideoOverlay from "@/components/videos/VideoOverlayProps";
 import { Check, Clock, ListPlus, MoreVertical, X } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { playlistService } from "../list/playlist-API";
@@ -22,6 +23,7 @@ interface VideoItemProps {
   videoTitle: string;
   videoUrl: string;
   channel?: string;
+  channelId?: string;
   totalView?: string;
   duration?: number | string;
   description?: string;
@@ -35,6 +37,7 @@ export default function VideoItem({
   videoTitle,
   videoUrl,
   channel,
+  channelId,
   description,
   totalView = "0 lượt xem",
   duration,
@@ -137,7 +140,20 @@ export default function VideoItem({
             <h3 className="text-[20px] font-semibold text-black line-clamp-2 mb-1 group-hover:text-blue-600">
               {videoTitle}
             </h3>
-            <p className="text-[14px] text-gray-600">{channel || "Unknown"} • {totalView} </p>
+            <p className="text-[14px] text-gray-600">
+              {channelId ? (
+                <Link
+                  href={`/channel/${channelId}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:text-black"
+                >
+                  {channel || "Unknown"}
+                </Link>
+              ) : (
+                channel || "Unknown"
+              )}{" "}
+              • {totalView}{" "}
+            </p>
             
             {description && (
               <p className="text-[14px] text-gray-500 mt-1 line-clamp-2">

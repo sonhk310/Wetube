@@ -11,6 +11,7 @@ public class PlaylistVideoDetailDto {
     private UUID videoId;
     private String videoTitle;
     private String channelName;
+    private UUID channelId;
     private String videoUrl;
     private String thumbnailUrl;
     private String description;

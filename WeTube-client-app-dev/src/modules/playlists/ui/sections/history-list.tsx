@@ -107,7 +107,8 @@ export default function HistoryList({ userId }: { userId: string }) {
                     videoUrl={`/watch/${v.videoId}`}
                     historyDuration={parseInt(v.historyDuration || "0", 10)}
                     channel={v.channelName || "Unknown"}
-                    totalView={`${v.totalViews || 0} lượt xem`}
+                    channelId={v.channelId}
+                    totalView={`${v.totalView || 0} lượt xem`}
                     duration={v.duration}
                     thumbnailUrl={v.thumbnailUrl || "/images/thumbnail.png"}
                     description={v.description}

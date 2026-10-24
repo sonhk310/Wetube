@@ -468,6 +468,14 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     return () => cancelAnimationFrame(frame);
   }, [playing]);
 
+  // Xem được vài giây là gửi ngay một lần, để video vào lịch sử luôn (không chờ lượt gửi định kỳ)
+  const firstReportedFor = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!user?.sub || !video?.id || firstReportedFor.current === video.id || currentTime < MIN_PROGRESS_SECONDS) return;
+    firstReportedFor.current = video.id;
+    reportProgress(false);
+  }, [currentTime, user?.sub, video?.id, reportProgress]);
+
   // Gửi vị trí định kỳ khi đang phát; gửi ngay khi ẩn tab / đóng tab / rời trang
   useEffect(() => {
     if (!playing) return;
