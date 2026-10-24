@@ -147,7 +147,7 @@ Cập nhật: 2026-10-24. File này để anh đọc ở nhà rồi làm tiếp.
 
 **Đã kiểm tra (gói 11):** `./gradlew compileJava compileTestJava`; test tạm trên H2 cho 2 truy vấn mới của `UserRepository` (đã xoá test); khởi động cả app trên H2 ở máy (context lên được, chỉ hỏng ở SQL riêng MySQL của `VideoSchemaInitializer`, không liên quan); `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`. Sau deploy: log backend không có Exception, 4 API mới trả 401 khi chưa đăng nhập, `/`, `/playlists/history`, `/watch/…` trả 200. **Chưa kiểm tra:** các thao tác khi đã đăng nhập, giao diện trên trình duyệt.
 
-### Gói 12: làm lại flow tải video lên, E3 (commit ở máy `563721b`…`5cf82cc`, **chưa push / deploy**)
+### Gói 12: làm lại flow tải video lên, E3 (commit `563721b`…`5cf82cc`, deploy 2026-10-24 backend 15:24, client 15:27 giờ VN)
 Thiết kế: `docs/superpowers/specs/2026-10-24-upload-flow-design.md`; kế hoạch: `docs/superpowers/plans/2026-10-24-upload-flow.md`.
 - **Bản nháp:** trạng thái mới `DRAFT` (nối cuối ENUM, `VideoSchemaInitializer`); `POST /api/videos/drafts` tải lên Cloudinary, tạo bản nháp (tiêu đề = tên tệp), không vào Elasticsearch, không báo người đăng ký. Đăng = `PUT /api/videos/{id}` có sẵn.
 - **Shorts:** ≤ 180 giây và rộng ≤ cao (`service/video/ShortsRule.java`, client `lib/shorts.ts`), ưu tiên số đo Cloudinary trả về. Trang Shorts chỉ lấy video có cờ `isShort` (bỏ điều kiện ≤ 60 giây cũ).
@@ -155,7 +155,7 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-upload-flow-design.md`; kế ho
 - **Studio:** nhãn "Bản nháp"; trang sửa video cho chọn chế độ hiển thị để đăng bản nháp.
 - **Phát hiện thêm:** nút AI cũ gọi `/api/ai/description` bằng axios không kèm cookie nên nhiều khả năng luôn 401 (chưa kiểm chứng); nút mới dùng `apiFetch`.
 
-**Đã kiểm tra:** test backend `ShortsRuleTest` (3) và `VideoDraftTest` (3) qua, cả bộ test backend xanh; `tsc` (chỉ 12 lỗi TS7006 cũ), eslint các tệp đã sửa, `next build`. **Chưa kiểm tra:** chưa deploy; chưa thử trên trình duyệt (tải lên thật, tiến trình, Shorts, danh sách phát, phụ đề AI).
+**Đã kiểm tra:** test backend `ShortsRuleTest` (3) và `VideoDraftTest` (3) qua, cả bộ test backend xanh; `tsc` (chỉ 12 lỗi TS7006 cũ), eslint các tệp đã sửa, `next build`. Sau deploy: log backend không có Exception, ENUM `videos_status` đã có `DRAFT`, `POST /api/videos/drafts` trả 401 khi chưa đăng nhập, `/api/videos/shorts` trả 200 (rỗng: video công khai duy nhất không đạt quy tắc Shorts mới), các trang `/`, `/studio`, `/shorts`, `/playlists/history` trả 200. **Chưa kiểm tra:** thử trên trình duyệt (tải lên thật, tiến trình, Shorts, danh sách phát, phụ đề AI).
 
 ---
 
