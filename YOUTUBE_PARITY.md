@@ -252,7 +252,7 @@ Thiết kế: `docs/superpowers/specs/2026-10-25-playlist-playback-design.md`; k
 - Lỗi em thấy, sửa cùng commit: icon Xem sau luôn bắt đầu ở "chưa lưu" kể cả khi video đã có trong Xem sau (bấm lần đầu thêm lại thay vì bỏ ra). Giờ đọc trạng thái thật lúc mở trang và sau khi đóng modal.
 - `65b9143` `/shorts` không có Shorts (hoặc lỗi tải): dòng chữ nhỏ trên nền đen → khung nền trắng giữa màn hình có icon, tiêu đề, giải thích.
 
-**Đã kiểm tra:** client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`; bản build trên Vibe Host đúng commit `65b9143`; sau deploy `/`, `/watch/{id}` của 2 video, `/shorts`, `/playlists/allplaylists`, `/playlists/watchlater` trả 200. **Chưa kiểm tra:** giao diện trên trình duyệt.
+**Đã kiểm tra:** client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`; bản build trên Vibe Host đúng commit `65b9143`; sau deploy `/`, `/watch/{id}` của 2 video, `/shorts`, `/playlists/allplaylists`, `/playlists/watchlater` trả 200. **Anh đã thử trên trình duyệt: OK.**
 
 ---
 
