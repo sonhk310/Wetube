@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MoreVertical, Pencil, Play, Shuffle, Trash2, X } from "lucide-react";
+import Link from "next/link";
+import { MoreVertical, Pencil, Play, Plus, Share2, Shuffle, Trash2, X } from "lucide-react";
 import { playlistService } from "./playlist-API";
 import ColorThief from "colorthief";
 import Image from 'next/image';
@@ -139,6 +140,18 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
   const canEdit = isOwner && isEditablePlaylist(playlist.playlistType);
   const canRemove = isOwner && canRemoveFromPlaylist(playlist.playlistType);
   const cover = playlist.videos[0];
+  const isEmpty = playlist.videos.length === 0;
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/playlists/${playlist.playlistId}`);
+      toastEmitter.success("Đã sao chép đường liên kết");
+    } catch {
+      toastEmitter.error("Không sao chép được đường liên kết");
+    }
+  };
+
+  const roundButton = "flex size-10 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200";
 
   const playAll = () => {
     if (!shownIds.length) return;
@@ -170,6 +183,46 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
   return (
     <div className="w-full flex flex-col md:flex-row bg-white">
       <div className="w-full md:w-96 md:sticky md:top-0 md:self-start p-6">
+        {isEmpty ? (
+          // Danh sách trống: như YouTube, không có thẻ ảnh bìa
+          <div className="flex flex-col">
+            <h1 className="text-3xl font-bold break-words mb-3">{title}</h1>
+            {playlist.ownerName && <p className="text-sm font-semibold mb-1">của {playlist.ownerName}</p>}
+            <p className="text-sm text-gray-600 mb-5">
+              Danh sách phát · {isPrivatePlaylist(playlist.privacy) ? "Riêng tư" : "Công khai"} · Không có video
+            </p>
+            <div className="flex items-center gap-2">
+              {canRemove && (
+                <Link
+                  href="/"
+                  className="flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+                >
+                  <Plus className="size-5" /> Thêm video
+                </Link>
+              )}
+              {canEdit && (
+                <button type="button" aria-label="Chỉnh sửa" title="Chỉnh sửa" onClick={() => setEditOpen(true)} className={roundButton}>
+                  <Pencil className="size-5" />
+                </button>
+              )}
+              <button type="button" aria-label="Chia sẻ" title="Chia sẻ" onClick={copyLink} className={roundButton}>
+                <Share2 className="size-5" />
+              </button>
+              {canEdit && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger aria-label="Tác vụ khác" className={roundButton}>
+                    <MoreVertical className="size-5" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onSelect={() => setDeleteOpen(true)} className="cursor-pointer gap-3 py-2.5">
+                      <Trash2 className="size-5" /> Xoá danh sách phát
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+        ) : (
         <div
           className="rounded-2xl p-6 text-white flex flex-col"
           style={{ background: `linear-gradient(180deg, ${bgColor} 0%, rgba(15, 15, 15, 0.92) 100%)` }}
@@ -229,6 +282,7 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
             </button>
           </div>
         </div>
+        )}
       </div>
 
       <div className="flex-1 min-w-0 p-6">
@@ -241,7 +295,7 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
           </div>
         )}
 
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className={cn("mb-4 flex flex-wrap items-center gap-2", isEmpty && "border-b pb-3")}>
           <Select value={sort} onValueChange={(v) => v && setSort(v as PlaylistSort)}>
             <SelectTrigger className="w-auto rounded-lg bg-gray-100 border-none font-medium">
               <SelectValue />
@@ -254,7 +308,7 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
               ))}
             </SelectContent>
           </Select>
-          {CHIPS.map((c) => (
+          {!isEmpty && CHIPS.map((c) => (
             <button
               key={c.value}
               type="button"
@@ -270,12 +324,8 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
         </div>
 
         {shown.length === 0 ? (
-          // Mọi video đều bị ẩn: dòng "Đã ẩn N video" ở trên đã đủ
-          !(playlist.videos.length === 0 && playlist.hiddenCount > 0) && (
-            <p className="py-10 text-center text-gray-500">
-              {playlist.videos.length === 0 ? "Danh sách phát này chưa có video nào." : "Không có video nào khớp."}
-            </p>
-          )
+          // Danh sách trống: cột trái đã ghi "Không có video" (như YouTube, bên phải để trống)
+          !isEmpty && <p className="py-10 text-center text-gray-500">Không có video nào khớp.</p>
         ) : (
           // Bấm vào link của một hàng: phát từ video đó theo đúng thứ tự đang hiển thị.
           // Hộp thoại Lưu / Chia sẻ nằm ngoài khung này trong DOM (portal) nên không tính.
