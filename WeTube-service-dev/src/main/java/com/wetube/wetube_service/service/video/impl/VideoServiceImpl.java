@@ -463,7 +463,8 @@ private static String draftTitle(String fileName) {
                         (long) v.getDuration(),
                         v.getUser().getPicture(),
                         v.getVideoUrl(),
-                        v.getUser().getChannel() != null ? v.getUser().getChannel().getId() : null))
+                        v.getUser().getChannel() != null ? v.getUser().getChannel().getId() : null,
+                        v.isShort()))
                 .toList();
 
         var recommend = RecommendResponseDto.builder()

@@ -22,4 +22,6 @@ public class RecommendVideoDto {
     private String videoUrl;
     /** Kênh của người đăng (thẻ video bấm vào avatar / tên kênh). */
     private UUID channelId;
+    /** Boolean (không phải boolean) để JSON có khoá "isShort" thay vì "short". */
+    private Boolean isShort;
 }

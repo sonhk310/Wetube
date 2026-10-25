@@ -33,6 +33,7 @@ export interface RecommendedVideoItem {
   uploadedAgo?: string;
   historyDuration?: number;
   channelId?: string;
+  isShort?: boolean;
 }
 
 export interface RecommendVideoDto {
@@ -46,6 +47,7 @@ export interface RecommendVideoDto {
   picture: string;
   videoUrl?: string;
   channelId?: string;
+  isShort?: boolean;
 }
 
 export interface TagDto {

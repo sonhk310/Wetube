@@ -9,7 +9,7 @@ export default function Shorts() {
     const itemsPerPage = 3;
 
     const shorts =
-        videoDetail?.recommend?.video.map((v) => ({
+        videoDetail?.recommend?.video.filter((v) => v.isShort).map((v) => ({
             id: v.id,
             title: v.title,
             thumbnail: v.thumbnailUrl,
