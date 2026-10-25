@@ -4,17 +4,22 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   BellIcon,
+  BookmarkIcon,
   ChevronDownIcon,
+  ClockIcon,
   HandThumbDownIcon,
   HandThumbUpIcon,
+  ShareIcon,
 } from "@heroicons/react/24/outline";
 import {
+  ClockIcon as ClockSolid,
   HandThumbDownIcon as HandThumbDownSolid,
   HandThumbUpIcon as HandThumbUpSolid,
 } from "@heroicons/react/24/solid";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import { formatCompact, timeAgo } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import {
   useSubscribeMutation,
   useUnsubscribeMutation,
@@ -29,6 +34,24 @@ import { useToggleDislikeMutation } from "@/app/api/videoApi";
 import { useControls } from "@/hooks/use-controls";
 import { toast } from "sonner";
 import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
+
+/** Nút tròn chỉ có icon, rê chuột hiện tên. */
+function IconAction({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          aria-label={label}
+          className="bg-gray-100 hover:bg-gray-200 rounded-full cursor-pointer p-2"
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export default function VideoMetadata() {
   const videoDetail = useVideoStore((state) => state.videoDetail);
@@ -59,6 +82,28 @@ export default function VideoMetadata() {
 
   const [subscribe] = useSubscribeMutation();
   const [unsubscribe] = useUnsubscribeMutation();
+
+  // Video đã nằm trong Xem sau chưa: kiểm lúc mở trang và sau khi đóng hộp thoại Lưu
+  const userId = user?.sub;
+  const checkSavedLater = useCallback(async () => {
+    if (!userId || !videoId) {
+      setSavedLater(false);
+      return;
+    }
+    try {
+      const [watchLater, containing] = await Promise.all([
+        playlistService.getByUserAndType(userId, "WATCH_LATER") as Promise<{ playlistId: string }[]>,
+        playlistService.getContaining(videoId),
+      ]);
+      setSavedLater(watchLater.some((p) => containing.includes(p.playlistId)));
+    } catch {
+      setSavedLater(false);
+    }
+  }, [userId, videoId]);
+
+  useEffect(() => {
+    void checkSavedLater();
+  }, [checkSavedLater]);
 
   if (!videoDetail) return null;
 
@@ -117,15 +162,20 @@ export default function VideoMetadata() {
   };
 
   const handleWatchLater = async () => {
-    if (!user?.sub) return;
+    if (!user?.sub) {
+      toast.error("Hãy đăng nhập để lưu video");
+      return;
+    }
     const add = !savedLater;
     setSavedLater(add);
     try {
       if (add) await playlistService.addToSystemPlaylist(user.sub, videoDetail.detail.id, "WATCH_LATER");
       else await playlistService.removeFromSystemPlaylist(user.sub, videoDetail.detail.id, "WATCH_LATER");
+      toast.success(add ? "Đã lưu vào Xem sau" : "Đã xoá khỏi Xem sau");
     } catch (err) {
       console.error("Failed to update watch later:", err);
       setSavedLater(!add);
+      toast.error(add ? "Không lưu được vào Xem sau" : "Không gỡ được khỏi Xem sau");
     }
   };
 
@@ -241,24 +291,15 @@ export default function VideoMetadata() {
               )}
             </button>
           </div>
-          <button
-            onClick={handleWatchLater}
-            className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5"
-          >
-            <p className="text-sm font-bold">{savedLater ? "Đã lưu xem sau" : "Xem sau"}</p>
-          </button>
-          <button
-            onClick={() => setSaveOpen(true)}
-            className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5"
-          >
-            <p className="text-sm font-bold">Lưu</p>
-          </button>
-          <button
-            onClick={handleShare}
-            className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full cursor-pointer flex gap-2 py-2 px-2.5"
-          >
-            <p className="text-sm font-bold">Chia sẻ</p>
-          </button>
+          <IconAction label={savedLater ? "Đã lưu vào Xem sau" : "Xem sau"} onClick={handleWatchLater}>
+            {savedLater ? <ClockSolid className="size-5" /> : <ClockIcon className="size-5" />}
+          </IconAction>
+          <IconAction label="Lưu" onClick={() => setSaveOpen(true)}>
+            <BookmarkIcon className="size-5" />
+          </IconAction>
+          <IconAction label="Chia sẻ" onClick={handleShare}>
+            <ShareIcon className="size-5" />
+          </IconAction>
           <VideoMoreMenu videoId={videoDetail.detail.id} channelId={channelId} />
             {/*<TranscriptModal videoId={videoDetail.detail.id} />*/}
         </section>
@@ -274,7 +315,11 @@ export default function VideoMetadata() {
       <SaveToPlaylistDialog
         videoId={videoDetail.detail.id}
         open={saveOpen}
-        onOpenChange={setSaveOpen}
+        onOpenChange={(next) => {
+          setSaveOpen(next);
+          // Hộp thoại có hàng Xem sau: đóng lại thì cập nhật icon Xem sau
+          if (!next) void checkSavedLater();
+        }}
       />
 
       {/* Description */}
