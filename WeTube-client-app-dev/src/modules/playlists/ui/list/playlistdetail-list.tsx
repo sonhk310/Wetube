@@ -21,7 +21,6 @@ import { cn } from "@/lib/utils";
 import {
   PLAYLIST_SORT_LABELS,
   arrangeVideos,
-  shuffleOrder,
   type PlaylistChip,
   type PlaylistSort,
 } from "@/lib/playlistOrder";
@@ -149,9 +148,9 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
 
   const playShuffled = () => {
     if (!shownIds.length) return;
-    const order = shuffleOrder(shownIds);
-    startPlayback(playlist, order, true);
-    router.push(watchHref(order[0], playlist.playlistId, true));
+    startPlayback(playlist, shownIds, true);
+    const first = usePlaylistPlaybackStore.getState().order[0];
+    router.push(watchHref(first, playlist.playlistId, true));
   };
 
   const removeVideo = async (videoId: string) => {

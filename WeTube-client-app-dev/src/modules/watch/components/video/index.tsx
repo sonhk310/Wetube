@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
 import { useProgressRouter } from "@/hooks/use-progress-router";
 import {
@@ -141,16 +141,23 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   const queue = usePlaylistQueue(videoId);
   const queueRef = useRef(queue);
   queueRef.current = queue;
-  const playlistNext: RecommendVideoDto | undefined = queue.next && {
-    id: queue.next.videoId,
-    title: queue.next.videoTitle,
-    thumbnailUrl: queue.next.thumbnailUrl ?? "",
-    totalView: queue.next.totalView,
-    createAt: queue.next.createdAt,
-    name: queue.next.channelName ?? "",
-    duration: queue.next.duration,
-    picture: "",
-  };
+  // Phải giữ cùng một object giữa các lần render: effect đếm ngược của EndScreen phụ thuộc vào `next`,
+  // object mới mỗi lần render (thanh loading render lại mỗi 100 ms) làm đếm ngược chạy lại / push lặp lại
+  const nextInList = queue.next;
+  const playlistNext = useMemo<RecommendVideoDto | undefined>(
+    () =>
+      nextInList && {
+        id: nextInList.videoId,
+        title: nextInList.videoTitle,
+        thumbnailUrl: nextInList.thumbnailUrl ?? "",
+        totalView: nextInList.totalView,
+        createAt: nextInList.createdAt,
+        name: nextInList.channelName ?? "",
+        duration: nextInList.duration,
+        picture: "",
+      },
+    [nextInList]
+  );
   const endScreenVideos = playlistNext
     ? [playlistNext, ...upNext.filter((v) => v.id !== playlistNext.id)]
     : upNext;

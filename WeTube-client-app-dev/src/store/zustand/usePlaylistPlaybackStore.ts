@@ -8,11 +8,14 @@ import { shuffleOrder } from "@/lib/playlistOrder";
  */
 interface PlaylistPlaybackState {
   detail: PlaylistDetail | null;
+  /** Thứ tự đã chọn (sắp xếp + chip ở trang danh sách); trộn bài xáo từ đây, tắt trộn thì về lại đây. */
+  baseOrder: string[];
+  /** Thứ tự đang phát. */
   order: string[];
   loop: boolean;
   shuffle: boolean;
-  /** Bấm Phát tất cả / Trộn bài / một hàng ở trang danh sách: giữ đúng thứ tự đang hiển thị. */
-  start: (detail: PlaylistDetail, order: string[], shuffle: boolean) => void;
+  /** Bấm Phát tất cả / Trộn bài / một hàng ở trang danh sách: `baseOrder` là thứ tự đang hiển thị. */
+  start: (detail: PlaylistDetail, baseOrder: string[], shuffle: boolean, firstId?: string) => void;
   /** Mở link `?list=` khi chưa giữ danh sách này: thứ tự mặc định (Ngày thêm mới nhất), trộn nếu `shuffle`. */
   load: (detail: PlaylistDetail, shuffle: boolean) => void;
   setLoop: (on: boolean) => void;
@@ -20,32 +23,28 @@ interface PlaylistPlaybackState {
   removeVideo: (videoId: string) => void;
 }
 
-const defaultOrder = (detail: PlaylistDetail) => detail.videos.map((v) => v.videoId);
-
 export const usePlaylistPlaybackStore = create<PlaylistPlaybackState>((set, get) => ({
   detail: null,
+  baseOrder: [],
   order: [],
   loop: false,
   shuffle: false,
-  start: (detail, order, shuffle) =>
+  start: (detail, baseOrder, shuffle, firstId) =>
     set((s) => ({
       detail,
-      order,
+      baseOrder,
+      order: shuffle ? shuffleOrder(baseOrder, firstId) : baseOrder,
       shuffle,
       loop: s.detail?.playlistId === detail.playlistId ? s.loop : false,
     })),
   load: (detail, shuffle) => {
     if (get().detail?.playlistId === detail.playlistId) return;
-    const order = defaultOrder(detail);
-    set({ detail, order: shuffle ? shuffleOrder(order) : order, shuffle, loop: false });
+    const baseOrder = detail.videos.map((v) => v.videoId);
+    set({ detail, baseOrder, order: shuffle ? shuffleOrder(baseOrder) : baseOrder, shuffle, loop: false });
   },
   setLoop: (on) => set({ loop: on }),
   setShuffle: (on, currentId) =>
-    set((s) => {
-      if (!s.detail) return {};
-      const order = defaultOrder(s.detail);
-      return { shuffle: on, order: on ? shuffleOrder(order, currentId) : order };
-    }),
+    set((s) => (s.detail ? { shuffle: on, order: on ? shuffleOrder(s.baseOrder, currentId) : s.baseOrder } : {})),
   removeVideo: (videoId) =>
     set((s) =>
       s.detail
@@ -55,6 +54,7 @@ export const usePlaylistPlaybackStore = create<PlaylistPlaybackState>((set, get)
               videos: s.detail.videos.filter((v) => v.videoId !== videoId),
               totalVideos: Math.max(0, s.detail.totalVideos - 1),
             },
+            baseOrder: s.baseOrder.filter((id) => id !== videoId),
             order: s.order.filter((id) => id !== videoId),
           }
         : {}
