@@ -315,21 +315,17 @@ export default function ContentListView() {
                       </TableCell>
                       <TableCell className="py-3">
                         <div className="flex gap-3">
-                          <div
-                            className={cn(
-                              "relative shrink-0 overflow-hidden rounded-md bg-gray-200",
-                              isShortsTab ? "h-20 aspect-[9/16]" : "h-[72px] aspect-video"
+                          <div className="relative h-[72px] aspect-video shrink-0 overflow-hidden rounded-md bg-gray-200">
+                            {image && isShortsTab ? (
+                              // Shorts: cùng khung 16:9 với video, ảnh dọc ở giữa, hai bên là chính ảnh đó làm mờ
+                              <>
+                                <Image src={image} alt="" aria-hidden fill sizes="128px" className="scale-125 object-cover blur-md" />
+                                <Image src={image} alt={video.videoTitle} fill sizes="128px" className="object-contain" />
+                              </>
+                            ) : (
+                              image && <Image src={image} alt={video.videoTitle} fill sizes="128px" className="object-cover" />
                             )}
-                          >
-                            {image && (
-                              <Image
-                                src={image}
-                                alt={video.videoTitle}
-                                fill
-                                sizes="128px"
-                                className={cn("object-cover", isDraft && "brightness-50")}
-                              />
-                            )}
+                            {isDraft && <div className="absolute inset-0 bg-black/60" />}
                             {video.duration > 0 && (
                               <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 text-[11px] font-medium text-white">
                                 {formatDuration(video.duration)}
