@@ -220,6 +220,9 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-search-relevance-design.md`.
 
 - **Sửa lỗi anh báo 25/10: xem tới phút 1, tua tới phút 3, thoát ra rồi vào lại thì phát tiếp ở phút 1** (client, `video/index.tsx`). Hai nguyên nhân, đều xác nhận bằng code: (1) tua không gửi vị trí: kéo thanh tua làm video tạm dừng nhưng lượt gửi lúc tạm dừng bị bỏ vì đang kéo; tua bằng phím / mốc thời gian không gửi gì, chỉ còn lượt gửi định kỳ 15 giây. (2) Rời trang trong app không gửi vị trí cuối: React đặt `ref` của thẻ `<video>` về `null` trước khi hàm dọn dẹp chạy (đã đọc trong `react-dom-client`: `case 5 → safelyDetachRef` ở pha xoá), nên `reportProgress(true)` lúc unmount luôn thoát sớm (lỗi có từ gói 6). Sửa: `onSeeked` gửi vị trí mới sau khi ngừng tua 1 giây (gom các lần tua liên tiếp, giới hạn `/progress` là 60 lượt/phút); `reportProgress` dùng thời điểm ghi lại ở `onTimeUpdate` khi thẻ video đã bị gỡ.
 
+- **Anh đã thử trên trình duyệt: OK (25/10)** (loading toàn site, phát tiếp video ngắn / video dài, tua rồi thoát ra).
+- Job `DraftCleanupJob` đã chạy thật lần đầu: log 2026-10-24 20:00 UTC (03:00 giờ VN 25/10) "Dọn bản nháp: 0/0 đã xoá".
+
 **Đã kiểm tra:** backend `compileJava compileTestJava`, cả bộ test (15 lớp); client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint các file đã sửa (0 lỗi, 8 cảnh báo có từ trước), `next build`; HTML dựng sẵn của mọi trang tĩnh không còn chữ "Đang tải" (chỉ còn `aria-label` của spinner). **Chưa kiểm tra:** thanh đỏ và skeleton trên trình duyệt thật.
 
 ---
