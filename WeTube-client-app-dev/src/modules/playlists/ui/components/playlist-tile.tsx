@@ -66,7 +66,7 @@ export function PlaylistTile({
         {playlist.totalVideos > 0 && (
           <Link
             href={`/playlists/${playlist.playlistId}?play=1`}
-            className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 text-sm font-semibold text-white opacity-0 transition-opacity group-hover/tile:opacity-100"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/60 text-sm font-semibold text-white opacity-0 transition-opacity group-hover/tile:pointer-events-auto group-hover/tile:opacity-100"
           >
             <Play className="size-5" fill="currentColor" /> Phát tất cả
           </Link>
