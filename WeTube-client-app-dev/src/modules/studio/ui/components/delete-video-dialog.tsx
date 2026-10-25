@@ -38,9 +38,10 @@ export function DeleteVideoDialog({ video, deleting, onCancel, onConfirm }: Dele
                   alt={video.videoTitle}
                   fill
                   sizes="144px"
-                  className={isDraft ? "object-cover brightness-50" : "object-cover"}
+                  className="object-cover"
                 />
               )}
+              {isDraft && <div className="absolute inset-0 bg-black/60" />}
               {video.duration > 0 && (
                 <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 text-xs text-white">
                   {formatDuration(video.duration)}

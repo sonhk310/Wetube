@@ -117,9 +117,11 @@ export function ContentCard({ video, vertical, onDelete }: ContentCardProps) {
               alt={video.videoTitle}
               fill
               sizes={vertical ? "176px" : "224px"}
-              className={cn("object-cover", isDraft && "brightness-50")}
+              className="object-cover"
             />
           )}
+          {/* Bản nháp: phủ tối như YouTube (brightness-50 không đủ với khung hình sáng) */}
+          {isDraft && <div className="absolute inset-0 bg-black/60" />}
           {video.duration > 0 && (
             <span className="absolute bottom-1.5 right-1.5 rounded bg-black/80 px-1 text-xs font-medium text-white">
               {formatDuration(video.duration)}
