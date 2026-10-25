@@ -58,4 +58,10 @@ public interface VideoService {
     VideoFormDetailDto getVideoDetail(UUID videoId);
 
     VideoDto updateVideo(UUID videoId, VideoUpdateDto updateDto, MultipartFile thumbnailFile, UUID authenticatedUserId);
+
+    /**
+     * Đổi chế độ hiển thị nhiều video của cùng một người (Studio, chọn nhiều hàng). Bỏ qua bản nháp,
+     * video bị admin ẩn, đã xoá hoặc đã đúng chế độ. Trả về số video đã đổi.
+     */
+    int updateVisibility(List<UUID> videoIds, String status, UUID authenticatedUserId);
 }

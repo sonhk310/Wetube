@@ -608,6 +608,43 @@ private static String draftTitle(String fileName) {
         return videoMapper.toDto(dtoSource);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int updateVisibility(List<UUID> videoIds, String status, UUID authenticatedUserId) {
+        ActiveStatus target = parseVisibility(status);
+        if (videoIds == null || videoIds.isEmpty()) {
+            return 0;
+        }
+        if (videoIds.size() > 100) {
+            throw new IllegalArgumentException("Tối đa 100 video mỗi lần");
+        }
+        List<Video> videos = videoRepository.findAllById(videoIds);
+        // Kiểm tra quyền trước khi đổi bất kỳ video nào
+        for (Video video : videos) {
+            if (!video.getUser().getId().equals(authenticatedUserId)) {
+                throw new AccessDeniedException("User does not have permission to update this video");
+            }
+        }
+        int updated = 0;
+        for (Video video : videos) {
+            ActiveStatus current = video.getVideosStatus();
+            if (current == ActiveStatus.DRAFT || current == ActiveStatus.INACTIVE
+                    || current == ActiveStatus.DELETED || current == target) {
+                continue;
+            }
+            boolean wasListed = VideoAccess.isListed(current);
+            video.setVideosStatus(target);
+            videoRepository.save(video);
+            Video withTags = videoRepository.findByIdWithTags(video.getId()).orElse(video);
+            indexToElasticsearch(withTags);
+            if (!wasListed) {
+                notifySubscribers(withTags);
+            }
+            updated++;
+        }
+        return updated;
+    }
+
     /** Video công khai: báo cho người đăng ký kênh. Lỗi khi gửi thông báo không làm hỏng việc đang làm. */
     private void notifySubscribers(Video video) {
         if (!VideoAccess.isListed(video.getVideosStatus())) {

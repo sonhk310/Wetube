@@ -8,6 +8,7 @@ import com.wetube.wetube_service.dto.response.CustomPageResponse;
 import com.wetube.wetube_service.dto.response.SearchResponseDto;
 import com.wetube.wetube_service.dto.video.VideoFormDetailDto;
 import com.wetube.wetube_service.dto.video.VideoUpdateDto;
+import com.wetube.wetube_service.dto.video.VisibilityUpdateRequest;
 import com.wetube.wetube_service.dto.LikeDto;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.security.OwnershipGuard;
@@ -259,6 +260,15 @@ public class VideoController {
     }
 
     /** Xoá mềm video (chủ video hoặc admin). */
+    /** Studio, chọn nhiều hàng: đổi chế độ hiển thị (chỉ video của mình; bỏ qua bản nháp / bị ẩn). */
+    @PatchMapping("/visibility")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Integer>> updateVisibility(@RequestBody VisibilityUpdateRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        int updated = videoService.updateVisibility(request.videoIds(), request.status(), CurrentUser.id(jwt));
+        return ResponseEntity.ok(Map.of("updated", updated));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, String>> deleteVideo(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
