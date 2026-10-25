@@ -135,11 +135,14 @@ public class PlaylistServiceImpl implements PlaylistService {
                 .map(playlistVideo -> {
                     Video video = playlistVideo.getVideo();
                     AppUser user = video.getUser();
+                    Channel channel = user != null ? user.getChannel() : null;
 
                     // 3. Build DTO mới với đầy đủ thông tin
                     return PlaylistVideoDetailDto.builder()
                             .videoId(video.getId())
                             .videoTitle(video.getTitle())
+                            .channelName(channel != null ? channel.getName() : null)
+                            .channelId(channel != null ? channel.getId() : null)
                             .videoUrl(video.getVideoUrl())
                             .thumbnailUrl(video.getThumbnailUrl())
                             .duration(video.getDuration())

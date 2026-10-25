@@ -6,6 +6,7 @@ import { playlistService } from "./playlist-API";
 import ColorThief from "colorthief";
 import Image from 'next/image';
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatDuration } from "@/lib/utils";
 
 /** Khung chờ cùng bố cục với trang danh sách phát: thẻ bìa bên trái, các hàng video bên phải. */
 export function PlaylistDetailSkeleton() {
@@ -130,8 +131,7 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
                 className="w-42 h-24 object-cover rounded-lg"
               />
               <span className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1 rounded">
-                {video.duration || "0:00"}
-                
+                {formatDuration(video.duration || 0)}
               </span>
             </div>
             <div className="flex-1 min-w-0">
@@ -139,7 +139,7 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
                 {video.videoTitle}
               </h3>
               <div className="text-sm text-gray-600 space-y-1">
-                <p>{video.channel || "Unknown Channel"}</p>
+                <p>{video.channelName}</p>
                 <p>{video.totalView || 0} lượt xem</p>
               </div>
             </div>

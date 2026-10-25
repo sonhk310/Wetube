@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.wetube.wetube_service.dto.response.playlist.PlaylistDetailDto;
 import com.wetube.wetube_service.entity.AppUser;
+import com.wetube.wetube_service.entity.channel.Channel;
 import com.wetube.wetube_service.entity.interaction.Comment;
 import com.wetube.wetube_service.entity.playlist.Playlist;
 import com.wetube.wetube_service.entity.playlist.PlaylistVideo;
@@ -59,5 +60,31 @@ class PlaylistDetailTest {
         assertThat(detail.getVideos().get(0).getIsShort()).isTrue();
         // Studio hiện số bình luận (gồm cả trả lời) trên thẻ video
         assertThat(detail.getVideos().get(0).getCommentCount()).isEqualTo(4L);
+    }
+
+    @Test
+    void detailCarriesChannelOfEachVideo() {
+        Channel channel = Channel.builder().id(UUID.randomUUID()).name("Kỳ Sơn Huỳnh").build();
+        AppUser owner = new AppUser();
+        owner.setId(UUID.randomUUID());
+        owner.setChannel(channel);
+        Video video = new Video();
+        video.setId(UUID.randomUUID());
+        video.setUser(owner);
+        video.setVideosStatus(ActiveStatus.ACTIVE);
+        Playlist playlist = Playlist.builder()
+                .id(UUID.randomUUID())
+                .title("Nhạc")
+                .playlistType(PlaylistType.USER_PLAYLIST)
+                .user(owner)
+                .build();
+        playlist.setPlaylistVideos(List.of(PlaylistVideo.builder().playlist(playlist).video(video).build()));
+        when(playlistRepo.findById(playlist.getId())).thenReturn(Optional.of(playlist));
+
+        PlaylistDetailDto detail = playlistService.getPlaylistDetailedById(playlist.getId(), null, false);
+
+        // Trang danh sách phát hiện tên kênh dưới mỗi video (trước đây luôn "Unknown Channel")
+        assertThat(detail.getVideos().get(0).getChannelName()).isEqualTo("Kỳ Sơn Huỳnh");
+        assertThat(detail.getVideos().get(0).getChannelId()).isEqualTo(channel.getId());
     }
 }
