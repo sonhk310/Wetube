@@ -3,12 +3,26 @@
 import ShortsVideoCard from "../components/shorts-video-card";
 import { useShortsFeed } from "@/modules/shorts/hooks/useShortsFeed";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Clapperboard } from "lucide-react";
+
+/** Khung trống giữa màn hình, nền trắng như lúc đang tải (trang Shorts có nền đen). */
+function EmptyState({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="flex h-screen flex-col items-center justify-center gap-3 bg-white px-6 pb-24 text-center">
+      <span className="flex size-20 items-center justify-center rounded-full bg-gray-100">
+        <Clapperboard className="size-9 text-gray-500" />
+      </span>
+      <p className="text-lg font-semibold text-gray-900">{title}</p>
+      <p className="max-w-sm text-sm text-gray-500">{text}</p>
+    </div>
+  );
+}
 
 export default function ShortsFeed() {
   const { shorts, loadMore, loading, hasMore, error } = useShortsFeed();
 
   if (error && shorts.length === 0) {
-    return <p className="p-6 text-center text-red-500">Không tải được Shorts.</p>;
+    return <EmptyState title="Không tải được Shorts" text="Hãy tải lại trang hoặc thử lại sau." />;
   }
   // Chưa tải trang đầu (hasMore vẫn true) cũng là đang tải, không phải "chưa có Shorts"
   if (shorts.length === 0 && (loading || hasMore)) {
@@ -20,9 +34,10 @@ export default function ShortsFeed() {
   }
   if (shorts.length === 0) {
     return (
-      <p className="p-6 text-center text-gray-500">
-        Chưa có Shorts nào. Video dọc hoặc vuông dài tối đa 3 phút sẽ tự xuất hiện ở đây.
-      </p>
+      <EmptyState
+        title="Chưa có Shorts nào"
+        text="Video dọc hoặc vuông dài tối đa 3 phút sẽ tự xuất hiện ở đây."
+      />
     );
   }
 
