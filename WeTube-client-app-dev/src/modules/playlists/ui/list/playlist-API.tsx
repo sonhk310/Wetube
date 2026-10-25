@@ -150,6 +150,20 @@ export const playlistService = {
     if (!res.ok) throw new Error("Không xoá được danh sách phát");
     return res.json();
   },
+
+  // PUT /{playlistId}: đổi tên / chế độ; lỗi thì ném message tiếng Việt của backend (vd. trùng tên)
+  update: async (playlistId: string, body: { title: string; privacy: "PUBLIC" | "PRIVATE" }) => {
+    const res = await apiFetch(`${API_BASE}/${playlistId}`, {
+      method: "PUT",
+      headers: jsonHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new Error(data?.message || "Không lưu được thay đổi");
+    }
+    return res.json();
+  },
   // POST|DELETE /{userId}/system/{LIKED|WATCH_LATER}/{videoId}
   addToSystemPlaylist: async (
     userId: string,
