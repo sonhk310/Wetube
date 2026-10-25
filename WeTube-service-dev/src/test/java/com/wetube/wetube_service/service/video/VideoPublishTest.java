@@ -1,6 +1,7 @@
 package com.wetube.wetube_service.service.video;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -81,6 +82,23 @@ class VideoPublishTest {
         update("PRIVATE");
 
         assertThat(video.getCreatedAt()).isAfter(LocalDateTime.now().minusMinutes(1));
+    }
+
+    @Test
+    void savingDraftAsDraftKeepsDraftAndDate() {
+        video.setVideosStatus(ActiveStatus.DRAFT);
+
+        update("DRAFT");
+
+        assertThat(video.getVideosStatus()).isEqualTo(ActiveStatus.DRAFT);
+        assertThat(video.getCreatedAt()).isEqualTo(uploadedAt);
+    }
+
+    @Test
+    void publishedVideoCannotGoBackToDraft() {
+        video.setVideosStatus(ActiveStatus.PRIVATE);
+
+        assertThatThrownBy(() -> update("DRAFT")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

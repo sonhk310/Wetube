@@ -559,12 +559,15 @@ private static String draftTitle(String fileName) {
             throw new ResourceNotFoundException(VIDEO, "id", videoId.toString());
         }
         boolean wasListed = VideoAccess.isListed(video.getVideosStatus());
+        // Đóng hộp thoại tải lên mà chưa đăng: lưu nội dung, vẫn là bản nháp
+        boolean keepDraft = video.getVideosStatus() == ActiveStatus.DRAFT
+                && "DRAFT".equalsIgnoreCase(String.valueOf(updateDto.getStatus()).trim());
         // Đăng bản nháp: ngày đăng là lúc đăng, không phải lúc tải lên
-        if (video.getVideosStatus() == ActiveStatus.DRAFT) {
+        if (video.getVideosStatus() == ActiveStatus.DRAFT && !keepDraft) {
             video.setCreatedAt(LocalDateTime.now());
         }
         // Video bị admin ẩn (INACTIVE): chủ video vẫn sửa được nội dung nhưng không tự bỏ ẩn được
-        if (video.getVideosStatus() != ActiveStatus.INACTIVE) {
+        if (video.getVideosStatus() != ActiveStatus.INACTIVE && !keepDraft) {
             video.setVideosStatus(parseVisibility(updateDto.getStatus()));
         }
 
