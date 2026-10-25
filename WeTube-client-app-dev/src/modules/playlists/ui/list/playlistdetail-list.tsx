@@ -270,12 +270,22 @@ export default function PlaylistDetail({ playlistId }: { playlistId: string }) {
         </div>
 
         {shown.length === 0 ? (
-          <p className="py-10 text-center text-gray-500">
-            {playlist.videos.length === 0 ? "Danh sách phát này chưa có video nào." : "Không có video nào khớp."}
-          </p>
+          // Mọi video đều bị ẩn: dòng "Đã ẩn N video" ở trên đã đủ
+          !(playlist.videos.length === 0 && playlist.hiddenCount > 0) && (
+            <p className="py-10 text-center text-gray-500">
+              {playlist.videos.length === 0 ? "Danh sách phát này chưa có video nào." : "Không có video nào khớp."}
+            </p>
+          )
         ) : (
-          // Bấm một hàng: phát từ video đó theo đúng thứ tự đang hiển thị
-          <div className="space-y-1" onClickCapture={() => startPlayback(playlist, shownIds, false)}>
+          // Bấm vào link của một hàng: phát từ video đó theo đúng thứ tự đang hiển thị.
+          // Hộp thoại Lưu / Chia sẻ nằm ngoài khung này trong DOM (portal) nên không tính.
+          <div
+            className="space-y-1"
+            onClickCapture={(e) => {
+              const link = (e.target as Element).closest("a");
+              if (link && e.currentTarget.contains(link)) startPlayback(playlist, shownIds, false);
+            }}
+          >
             {shown.map((video, index) => (
               <PlaylistVideoRow
                 key={video.videoId}
