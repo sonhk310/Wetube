@@ -116,11 +116,25 @@ public class PlaylistServiceImpl implements PlaylistService {
     private List<UserPlaylistDto> toVisibleDtos(List<Playlist> playlists, UUID viewerId, boolean admin) {
         return playlists.stream().map(playlist -> {
             UserPlaylistDto dto = playlistMapper.toDto(playlist);
-            List<PlaylistVideo> visible = visibleVideos(playlist, viewerId, admin);
+            List<PlaylistVideo> visible = newestAddedFirst(visibleVideos(playlist, viewerId, admin));
             dto.setTotalVideos(visible.size());
-            dto.setThumbnailUrl(visible.isEmpty() ? null : visible.get(visible.size() - 1).getVideo().getThumbnailUrl());
+            dto.setThumbnailUrl(visible.isEmpty() ? null : visible.get(0).getVideo().getThumbnailUrl());
+            dto.setOwnerName(ownerChannelName(playlist));
             return dto;
         }).toList();
+    }
+
+    /** Video thêm vào danh sách gần nhất đứng đầu (thứ tự mặc định "Ngày thêm (mới nhất)"). */
+    private static List<PlaylistVideo> newestAddedFirst(List<PlaylistVideo> playlistVideos) {
+        return playlistVideos.stream()
+                .sorted(Comparator.comparing(PlaylistVideo::getCreatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+    }
+
+    private static String ownerChannelName(Playlist playlist) {
+        AppUser owner = playlist.getUser();
+        return owner != null && owner.getChannel() != null ? owner.getChannel().getName() : null;
     }
 
     @Override
@@ -129,7 +143,8 @@ public class PlaylistServiceImpl implements PlaylistService {
                 .orElseThrow(() -> new ResourceNotFoundException("Playlist", "id", playlistId.toString()));
 
 //        return playlistMapper.toPlaylistDetailDto(playlist);
-        List<PlaylistVideo> visible = visibleVideos(playlist, viewerId, admin);
+        List<PlaylistVideo> all = playlist.getPlaylistVideos() == null ? List.of() : playlist.getPlaylistVideos();
+        List<PlaylistVideo> visible = newestAddedFirst(visibleVideos(playlist, viewerId, admin));
         Map<UUID, Long> commentCounts = commentCounts(visible);
         List<PlaylistVideoDetailDto> videoDetails = visible.stream()
                 .map(playlistVideo -> {
@@ -153,10 +168,12 @@ public class PlaylistServiceImpl implements PlaylistService {
                             .description(video.getDescription())
                             .createdAt(video.getCreatedAt())
                             .updatedAt(video.getUpdatedAt())
+                            .addedAt(playlistVideo.getCreatedAt())
                             .build();
                 })
                 .collect(Collectors.toList());
 
+        LocalDateTime lastAdded = visible.isEmpty() ? null : visible.get(0).getCreatedAt();
         return PlaylistDetailDto.builder()
                 .playlistId(playlist.getId())
                 .playlistTitle(playlist.getTitle())
@@ -164,6 +181,11 @@ public class PlaylistServiceImpl implements PlaylistService {
                 .totalVideos(videoDetails.size())
                 .createdAt(playlist.getCreatedAt())
                 .videos(videoDetails)
+                .ownerId(playlist.getUser() != null ? playlist.getUser().getId() : null)
+                .ownerName(ownerChannelName(playlist))
+                .privacy(playlist.getPrivacy())
+                .hiddenCount(all.size() - visible.size())
+                .lastUpdatedAt(lastAdded != null ? lastAdded : playlist.getCreatedAt())
                 .build();
     }
 

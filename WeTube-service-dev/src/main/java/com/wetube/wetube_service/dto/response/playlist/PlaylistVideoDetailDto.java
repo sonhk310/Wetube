@@ -25,4 +25,6 @@ public class PlaylistVideoDetailDto {
     private String videoStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    /** Lúc video được thêm vào danh sách (playlist_videos.created_at); có ở API chi tiết theo id. */
+    private LocalDateTime addedAt;
 }

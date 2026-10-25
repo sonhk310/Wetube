@@ -24,5 +24,7 @@ public class UserPlaylistDto {
     private LocalDateTime createdAt;
     private String privacy;   
     private String lastUpdatedLabel;
-    private String thumbnailUrl; 
+    private String thumbnailUrl;
+    /** Tên kênh của chủ danh sách, để thẻ hiện "{kênh} · Danh sách phát". */
+    private String ownerName;
 }

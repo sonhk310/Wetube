@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,6 +61,75 @@ class PlaylistDetailTest {
         assertThat(detail.getVideos().get(0).getIsShort()).isTrue();
         // Studio hiện số bình luận (gồm cả trả lời) trên thẻ video
         assertThat(detail.getVideos().get(0).getCommentCount()).isEqualTo(4L);
+    }
+
+    private static Video video(AppUser owner, ActiveStatus status) {
+        Video v = new Video();
+        v.setId(UUID.randomUUID());
+        v.setUser(owner);
+        v.setVideosStatus(status);
+        return v;
+    }
+
+    private static PlaylistVideo added(Playlist playlist, Video video, LocalDateTime at) {
+        return PlaylistVideo.builder().playlist(playlist).video(video).createdAt(at).build();
+    }
+
+    @Test
+    void detailListsNewestAddedFirstWithOwnerAndHiddenCount() {
+        Channel channel = Channel.builder().id(UUID.randomUUID()).name("Kỳ Sơn Huỳnh").build();
+        AppUser owner = new AppUser();
+        owner.setId(UUID.randomUUID());
+        owner.setChannel(channel);
+        AppUser other = new AppUser();
+        other.setId(UUID.randomUUID());
+        Video a = video(owner, ActiveStatus.ACTIVE);
+        Video b = video(owner, ActiveStatus.ACTIVE);
+        Video c = video(other, ActiveStatus.PRIVATE);
+        Playlist playlist = Playlist.builder()
+                .id(UUID.randomUUID())
+                .title("Nhạc")
+                .playlistType(PlaylistType.USER_PLAYLIST)
+                .privacy("PUBLIC")
+                .user(owner)
+                .build();
+        playlist.setPlaylistVideos(List.of(
+                added(playlist, a, LocalDateTime.of(2026, 10, 1, 8, 0)),
+                added(playlist, c, LocalDateTime.of(2026, 10, 2, 8, 0)),
+                added(playlist, b, LocalDateTime.of(2026, 10, 3, 8, 0))));
+        when(playlistRepo.findById(playlist.getId())).thenReturn(Optional.of(playlist));
+
+        PlaylistDetailDto detail = playlistService.getPlaylistDetailedById(playlist.getId(), null, false);
+
+        assertThat(detail.getVideos()).extracting("videoId").containsExactly(b.getId(), a.getId());
+        assertThat(detail.getVideos().get(0).getAddedAt()).isEqualTo(LocalDateTime.of(2026, 10, 3, 8, 0));
+        // Video riêng tư của người khác: không lộ ra, chỉ đếm
+        assertThat(detail.getHiddenCount()).isEqualTo(1);
+        assertThat(detail.getOwnerName()).isEqualTo("Kỳ Sơn Huỳnh");
+        assertThat(detail.getOwnerId()).isEqualTo(owner.getId());
+        assertThat(detail.getPrivacy()).isEqualTo("PUBLIC");
+        assertThat(detail.getLastUpdatedAt()).isEqualTo(LocalDateTime.of(2026, 10, 3, 8, 0));
+    }
+
+    @Test
+    void emptyPlaylistLastUpdatedIsCreatedAt() {
+        AppUser owner = new AppUser();
+        owner.setId(UUID.randomUUID());
+        Playlist playlist = Playlist.builder()
+                .id(UUID.randomUUID())
+                .title("Trống")
+                .playlistType(PlaylistType.USER_PLAYLIST)
+                .user(owner)
+                .createdAt(LocalDateTime.of(2026, 9, 1, 8, 0))
+                .build();
+        playlist.setPlaylistVideos(List.of());
+        when(playlistRepo.findById(playlist.getId())).thenReturn(Optional.of(playlist));
+
+        PlaylistDetailDto detail = playlistService.getPlaylistDetailedById(playlist.getId(), owner.getId(), false);
+
+        assertThat(detail.getLastUpdatedAt()).isEqualTo(LocalDateTime.of(2026, 9, 1, 8, 0));
+        assertThat(detail.getHiddenCount()).isZero();
+        assertThat(detail.getOwnerName()).isNull();
     }
 
     @Test
