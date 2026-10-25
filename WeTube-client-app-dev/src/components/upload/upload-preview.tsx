@@ -17,7 +17,10 @@ interface UploadPreviewProps {
 /** Xem trước tệp trên máy; Shorts hiện ở khung dọc. */
 export function UploadPreview({ src, isShort, reason, fileName, videoId }: UploadPreviewProps) {
   const [, copy] = useCopyToClipboard();
-  const link = videoId && typeof window !== "undefined" ? `${window.location.origin}/watch/${videoId}` : "";
+  const link =
+    videoId && typeof window !== "undefined"
+      ? `${window.location.origin}/${isShort ? "shorts" : "watch"}/${videoId}`
+      : "";
 
   const copyLink = async () => {
     if (await copy(link)) toastEmitter.success("Đã sao chép liên kết");
@@ -62,12 +65,15 @@ export function UploadPreview({ src, isShort, reason, fileName, videoId }: Uploa
             <p className="text-gray-500">Có sau khi tải lên xong</p>
           )}
         </div>
-        <div>
-          <p className="text-xs text-gray-500">Tên tệp</p>
-          <p className="truncate" title={fileName}>
-            {fileName}
-          </p>
-        </div>
+        {/* Mở lại bản nháp thì không còn tệp trên máy */}
+        {fileName && (
+          <div>
+            <p className="text-xs text-gray-500">Tên tệp</p>
+            <p className="truncate" title={fileName}>
+              {fileName}
+            </p>
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={cn(

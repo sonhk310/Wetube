@@ -14,6 +14,7 @@ import { apiFetch } from "@/lib/apiFetch";
 import { isShortVideo, shortsReason } from "@/lib/shorts";
 import { toastEmitter } from "@/lib/toastEmitter";
 import { uploadDraft } from "@/lib/uploadDraft";
+import { videoImageUrl } from "@/lib/videoMedia";
 import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
 import { StepChecks } from "./step-checks";
 import { StepDetails } from "./step-details";
@@ -35,7 +36,8 @@ const MAX_THUMBNAIL_BYTES = 5 * 1024 * 1024;
 // Giữ quy tắc thẻ của form cũ: "#the1 #the2"; nhận chữ có dấu (#âmnhạc)
 const TAGS_PATTERN = /^(#[\p{L}\p{N}_]+(\s+#[\p{L}\p{N}_]+)*)$/u;
 
-function validate(form: WizardForm): FormErrors {
+/** Dùng chung với trang Chi tiết video của Studio. */
+export function validate(form: WizardForm): FormErrors {
   const errors: FormErrors = {};
   const title = form.title.trim();
   if (!title) errors.title = "Vui lòng nhập tiêu đề.";
@@ -70,17 +72,42 @@ function captureFrame(video: HTMLVideoElement): Promise<File> {
   });
 }
 
+/** Bản nháp đã có (mở lại từ Studio): không tải lên nữa, sửa tiếp rồi đăng. */
+export interface DraftVideo {
+  id: string;
+  title: string;
+  description: string;
+  tags: string;
+  thumbnailUrl: string | null;
+  videoUrl: string;
+  isShort: boolean;
+}
+
 interface UploadWizardProps {
-  file: File;
+  /** Tệp mới chọn; hoặc `draft` khi mở lại bản nháp (đúng một trong hai). */
+  file?: File;
+  draft?: DraftVideo;
   /** Đóng hộp thoại (đã đăng, đã lưu bản nháp hoặc đã huỷ). */
   onClose: () => void;
+}
+
+/** Nội dung gửi PUT /videos/{id}; dùng chung với trang Chi tiết video của Studio. */
+export function toFormData(form: WizardForm, status: string): FormData {
+  const formData = new FormData();
+  formData.append("title", form.title.trim());
+  formData.append("description", form.description);
+  formData.append("tags", form.tags.trim());
+  formData.append("status", status);
+  if (form.thumbnailFile) formData.append("thumbnailFile", form.thumbnailFile);
+  return formData;
 }
 
 /**
  * Luồng tải lên 4 bước kiểu YouTube: tệp tải lên thành bản nháp ngay khi chọn, trong lúc đó người dùng
  * điền Chi tiết → Các thành phần → Kiểm tra → Chế độ hiển thị rồi bấm Đăng (PUT /videos/{id}).
+ * Đóng giữa chừng thì lưu nội dung vào bản nháp; mở lại bản nháp từ Studio cũng dùng hộp thoại này.
  */
-export function UploadWizard({ file, onClose }: UploadWizardProps) {
+export function UploadWizard({ file, draft, onClose }: UploadWizardProps) {
   const dispatch = useDispatch();
   const [updateVideoDetails] = useUpdateVideoDetailsMutation();
 
@@ -88,9 +115,9 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
   // Bước xa nhất đã tới: chỉ được bấm tới các bước này (như YouTube)
   const [maxReached, setMaxReached] = useState(0);
   const [form, setFormState] = useState<WizardForm>(() => ({
-    title: file.name.replace(/\.[^/.]+$/, "").slice(0, 100),
-    description: "",
-    tags: "",
+    title: draft ? draft.title : (file?.name ?? "").replace(/\.[^/.]+$/, "").slice(0, 100),
+    description: draft?.description ?? "",
+    tags: draft?.tags ?? "",
     thumbnailFile: null,
     playlistIds: [],
     targetLang: "",
@@ -100,17 +127,21 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
 
   const [previewUrl, setPreviewUrl] = useState("");
   const [meta, setMeta] = useState<VideoMeta>({ duration: 0, width: 0, height: 0 });
-  const [generatingThumbnail, setGeneratingThumbnail] = useState(true);
-  const [upload, setUpload] = useState<UploadState>({ phase: "uploading", percent: 0 });
+  const [generatingThumbnail, setGeneratingThumbnail] = useState(!draft?.thumbnailUrl);
+  const [upload, setUpload] = useState<UploadState>(
+    draft ? { phase: "done", videoId: draft.id } : { phase: "uploading", percent: 0 }
+  );
   const abortRef = useRef<AbortController | null>(null);
   const [publishRequested, setPublishRequested] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
 
   const errors = useMemo(() => validate(form), [form]);
   const detailsHasError = Object.keys(errors).length > 0;
 
   const startUpload = useCallback(
     (m: VideoMeta) => {
+      if (!file) return;
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -142,8 +173,48 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
     [file]
   );
 
+  // Bản nháp: đọc kích thước từ link video; chưa có ảnh thu nhỏ thì lấy khung hình Cloudinary cắt sẵn
+  useEffect(() => {
+    if (!draft) return;
+    setPreviewUrl(draft.videoUrl);
+    let cancelled = false;
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      setMeta({
+        duration: Number.isFinite(video.duration) ? video.duration : 0,
+        width: video.videoWidth,
+        height: video.videoHeight,
+      });
+    };
+    video.src = draft.videoUrl;
+    if (!draft.thumbnailUrl) {
+      const frame = videoImageUrl(null, draft.videoUrl);
+      if (frame) {
+        fetch(frame)
+          .then((res) => (res.ok ? res.blob() : Promise.reject(new Error())))
+          .then((blob) => {
+            if (cancelled) return;
+            const thumb = new File([blob], "thumbnail.jpg", { type: blob.type || "image/jpeg" });
+            setFormState((f) => (f.thumbnailFile ? f : { ...f, thumbnailFile: thumb }));
+          })
+          .catch(() => undefined)
+          .finally(() => !cancelled && setGeneratingThumbnail(false));
+      } else {
+        setGeneratingThumbnail(false);
+      }
+    }
+    return () => {
+      cancelled = true;
+      video.onloadedmetadata = null;
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [draft]);
+
   // Đọc kích thước / thời lượng, bắt đầu tải lên, chụp ảnh thu nhỏ mặc định
   useEffect(() => {
+    if (!file) return;
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
     const video = document.createElement("video");
@@ -185,26 +256,22 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
     };
   }, [file, startUpload]);
 
-  const thumbnailPreview = useMemo(
+  const fileThumbnail = useMemo(
     () => (form.thumbnailFile ? URL.createObjectURL(form.thumbnailFile) : ""),
     [form.thumbnailFile]
   );
-  useEffect(() => () => (thumbnailPreview ? URL.revokeObjectURL(thumbnailPreview) : undefined), [thumbnailPreview]);
+  useEffect(() => () => (fileThumbnail ? URL.revokeObjectURL(fileThumbnail) : undefined), [fileThumbnail]);
+  const thumbnailPreview = fileThumbnail || draft?.thumbnailUrl || "";
 
-  const isShort = isShortVideo(meta.duration, meta.width, meta.height);
+  // Bản nháp đã được backend xếp loại Shorts / video thường lúc tải lên
+  const isShort = draft ? draft.isShort : isShortVideo(meta.duration, meta.width, meta.height);
   const reason = shortsReason(meta.duration, meta.width, meta.height);
 
   const publish = useCallback(
     async (videoId: string) => {
       setPublishing(true);
-      const formData = new FormData();
-      formData.append("title", form.title.trim());
-      formData.append("description", form.description);
-      formData.append("tags", form.tags.trim());
-      formData.append("status", form.visibility);
-      if (form.thumbnailFile) formData.append("thumbnailFile", form.thumbnailFile);
       try {
-        await updateVideoDetails({ videoId, formData }).unwrap();
+        await updateVideoDetails({ videoId, formData: toFormData(form, form.visibility) }).unwrap();
       } catch (err) {
         toastEmitter.error(apiErrorMessage(err, "Không đăng được video, vui lòng thử lại."));
         setPublishing(false);
@@ -260,12 +327,26 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
     else setPublishRequested(true);
   };
 
-  const handleClose = () => {
-    if (publishing) return;
+  const handleClose = async () => {
+    if (publishing || savingDraft) return;
     if (upload.phase === "uploading" || upload.phase === "processing") {
       if (!window.confirm("Huỷ tải lên? Video sẽ không được lưu.")) return;
       abortRef.current?.abort();
     } else if (upload.phase === "done") {
+      // Như YouTube: đóng là lưu những gì đã điền vào bản nháp (vẫn là bản nháp, chưa đăng)
+      if (detailsHasError) {
+        if (!window.confirm("Các thay đổi đang có lỗi ở bước Chi tiết sẽ không được lưu. Vẫn đóng?")) return;
+      } else {
+        setSavingDraft(true);
+        try {
+          await updateVideoDetails({ videoId: upload.videoId, formData: toFormData(form, "DRAFT") }).unwrap();
+        } catch (err) {
+          setSavingDraft(false);
+          toastEmitter.error(apiErrorMessage(err, "Không lưu được bản nháp, vui lòng thử lại."));
+          return;
+        }
+        setSavingDraft(false);
+      }
       toastEmitter.success("Đã lưu bản nháp trong Studio");
       // Studio lấy danh sách từ playlist "đã tải lên": phải làm mới cả cache Playlist
       dispatch(playlistApi.util.invalidateTags(["Playlist"]));
@@ -295,10 +376,21 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
         <DialogTitle className="truncate pr-4 text-xl font-medium text-black">
           {form.title.trim() || "Tải video lên"}
         </DialogTitle>
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={handleClose} disabled={publishing}>
-          <X className="h-6 w-6" />
-          <span className="sr-only">Đóng</span>
-        </Button>
+        <div className="flex shrink-0 items-center gap-3">
+          {upload.phase === "done" && (
+            <span className="rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">Đã lưu ở dạng bản nháp</span>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={handleClose}
+            disabled={publishing || savingDraft}
+          >
+            {savingDraft ? <Loader2 className="h-5 w-5 animate-spin" /> : <X className="h-6 w-6" />}
+            <span className="sr-only">Đóng</span>
+          </Button>
+        </div>
       </div>
       <UploadTopBar upload={upload} />
 
@@ -325,7 +417,7 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
             <StepChecks
               errors={errors}
               upload={upload}
-              hasThumbnail={!!form.thumbnailFile}
+              hasThumbnail={!!thumbnailPreview}
               isShort={isShort}
               shortsReason={reason}
               goTo={setStep}
@@ -339,7 +431,7 @@ export function UploadWizard({ file, onClose }: UploadWizardProps) {
             src={previewUrl}
             isShort={isShort}
             reason={reason}
-            fileName={file.name}
+            fileName={file?.name ?? ""}
             videoId={upload.phase === "done" ? upload.videoId : undefined}
           />
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -29,6 +29,7 @@ import { toastEmitter } from "@/lib/toastEmitter";
 import { cn, formatDuration } from "@/lib/utils";
 import { videoDownloadUrl, videoImageUrl } from "@/lib/videoMedia";
 import type { VideoFromPlaylist } from "@/types/playlistSummary";
+import { DraftEditDialog } from "./draft-edit-dialog";
 
 const STATUS: Record<string, { label: string; icon: typeof Globe2; className?: string }> = {
   ACTIVE: { label: "Công khai", icon: Globe2 },
@@ -48,6 +49,33 @@ interface ContentCardProps {
 const actionClass =
   "flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white transition-colors hover:bg-black";
 
+/** Video đã đăng: link tới trang Chi tiết; bản nháp: nút mở lại hộp thoại tải lên (như YouTube). */
+function EditTarget({
+  isDraft,
+  href,
+  onOpenDraft,
+  className,
+  title,
+  children,
+}: {
+  isDraft: boolean;
+  href: string;
+  onOpenDraft: () => void;
+  className: string;
+  title?: string;
+  children: ReactNode;
+}) {
+  return isDraft ? (
+    <button type="button" onClick={onOpenDraft} title={title} className={className}>
+      {children}
+    </button>
+  ) : (
+    <Link href={href} title={title} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 /**
  * Thẻ video trong trang Nội dung (Studio). Rê chuột: nền thẻ sáng lên và hiện các nút thao tác
  * (video: hàng ngang phía trên ảnh; Shorts: cột dọc bên phải). Bản nháp có ảnh tối lại.
@@ -59,8 +87,9 @@ export function ContentCard({ video, vertical, onDelete }: ContentCardProps) {
   const StatusIcon = status.icon;
   const isDraft = video.videoStatus === "DRAFT";
   const image = videoImageUrl(video.thumbnailUrl, video.videoUrl);
+  const [draftOpen, setDraftOpen] = useState(false);
   const editHref = `/studio/videos/${video.videoId}`;
-  const watchHref = `/watch/${video.videoId}`;
+  const watchHref = `/${vertical ? "shorts" : "watch"}/${video.videoId}`;
 
   const copyLink = async () => {
     if (await copy(`${window.location.origin}${watchHref}`)) toastEmitter.success("Đã sao chép liên kết");
@@ -75,7 +104,7 @@ export function ContentCard({ video, vertical, onDelete }: ContentCardProps) {
         vertical ? "w-48" : "w-60"
       )}
     >
-      <Link href={editHref} className="block">
+      <EditTarget isDraft={isDraft} href={editHref} onOpenDraft={() => setDraftOpen(true)} className="block w-full text-left">
         <div
           className={cn(
             "relative overflow-hidden rounded-lg bg-gray-200",
@@ -117,7 +146,7 @@ export function ContentCard({ video, vertical, onDelete }: ContentCardProps) {
             </span>
           </p>
         )}
-      </Link>
+      </EditTarget>
 
       {/* Nút thao tác khi rê chuột (vẫn hiện khi menu ⋮ đang mở) */}
       <div
@@ -127,10 +156,10 @@ export function ContentCard({ video, vertical, onDelete }: ContentCardProps) {
           vertical ? "right-3.5 top-3.5 flex-col" : "left-0 right-0 top-4 justify-center"
         )}
       >
-        <Link href={editHref} title="Chi tiết" className={actionClass}>
+        <EditTarget isDraft={isDraft} href={editHref} onOpenDraft={() => setDraftOpen(true)} title="Chi tiết" className={actionClass}>
           <Pencil className="h-4 w-4" />
           <span className="sr-only">Chi tiết</span>
-        </Link>
+        </EditTarget>
         {!isDraft && (
           <Link href={watchHref} target="_blank" title="Xem trên WeTube" className={actionClass}>
             <ExternalLink className="h-4 w-4" />
@@ -160,6 +189,8 @@ export function ContentCard({ video, vertical, onDelete }: ContentCardProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {isDraft && <DraftEditDialog videoId={video.videoId} open={draftOpen} onOpenChange={setDraftOpen} />}
     </div>
   );
 }

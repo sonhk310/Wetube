@@ -17,6 +17,8 @@ interface StepDetailsProps extends StepProps {
   thumbnailPreview: string;
   generatingThumbnail: boolean;
   isShort: boolean;
+  /** Trang Chi tiết video của Studio đã có tiêu đề riêng. */
+  showHeading?: boolean;
 }
 
 /** Gộp thẻ AI gợi ý vào thẻ đã có, bỏ trùng (không phân biệt hoa thường). */
@@ -44,6 +46,7 @@ export function StepDetails({
   thumbnailPreview,
   generatingThumbnail,
   isShort,
+  showHeading = true,
 }: StepDetailsProps) {
   const [suggesting, setSuggesting] = useState(false);
 
@@ -73,7 +76,7 @@ export function StepDetails({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Chi tiết</h2>
+      {showHeading && <h2 className="text-xl font-semibold">Chi tiết</h2>}
 
       <div>
         <label htmlFor="upload-title" className="mb-2 block font-medium">
