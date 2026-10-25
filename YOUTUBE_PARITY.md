@@ -41,7 +41,7 @@ Cập nhật: 2026-10-25. Không chứa mật khẩu hay khoá nào.
 - **Mục Shorts ở trang xem** (`54149ff`, `940cbcb`): dữ liệu gợi ý có `isShort`; mục Shorts chỉ còn Shorts, danh sách gợi ý và tự phát bỏ Shorts ✅.
 - **Lưu kiểu YouTube** (`c86430d`, `4fd3b78`, `65b9143`): nút icon Xem sau / Lưu / Chia sẻ; modal "Lưu vào..." (Xem sau + danh sách tự tạo, bật / tắt từng danh sách, tạo mới thì lưu luôn và đóng); icon Xem sau đọc đúng trạng thái; trang `/shorts` trống có khung giữa màn hình ✅.
 - **Trang danh sách phát trống** (`5ddede0`): như YouTube, không có ảnh bìa; tên, "của {kênh}", "Không có video", nút Thêm video (về trang chủ) / Chỉnh sửa / Chia sẻ (sao chép link) / ⋮ Xoá. Anh quyết không cần avatar kênh ✅.
-- **Gói 17, D3 trình phát Shorts kiểu YouTube** (`0d4e4e1`, nhánh `shorts-player`, CHƯA DEPLOY): góc trên có phát / dừng và âm lượng (rê chuột ra thanh kéo); góc dưới có kênh, Đăng ký, tiêu đề; thanh tiến trình đỏ tua được. Cột nút Thích / Không thích / Bình luận (có số) / Chia sẻ (hộp thoại có sẵn) / ⋮ (Lưu vào danh sách phát, Báo cáo); trên điện thoại nằm đè lên video. Bình luận mở cạnh video (máy tính) hoặc trượt từ dưới lên (điện thoại), dùng lại bộ bình luận của trang xem. Nút lên / xuống, phím ↑ / ↓, Space / K, M. Nhớ âm lượng / tắt tiếng (`useShortsVolume`, localStorage riêng của Shorts, mặc định tắt tiếng). URL đổi theo Short đang xem (`/shorts/{id}`, trước đây trang này chỉ có chữ "Trang Shorts"); mở link đó thì Short đó đứng đầu. Kiểm tra: `tsc` (12 lỗi cũ), eslint, `next build`; bản build ở máy: `/shorts`, `/shorts/{id}`, `/shorts/<id không tồn tại>` trả 200. Chưa thử trên trình duyệt.
+- **Gói 17, D3 trình phát Shorts kiểu YouTube** (`0d4e4e1`, anh duyệt, deploy client 25/10 11:46 giờ VN): góc trên có phát / dừng và âm lượng (rê chuột ra thanh kéo); góc dưới có kênh, Đăng ký, tiêu đề; thanh tiến trình đỏ tua được. Cột nút Thích / Không thích / Bình luận (có số) / Chia sẻ (hộp thoại có sẵn) / ⋮ (Lưu vào danh sách phát, Báo cáo); trên điện thoại nằm đè lên video. Bình luận mở cạnh video (máy tính) hoặc trượt từ dưới lên (điện thoại), dùng lại bộ bình luận của trang xem. Nút lên / xuống, phím ↑ / ↓, Space / K, M. Nhớ âm lượng / tắt tiếng (`useShortsVolume`, localStorage riêng của Shorts, mặc định tắt tiếng). URL đổi theo Short đang xem (`/shorts/{id}`, trước đây trang này chỉ có chữ "Trang Shorts"); mở link đó thì Short đó đứng đầu. Kiểm tra: `tsc` (12 lỗi cũ), eslint, `next build`; bản build ở máy: `/shorts`, `/shorts/{id}`, `/shorts/<id không tồn tại>` trả 200; sau deploy 3 trang này trên production trả 200. Chưa thử trên trình duyệt.
 
 ---
 
@@ -51,10 +51,10 @@ Cập nhật: 2026-10-25. Không chứa mật khẩu hay khoá nào.
 - `TEST_CHECKLIST.md` mục 1–15, dùng 2 tài khoản. Nên thử Riêng tư / Không công khai trước. Mục 1–10 (đăng nhập, báo cáo, phụ đề AI, phòng xem chung, MoMo) chưa thử hết.
 - Gói 16: chưa xác nhận đã thử đủ danh sách gốc, nhất là đếm ngược 5 giây giảm đều rồi sang video sau (kể cả khi tắt Tự phát), Lặp lại ở video cuối, Shift+N / Shift+P, và người khác mở danh sách công khai của anh thì không thấy nút sửa / xoá.
 - Đăng xuất, menu ⋮ của thẻ video → "Lưu vào Xem sau": phải có toast "Hãy đăng nhập để lưu video" kèm nút Đăng nhập.
-- Mục Shorts ở trang xem khi đã có Shorts thật (production chưa có video dọc nào nên mục này đang ẩn).
+- Gói 17 (trình phát Shorts) và mục Shorts ở trang xem: production đã có Short đầu tiên ("Xiaochaomeng và trick nâng cao Ambessa", `b0203ec5…`, dọc 720x960, 38 giây).
 
 ### 2.2 Em theo dõi
-- **Cloudinary có trả `video.codec` không:** lần tải lên tới, đọc log (lọc `Video `) tìm dòng `Video <id>: … -> phát file gốc | chuyển mã H.264`; mở video ngay để xem thời lượng và thanh tiến trình. Không có codec thì vẫn chuyển mã như trước.
+- ~~Cloudinary có trả `video.codec` không~~: đã xác nhận 25/10. Lần tải lên Short trên (11:13 giờ VN), log ghi `mp4 {codec=h264, …} -> phát file gốc`.
 - Lần deploy backend lỗi đầu tiên của gói 11 (24/10 13:52) chưa rõ nguyên nhân, vì log bị cắt mất dòng lỗi.
 - Khách đổi `anonId` liên tục có thể thổi phồng thời gian xem. Chấp nhận, vì đã chặn 60 lượt / phút / IP.
 
@@ -65,7 +65,7 @@ Code đã xong, mọi key đều có TTL. Cấu hình đề xuất trên Vibe Ho
 
 ## 3. SẼ LÀM
 
-Đã xong: A1–A7, B4, B6, B7, C1, C2, D1, E1, E3, F1 (xem mục 1). Xong việc nào thì chuyển mã việc đó lên dòng này và bỏ khỏi bảng.
+Đã xong: A1–A7, B4, B6, B7, C1, C2, D1, D3, E1, E3, F1 (xem mục 1). Xong việc nào thì chuyển mã việc đó lên dòng này và bỏ khỏi bảng.
 Cỡ: S = vài giờ, M = khoảng 1 ngày, L = vài ngày. "Chưa xem kỹ" = em chưa đọc code phần đó.
 
 | # | Việc | Ở đâu | Cỡ | Ghi chú |
@@ -80,7 +80,6 @@ Cỡ: S = vài giờ, M = khoảng 1 ngày, L = vài ngày. "Chưa xem kỹ" = e
 | C4 | Trang Khám phá (Âm nhạc, Thể thao, Tin tức, Trò chơi) dùng dữ liệu thật | BE+FE | M | Chưa xem kỹ, có thể còn dữ liệu mẫu |
 | C5 | Cuộn vô hạn ở trang chủ / kênh / tìm kiếm | FE | S | Chưa xem kỹ |
 | D2 | Danh sách phát: kéo thả, Chuyển lên đầu / xuống dưới, sắp xếp "Thủ công", ảnh bìa, mô tả | BE+FE | M | Nối tiếp gói 16 |
-| D3 | Shorts: bình luận ngay trong Shorts, vuốt lên / xuống, nhớ âm lượng | FE | M | Gói 17 đã làm trên nhánh `shorts-player`, chờ anh duyệt deploy |
 | D4 | Hộp thoại "Thêm video" vào danh sách (tìm kiếm, Xem sau, video của kênh) | BE+FE | M | Hiện nút này về trang chủ |
 | E2 | Duyệt / sửa phụ đề AI trước khi đăng | BE+FE | M | PRD có yêu cầu |
 | E4 | Đặt lịch công khai video | BE+FE | M | |
