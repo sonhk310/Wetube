@@ -6,6 +6,7 @@ import VideoMetadata from "./components/video-metadata";
 import VideoTags from "./components/video-tags";
 import VideosList from "./components/videos-list";
 import PlaylistPanel from "./components/playlist-panel";
+import ChaptersPanel from "./components/chapters-panel";
 import {useVideoStore } from "@/store/zustand/videoStore";
 import { useEffect } from "react";
 import { useTheater } from "@/hooks/use-controls";
@@ -86,6 +87,7 @@ export default function App({ videoId }: AppProps) {
             theater ? "md:row-start-2 md:pt-2" : "md:row-start-1 md:row-span-2"
           )}
         >
+          <ChaptersPanel videoId={videoId} />
           <PlaylistPanel videoId={videoId} />
           <VideoTags />
           <Shorts />

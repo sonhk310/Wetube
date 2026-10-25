@@ -14,9 +14,6 @@ const LINK = /https?:\/\/[^\s<>"]+/g;
 
 const MIN_LENGTH = 10;
 
-/** id của hàng "Chương" dưới mô tả (nút tên chương trên trình phát cuộn tới đây). */
-export const CHAPTERS_ID = "video-chapters";
-
 function toSeconds(stamp: string) {
   return stamp.split(":").reduce((total, part) => total * 60 + Number(part), 0);
 }

@@ -36,7 +36,8 @@ import { toastEmitter } from "@/lib/toastEmitter";
 import EndScreen from "./end-screen";
 import type { RecommendVideoDto } from "@/types/video";
 import { usePlaylistQueue } from "../../lib/use-playlist-queue";
-import { CHAPTERS_ID, chapterIndexAt, parseChapters } from "../../lib/chapters";
+import { chapterIndexAt, parseChapters } from "../../lib/chapters";
+import { useChaptersPanelStore } from "@/store/zustand/useChaptersPanelStore";
 import { formatTime } from "./format-time";
 
 const VOLUME_KEY = "wetube_player_volume";
@@ -200,6 +201,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   // Chương đọc từ mô tả (quy tắc YouTube); không đủ điều kiện thì []
   const chapters = useMemo(() => parseChapters(description, duration), [description, duration]);
   const chapter = chapters[chapterIndexAt(chapters, currentTime)];
+  const toggleChaptersPanel = useChaptersPanelStore((s) => s.toggle);
 
   const idleTimer = useRef<number | undefined>(undefined);
   const startApplied = useRef(false);
@@ -920,9 +922,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
             <button
               type="button"
               title={chapter.title}
-              onClick={() =>
-                document.getElementById(CHAPTERS_ID)?.scrollIntoView({ behavior: "smooth", block: "center" })
-              }
+              onClick={toggleChaptersPanel}
               className="ml-1 hidden min-w-0 items-center gap-0.5 rounded px-1 text-sm text-white/90 hover:text-white sm:flex"
             >
               <span className="text-white/60">•</span>
