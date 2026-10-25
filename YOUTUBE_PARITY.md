@@ -50,6 +50,7 @@ Cập nhật: 2026-10-25. Không chứa mật khẩu hay khoá nào.
   - `fa17adf` B3: đọc chương từ mô tả theo quy tắc YouTube (`modules/watch/lib/chapters.ts`: mốc đầu `0:00`, ≥ 3 mốc, tăng dần, mỗi chương ≥ 10 giây; số trong link không tính). Thanh tua chia đoạn, tên chương khi rê chuột, "• Tên chương ›" cạnh giờ, hàng "Chương" dưới mô tả (khung hình Cloudinary `so_`).
   - Kiểm tra: 15 phép thử bằng `node`, `tsc`, eslint, `next build`; sau deploy: bản build lấy `fa17adf`, các trang chính trả 200, JS trang xem có code chương, CSS có `field-sizing-fixed`, log không lỗi. Chưa thử trên trình duyệt.
   - Anh yêu cầu (25/10): `bb1930d` bỏ hàng "Chương" dưới mô tả; thay bằng khung "Chương" ở cột phải (trên khung danh sách phát, cùng kiểu): mặc định đóng, bấm "• Tên chương ›" trên trình phát để mở / đóng, có ✕; mỗi hàng ảnh + tên + giờ, tô chương đang xem, bấm để tua; sang video khác thì đóng (`components/chapters-panel.tsx`, `store/zustand/useChaptersPanelStore.ts`). Trên điện thoại nút tên chương vẫn ẩn nên không mở được khung. Deploy client 20:54 giờ VN; trang xem / Studio trả 200, log không lỗi. Chưa thử trên trình duyệt.
+  - Anh yêu cầu thêm: `c910365` khung Chương trượt xuống + hiện dần (0,2 giây) khi mở; nút tên chương trên trình phát chỉ mở, đóng bằng ✕. Deploy client 21:02 giờ VN; JS / CSS trên production có animation, log không lỗi. Chưa thử trên trình duyệt.
 
 ---
 
