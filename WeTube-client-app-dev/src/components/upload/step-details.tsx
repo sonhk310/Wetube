@@ -1,14 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ThumbnailSelector } from "@/components/ThumbnailSelector";
-import { API_PREFIX } from "@/constants/appConstant";
-import { apiFetch } from "@/lib/apiFetch";
-import { toastEmitter } from "@/lib/toastEmitter";
 import { PlaylistPicker } from "./playlist-picker";
 import type { FormErrors, StepProps } from "./types";
 
@@ -19,20 +13,6 @@ interface StepDetailsProps extends StepProps {
   isShort: boolean;
   /** Trang Chi tiết video của Studio đã có tiêu đề riêng. */
   showHeading?: boolean;
-}
-
-/** Gộp thẻ AI gợi ý vào thẻ đã có, bỏ trùng (không phân biệt hoa thường). */
-function mergeTags(current: string, suggested: string): string {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const raw of `${current} ${suggested}`.split(/[\s,]+/)) {
-    if (!raw) continue;
-    const tag = raw.startsWith("#") ? raw : `#${raw}`;
-    if (seen.has(tag.toLowerCase())) continue;
-    seen.add(tag.toLowerCase());
-    out.push(tag);
-  }
-  return out.join(" ");
 }
 
 function FieldError({ message }: { message?: string }) {
@@ -48,32 +28,6 @@ export function StepDetails({
   isShort,
   showHeading = true,
 }: StepDetailsProps) {
-  const [suggesting, setSuggesting] = useState(false);
-
-  const suggestTags = async () => {
-    const title = form.title.trim();
-    if (!title) {
-      toastEmitter.error("Vui lòng nhập tiêu đề trước.");
-      return;
-    }
-    setSuggesting(true);
-    try {
-      const res = await apiFetch(`${API_PREFIX}/ai/description`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
-      });
-      if (!res.ok) throw new Error();
-      const data = (await res.json()) as { tags?: string };
-      if (!data.tags) throw new Error();
-      setForm({ tags: mergeTags(form.tags, data.tags) });
-    } catch {
-      toastEmitter.error("Không gợi ý được thẻ, vui lòng thử lại.");
-    } finally {
-      setSuggesting(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       {showHeading && <h2 className="text-xl font-semibold">Chi tiết</h2>}
@@ -113,19 +67,13 @@ export function StepDetails({
         <label htmlFor="upload-tags" className="mb-2 block font-medium">
           Thẻ
         </label>
-        <div className="flex gap-2">
-          <Input
-            id="upload-tags"
-            value={form.tags}
-            onChange={(e) => setForm({ tags: e.target.value })}
-            placeholder="#the1 #the2"
-            className={errors.tags ? "border-red-500" : ""}
-          />
-          <Button type="button" variant="secondary" className="rounded-full" onClick={suggestTags} disabled={suggesting}>
-            {suggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            Gợi ý thẻ bằng AI
-          </Button>
-        </div>
+        <Input
+          id="upload-tags"
+          value={form.tags}
+          onChange={(e) => setForm({ tags: e.target.value })}
+          placeholder="#the1 #the2"
+          className={errors.tags ? "border-red-500" : ""}
+        />
         <FieldError message={errors.tags} />
         <p className="mt-1 text-xs text-gray-500">Thẻ giúp người khác dễ tìm thấy video của bạn.</p>
       </div>
