@@ -33,6 +33,8 @@ import PlayerContextMenu, { CONTEXT_MENU_SIZE } from "./context-menu";
 import { useCopyToClipboard } from "@/lib/clipboard";
 import { toastEmitter } from "@/lib/toastEmitter";
 import EndScreen from "./end-screen";
+import type { RecommendVideoDto } from "@/types/video";
+import { usePlaylistQueue } from "../../lib/use-playlist-queue";
 import { formatTime } from "./format-time";
 
 const VOLUME_KEY = "wetube_player_volume";
@@ -135,6 +137,23 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   const video = response?.detail.id === videoId ? response.detail : undefined;
   const upNext = video ? (response?.recommend?.video ?? []).filter((v) => v.id !== videoId) : [];
   const router = useProgressRouter();
+  // Đang phát theo danh sách (?list=): hết video thì sang video kế tiếp trong danh sách
+  const queue = usePlaylistQueue(videoId);
+  const queueRef = useRef(queue);
+  queueRef.current = queue;
+  const playlistNext: RecommendVideoDto | undefined = queue.next && {
+    id: queue.next.videoId,
+    title: queue.next.videoTitle,
+    thumbnailUrl: queue.next.thumbnailUrl ?? "",
+    totalView: queue.next.totalView,
+    createAt: queue.next.createdAt,
+    name: queue.next.channelName ?? "",
+    duration: queue.next.duration,
+    picture: "",
+  };
+  const endScreenVideos = playlistNext
+    ? [playlistNext, ...upNext.filter((v) => v.id !== playlistNext.id)]
+    : upNext;
   const subtitles = video?.subtitles ?? [];
   const { setSeek } = useControls();
   const { user } = useAuth();
@@ -265,7 +284,18 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     });
   };
 
-  const openVideo = useCallback((id: string) => router.push(`/watch/${id}`), [router]);
+  const openVideo = useCallback(
+    (id: string) => {
+      // Danh sách 1 video có bật lặp lại: "video sau" là chính nó, cùng URL nên phải tự phát lại
+      if (id === videoId) {
+        videoRef.current?.play().catch(() => {});
+        return;
+      }
+      const inList = queueRef.current.detail?.videos.some((v) => v.videoId === id);
+      router.push(inList ? queueRef.current.hrefFor(id) : `/watch/${id}`);
+    },
+    [router, videoId]
+  );
 
   // ---------- hiện/ẩn thanh điều khiển ----------
   const poke = useCallback(() => {
@@ -543,6 +573,16 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
       if (!v) return;
       const inPlayer = !!containerRef.current?.contains(document.activeElement);
 
+      // Shift+N / Shift+P: video sau / trước trong danh sách phát
+      if (e.shiftKey && (e.key === "N" || e.key === "P") && queueRef.current.detail) {
+        const goTo = e.key === "N" ? queueRef.current.next : queueRef.current.prev;
+        if (goTo) {
+          e.preventDefault();
+          openVideo(goTo.videoId);
+        }
+        return;
+      }
+
       switch (e.key) {
         case " ":
         case "k":
@@ -616,7 +656,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [togglePlay, seekBy, seekTo, changeVolume, toggleMute, toggleFullscreen, toggleCaptions, toggleTheater, stepRate, poke]);
+  }, [togglePlay, seekBy, seekTo, changeVolume, toggleMute, toggleFullscreen, toggleCaptions, toggleTheater, stepRate, poke, openVideo]);
 
   // Chạm (điện thoại): lần chạm đầu chỉ hiện điều khiển; chuột: bấm là phát/dừng
   const handleSurfacePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -786,8 +826,9 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
       {/* Hết video: đếm ngược tự phát / lưới gợi ý */}
       {ended && !failed && (
         <EndScreen
-          videos={upNext}
-          autoplay={autoplayNext}
+          videos={endScreenVideos}
+          // Trong danh sách phát luôn tự sang video sau, không phụ thuộc công tắc Tự phát (như YouTube)
+          autoplay={playlistNext ? true : autoplayNext}
           fullscreen={fullscreen}
           onReplay={togglePlay}
           onOpen={openVideo}
