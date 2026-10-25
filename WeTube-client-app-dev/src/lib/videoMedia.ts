@@ -11,6 +11,14 @@ export function videoImageUrl(thumbnailUrl: string | null | undefined, videoUrl:
   return "";
 }
 
+/** Khung hình tại giây `seconds` do Cloudinary cắt (so_), rộng `width` px; "" nếu không phải video Cloudinary. */
+export function videoFrameUrl(videoUrl: string | null | undefined, seconds: number, width = 320): string {
+  if (!videoUrl || !isCloudinary(videoUrl)) return "";
+  return videoUrl
+    .replace("/upload/", `/upload/so_${Math.floor(seconds)},w_${width}/`)
+    .replace(/\.mp4(\?.*)?$/, ".jpg");
+}
+
 /** Link tải tệp video về máy (Cloudinary fl_attachment ép trình duyệt tải xuống). */
 export function videoDownloadUrl(videoUrl: string): string {
   return isCloudinary(videoUrl) ? videoUrl.replace("/upload/", "/upload/fl_attachment/") : videoUrl;

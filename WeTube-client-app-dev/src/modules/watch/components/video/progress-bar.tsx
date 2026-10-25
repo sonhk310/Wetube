@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { chapterIndexAt, type Chapter } from "../../lib/chapters";
 import { formatTime } from "./format-time";
 
 interface ProgressBarProps {
@@ -9,6 +10,8 @@ interface ProgressBarProps {
   duration: number;
   /** Đã tải tới giây thứ mấy (tính từ vị trí đang xem). */
   buffered: number;
+  /** Có chương thì thanh tua chia đoạn và nhãn rê chuột hiện tên chương. */
+  chapters: Chapter[];
   onScrubStart: () => void;
   onScrub: (time: number) => void;
   onScrubEnd: (time: number) => void;
@@ -19,6 +22,7 @@ export default function ProgressBar({
   currentTime,
   duration,
   buffered,
+  chapters,
   onScrubStart,
   onScrub,
   onScrubEnd,
@@ -56,10 +60,17 @@ export default function ProgressBar({
   };
 
   const played = duration ? Math.min(100, (currentTime / duration) * 100) : 0;
-  const loaded = duration ? Math.min(100, (buffered / duration) * 100) : 0;
   const expanded = dragging || hover !== null;
-  // Giữ nhãn thời gian nằm trong khung
-  const labelX = hover ? Math.min(Math.max(hover.x, 24), hover.width - 24) : 0;
+  // Không có chương thì cả thanh là một đoạn
+  const segments = chapters.length ? chapters : [{ start: 0, end: duration }];
+  const hoverIndex = hover ? chapterIndexAt(chapters, hover.time) : -1;
+  const hoverTitle = hoverIndex >= 0 ? chapters[hoverIndex].title : null;
+  // Phần trăm của đoạn [start, end] đã tới giây `time`
+  const fill = (time: number, start: number, end: number) =>
+    end > start ? Math.min(100, Math.max(0, ((time - start) / (end - start)) * 100)) : 0;
+  // Giữ nhãn thời gian (và tên chương) nằm trong khung
+  const labelHalf = hoverTitle ? 80 : 24;
+  const labelX = hover ? Math.min(Math.max(hover.x, labelHalf), hover.width - labelHalf) : 0;
 
   return (
     <div
@@ -79,32 +90,45 @@ export default function ProgressBar({
         if (!dragging) setHover(null);
       }}
     >
+      <div className="flex w-full items-center gap-0.5">
+        {segments.map((s, i) => (
+          <div
+            key={s.start}
+            className={cn(
+              "relative bg-white/25 transition-[height] duration-100",
+              chapters.length && i === hoverIndex ? "h-[8px]" : expanded ? "h-[5px]" : "h-[3px]"
+            )}
+            // Rộng theo độ dài đoạn (chưa biết thời lượng thì vẫn rộng hết thanh)
+            style={{ flex: `${s.end - s.start || 1} 1 0` }}
+          >
+            <div className="absolute inset-y-0 left-0 bg-white/40" style={{ width: `${fill(buffered, s.start, s.end)}%` }} />
+            {hover && !dragging && (
+              <div
+                className="absolute inset-y-0 left-0 bg-white/30"
+                style={{ width: `${fill(hover.time, s.start, s.end)}%` }}
+              />
+            )}
+            <div className="absolute inset-y-0 left-0 bg-red-600" style={{ width: `${fill(currentTime, s.start, s.end)}%` }} />
+          </div>
+        ))}
+      </div>
       <div
         className={cn(
-          "relative w-full bg-white/25 transition-[height] duration-100",
-          expanded ? "h-[5px]" : "h-[3px]"
+          "pointer-events-none absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-600 transition-transform duration-100",
+          expanded ? "scale-100" : "scale-0"
         )}
-      >
-        <div className="absolute inset-y-0 left-0 bg-white/40" style={{ width: `${loaded}%` }} />
-        {hover && !dragging && (
-          <div className="absolute inset-y-0 left-0 bg-white/30" style={{ width: hover.x }} />
-        )}
-        <div className="absolute inset-y-0 left-0 bg-red-600" style={{ width: `${played}%` }} />
-        <div
-          className={cn(
-            "absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-600 transition-transform duration-100",
-            expanded ? "scale-100" : "scale-0"
-          )}
-          style={{ left: `${played}%` }}
-        />
-      </div>
+        style={{ left: `${played}%` }}
+      />
 
       {hover && (
         <div
-          className="pointer-events-none absolute bottom-5 -translate-x-1/2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white tabular-nums"
+          className="pointer-events-none absolute bottom-5 flex -translate-x-1/2 flex-col items-center gap-0.5 text-xs font-medium text-white"
           style={{ left: labelX }}
         >
-          {formatTime(hover.time)}
+          {hoverTitle && (
+            <span className="max-w-40 truncate [text-shadow:0_0_4px_rgba(0,0,0,0.8)]">{hoverTitle}</span>
+          )}
+          <span className="rounded bg-black/80 px-1.5 py-0.5 tabular-nums">{formatTime(hover.time)}</span>
         </div>
       )}
     </div>

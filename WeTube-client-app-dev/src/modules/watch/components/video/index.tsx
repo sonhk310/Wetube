@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { motion } from "motion/react";
 import { useProgressRouter } from "@/hooks/use-progress-router";
 import {
+  ChevronRight,
   FastForward,
   Loader2,
   Maximize,
@@ -35,6 +36,7 @@ import { toastEmitter } from "@/lib/toastEmitter";
 import EndScreen from "./end-screen";
 import type { RecommendVideoDto } from "@/types/video";
 import { usePlaylistQueue } from "../../lib/use-playlist-queue";
+import { CHAPTERS_ID, chapterIndexAt, parseChapters } from "../../lib/chapters";
 import { formatTime } from "./format-time";
 
 const VOLUME_KEY = "wetube_player_volume";
@@ -162,6 +164,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     ? [playlistNext, ...upNext.filter((v) => v.id !== playlistNext.id)]
     : upNext;
   const subtitles = video?.subtitles ?? [];
+  const description = video?.description;
   const { setSeek } = useControls();
   const { user } = useAuth();
   const { theater, toggleTheater } = useTheater();
@@ -194,6 +197,9 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   const [loop, setLoop] = useState(false);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [, copy] = useCopyToClipboard();
+  // Chương đọc từ mô tả (quy tắc YouTube); không đủ điều kiện thì []
+  const chapters = useMemo(() => parseChapters(description, duration), [description, duration]);
+  const chapter = chapters[chapterIndexAt(chapters, currentTime)];
 
   const idleTimer = useRef<number | undefined>(undefined);
   const startApplied = useRef(false);
@@ -873,6 +879,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
           currentTime={currentTime}
           duration={duration}
           buffered={buffered}
+          chapters={chapters}
           onScrubStart={handleScrubStart}
           onScrub={handleScrub}
           onScrubEnd={handleScrubEnd}
@@ -908,6 +915,21 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
           <span className="ml-1 text-xs whitespace-nowrap tabular-nums sm:text-sm">
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
+
+          {chapter && (
+            <button
+              type="button"
+              title={chapter.title}
+              onClick={() =>
+                document.getElementById(CHAPTERS_ID)?.scrollIntoView({ behavior: "smooth", block: "center" })
+              }
+              className="ml-1 hidden min-w-0 items-center gap-0.5 rounded px-1 text-sm text-white/90 hover:text-white sm:flex"
+            >
+              <span className="text-white/60">•</span>
+              <span className="truncate">{chapter.title}</span>
+              <ChevronRight size={16} className="shrink-0" />
+            </button>
+          )}
 
           <div className="flex-1" />
 
