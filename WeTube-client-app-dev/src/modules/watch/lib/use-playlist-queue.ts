@@ -38,12 +38,12 @@ export function usePlaylistQueue(videoId: string): PlaylistQueue {
     loadingListId = listId;
     playlistService
       .getDetail(listId)
-      .then((detail: PlaylistDetail) => load(detail, shuffleParam))
+      .then((detail: PlaylistDetail) => load(detail, shuffleParam, videoId))
       .catch((err: unknown) => console.error("Không tải được danh sách phát:", err))
       .finally(() => {
         if (loadingListId === listId) loadingListId = null;
       });
-  }, [listId, stored?.playlistId, shuffleParam, load]);
+  }, [listId, stored?.playlistId, shuffleParam, load, videoId]);
 
   const detail = listId && stored?.playlistId === listId ? stored : null;
 

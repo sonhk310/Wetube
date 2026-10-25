@@ -16,8 +16,11 @@ interface PlaylistPlaybackState {
   shuffle: boolean;
   /** Bấm Phát tất cả / Trộn bài / một hàng ở trang danh sách: `baseOrder` là thứ tự đang hiển thị. */
   start: (detail: PlaylistDetail, baseOrder: string[], shuffle: boolean, firstId?: string) => void;
-  /** Mở link `?list=` khi chưa giữ danh sách này: thứ tự mặc định (Ngày thêm mới nhất), trộn nếu `shuffle`. */
-  load: (detail: PlaylistDetail, shuffle: boolean) => void;
+  /**
+   * Mở link `?list=` khi chưa giữ danh sách này: thứ tự mặc định (Ngày thêm mới nhất), trộn nếu `shuffle`
+   * (video đang xem `firstId` đứng đầu).
+   */
+  load: (detail: PlaylistDetail, shuffle: boolean, firstId?: string) => void;
   setLoop: (on: boolean) => void;
   setShuffle: (on: boolean, currentId?: string) => void;
   removeVideo: (videoId: string) => void;
@@ -37,10 +40,10 @@ export const usePlaylistPlaybackStore = create<PlaylistPlaybackState>((set, get)
       shuffle,
       loop: s.detail?.playlistId === detail.playlistId ? s.loop : false,
     })),
-  load: (detail, shuffle) => {
+  load: (detail, shuffle, firstId) => {
     if (get().detail?.playlistId === detail.playlistId) return;
     const baseOrder = detail.videos.map((v) => v.videoId);
-    set({ detail, baseOrder, order: shuffle ? shuffleOrder(baseOrder) : baseOrder, shuffle, loop: false });
+    set({ detail, baseOrder, order: shuffle ? shuffleOrder(baseOrder, firstId) : baseOrder, shuffle, loop: false });
   },
   setLoop: (on) => set({ loop: on }),
   setShuffle: (on, currentId) =>
