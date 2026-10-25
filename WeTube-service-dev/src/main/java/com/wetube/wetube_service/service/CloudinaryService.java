@@ -1,6 +1,7 @@
 package com.wetube.wetube_service.service;
 
 import com.cloudinary.Cloudinary;
+import com.cloudinary.EagerTransformation;
 import com.cloudinary.Transformation;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -48,19 +50,52 @@ public class CloudinaryService {
         }
         String publicId = publicIdObj.toString();
 
+        // Bản chuyển mã chỉ được Cloudinary tạo khi có người mở link lần đầu; trong lúc tạo (vài phút với
+        // video dài) nó phát kiểu vừa mã hoá vừa gửi, không tua được và trình duyệt thấy thời lượng sai.
+        // File đã là MP4 H.264 thì phát thẳng file gốc; còn lại thì xin tạo sẵn bản chuyển mã ngay.
+        boolean asUploaded = playsAsUploaded(result);
+        if (!asUploaded) {
+            requestTranscode(publicId);
+        }
+        System.out.println("Video " + publicId + ": " + result.get("format") + " " + result.get("video")
+                + (asUploaded ? " -> phát file gốc" : " -> chuyển mã H.264"));
+        return new UploadedVideo(playbackUrl(cloudinary, publicId, asUploaded), intOrNull(result.get("width")),
+                intOrNull(result.get("height")), floatOrNull(result.get("duration")));
+    }
 
-        String url = cloudinary.url()
-                .resourceType("video")
-                .format("mp4")
-                .transformation(
-                        new Transformation()
-                                .videoCodec("h264")
-                                .quality("auto")
-                )
-                .secure(true)
-                .generate(publicId);
-        return new UploadedVideo(url, intOrNull(result.get("width")), intOrNull(result.get("height")),
-                floatOrNull(result.get("duration")));
+    /** Trình duyệt nào cũng phát được (và tua được) file gốc: MP4, H.264 8-bit. */
+    static boolean playsAsUploaded(Map<?, ?> uploadResult) {
+        if (!"mp4".equals(uploadResult.get("format")) || !(uploadResult.get("video") instanceof Map<?, ?> video)) {
+            return false;
+        }
+        Object pixFormat = video.get("pix_format");
+        return "h264".equals(video.get("codec")) && (pixFormat == null || "yuv420p".equals(pixFormat));
+    }
+
+    static String playbackUrl(Cloudinary cloudinary, String publicId, boolean asUploaded) {
+        var url = cloudinary.url().resourceType("video").format("mp4").secure(true);
+        if (!asUploaded) {
+            url.transformation(new Transformation().videoCodec("h264").quality("auto"));
+        }
+        return url.generate(publicId);
+    }
+
+    /** Phải trùng với transformation trong playbackUrl, nếu không Cloudinary tạo ra một bản khác. */
+    static EagerTransformation transcodeEager() {
+        return new EagerTransformation().videoCodec("h264").quality("auto").format("mp4");
+    }
+
+    /** Xin Cloudinary tạo sẵn bản q_auto,vc_h264 ở nền; lỗi thì bản đó vẫn được tạo khi có người xem. */
+    private void requestTranscode(String publicId) {
+        try {
+            cloudinary.uploader().explicit(publicId, ObjectUtils.asMap(
+                    "type", "upload",
+                    "resource_type", "video",
+                    "eager", List.of(transcodeEager()),
+                    "eager_async", true));
+        } catch (Exception e) {
+            System.err.println("Không xin được chuyển mã trước cho video " + publicId + ": " + e.getMessage());
+        }
     }
 
     private static Integer intOrNull(Object value) {
