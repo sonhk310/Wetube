@@ -18,8 +18,10 @@ const container: Variants = {
 
 export default function VideosList() {
     const videoDetail = useVideoStore((s) => s.videoDetail);
+    // Shorts đã có mục riêng ở trên
+    const videos = videoDetail?.recommend?.video?.filter((v) => !v.isShort) ?? [];
 
-    if (!videoDetail?.recommend?.video?.length) return null;
+    if (!videos.length) return null;
     return (
         <motion.section
             variants={container}
@@ -27,7 +29,7 @@ export default function VideosList() {
             animate="show"
             className="flex flex-col gap-1 w-full border-t pt-2 border-gray-200 mb-[58px]"
         >
-            {videoDetail.recommend.video.map((video) => (
+            {videos.map((video) => (
                 <VideoPreview key={video.id} video={video} />
             ))}
         </motion.section>

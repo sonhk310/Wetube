@@ -135,7 +135,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   const response = useVideoStore((s) => s.videoDetail);
   // Khi chuyển video, store còn giữ video cũ một lúc: chỉ phát khi đúng video của trang
   const video = response?.detail.id === videoId ? response.detail : undefined;
-  const upNext = video ? (response?.recommend?.video ?? []).filter((v) => v.id !== videoId) : [];
+  const upNext = video ? (response?.recommend?.video ?? []).filter((v) => v.id !== videoId && !v.isShort) : [];
   const router = useProgressRouter();
   // Đang phát theo danh sách (?list=): hết video thì sang video kế tiếp trong danh sách
   const queue = usePlaylistQueue(videoId);
