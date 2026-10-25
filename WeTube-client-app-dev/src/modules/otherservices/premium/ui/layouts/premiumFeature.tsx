@@ -116,7 +116,7 @@ export default function PremiumFeatures() {
             </p>
             <p className="text-sm text-gray-700 mb-1">{plan.description}</p>
             <p className="text-xs text-gray-500 mb-4">
-              Duration: {plan.durationDays} days
+              Thời hạn: {plan.durationDays} ngày
             </p>
 
             <button
@@ -130,7 +130,7 @@ export default function PremiumFeatures() {
             >
               {payLoading === plan.id
                 ? <Spinner className="size-5 mx-auto text-current" />
-                : `Select ${plan.name}`}
+                : `Chọn ${plan.name}`}
             </button>
           </div>
         ))}

@@ -40,7 +40,7 @@ export default function Playlistliked() {
   }, [user?.sub, authLoading]);
 
   if (loading) return <PlaylistDetailSkeleton />;
-  if (!playlistId) return <p>Không có playlist Liked</p>;
+  if (!playlistId) return <p className="p-6 text-gray-500">Chưa có video nào bạn đã thích.</p>;
 
   return <PlaylistDetail playlistId={playlistId} />;
 }

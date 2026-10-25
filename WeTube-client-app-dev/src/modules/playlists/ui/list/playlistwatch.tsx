@@ -40,7 +40,7 @@ export default function PlaylistWatch() {
   }, [user?.sub, authLoading]);
 
   if (loading) return <PlaylistDetailSkeleton />;
-  if (!playlistId) return <p>Không có playlist Watch Later</p>;
+  if (!playlistId) return <p className="p-6 text-gray-500">Chưa có video nào trong danh sách Xem sau.</p>;
 
   return <PlaylistDetail playlistId={playlistId} />;
 }

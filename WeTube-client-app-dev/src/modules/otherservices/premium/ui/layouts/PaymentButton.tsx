@@ -51,7 +51,7 @@ export default function PaymentButton() {
       disabled={loading}
       className="bg-blue-600 text-white text-lg font-medium px-6 py-3 rounded-full hover:bg-blue-700 transition disabled:opacity-50"
     >
-      {loading ? <Spinner className="size-6 mx-auto text-current" /> : "Try it for 1 month 0 VND"}
+      {loading ? <Spinner className="size-6 mx-auto text-current" /> : "Dùng thử 1 tháng với giá 0 ₫"}
     </button>
   );
 }
