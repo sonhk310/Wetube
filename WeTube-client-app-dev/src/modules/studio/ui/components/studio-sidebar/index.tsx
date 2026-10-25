@@ -30,7 +30,8 @@ export default function StudioSidebar() {
             <StudioSidebarHeader />
             <SidebarMenuItem>
               <SidebarMenuButton
-                isActive={pathname === pageUrls.STUDIO}
+                // Trang "Xem tất cả" (/studio/content) cũng thuộc mục Nội dung
+                isActive={pathname === pageUrls.STUDIO || pathname === `${pageUrls.STUDIO}/content`}
                 tooltip="Nội dung"
                 asChild
               >

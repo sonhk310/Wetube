@@ -31,7 +31,7 @@ import { videoDownloadUrl, videoImageUrl } from "@/lib/videoMedia";
 import type { VideoFromPlaylist } from "@/types/playlistSummary";
 import { DraftEditDialog } from "./draft-edit-dialog";
 
-const STATUS: Record<string, { label: string; icon: typeof Globe2; className?: string }> = {
+export const STATUS: Record<string, { label: string; icon: typeof Globe2; className?: string }> = {
   ACTIVE: { label: "Công khai", icon: Globe2 },
   PUBLIC: { label: "Công khai", icon: Globe2 },
   UNLISTED: { label: "Không công khai", icon: LinkIcon },

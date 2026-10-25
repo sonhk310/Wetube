@@ -60,6 +60,19 @@ export const videoApi = createApi({
             invalidatesTags: ["VideoList", "Playlist"],
         }),
 
+        // Studio, chọn nhiều hàng: đổi chế độ hiển thị (backend bỏ qua bản nháp / video bị ẩn)
+        updateVisibility: builder.mutation<
+            { updated: number },
+            { videoIds: string[]; status: "PUBLIC" | "UNLISTED" | "PRIVATE" }
+        >({
+            query: (body) => ({
+                url: `/videos/visibility`,
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: ["VideoList", "Playlist"],
+        }),
+
         toggleDislike: builder.mutation<LikeInfo, string>({
             query: (videoId) => ({
                 url: `/videos/${videoId}/dislike`,
@@ -78,6 +91,7 @@ export const {
     useGetVideoFormDetailsQuery,
     useUpdateVideoDetailsMutation,
     useDeleteVideoMutation,
+    useUpdateVisibilityMutation,
     useToggleDislikeMutation,
     useGetPopularTagsQuery,
 } = videoApi;
