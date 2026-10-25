@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useProgressRouter } from "@/hooks/use-progress-router";
 import {
   Clock,
   ListPlus,
@@ -48,8 +47,10 @@ const VideoCard = ({
   historyDuration,
   channelId,
 }: RecommendedVideoItem) => {
-  const router = useProgressRouter();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
+  // Không có trang /login: khách bấm Lưu thì mời đăng nhập Google ngay trong thông báo
+  const askToLogin = () =>
+    toast("Hãy đăng nhập để lưu video", { action: { label: "Đăng nhập", onClick: login } });
   const [saveInteraction] = useSaveInteractionMutation();
   const watched = useWatchProgress(id) ?? historyDuration ?? 0;
 
@@ -103,7 +104,7 @@ const VideoCard = ({
 
   const addToWatchLater = async () => {
     if (!user?.sub) {
-      router.push("/login");
+      askToLogin();
       return;
     }
     try {
@@ -277,7 +278,7 @@ const VideoCard = ({
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() =>
-                user?.sub ? setSaveOpen(true) : router.push("/login")
+                user?.sub ? setSaveOpen(true) : askToLogin()
               }
               className="cursor-pointer gap-3 py-2.5"
             >
