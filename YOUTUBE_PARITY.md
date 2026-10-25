@@ -247,6 +247,13 @@ Thiết kế: `docs/superpowers/specs/2026-10-25-playlist-playback-design.md`; k
 
 **Đã kiểm tra:** backend `compileJava compileTestJava`; client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`. Sau deploy: log backend không có Exception; `GET /api/videos/{id}/detail` của cả 2 video công khai trả gợi ý kèm `"isShort":false`; các trang client (`/`, `/watch/{id}` của 2 video, `/shorts`, `/playlists/allplaylists`, `/playlists/watchlater`) trả 200. **Anh đã thử trên trình duyệt: OK.** **Chưa kiểm tra:** mục Shorts khi có Shorts thật (production chưa có video dọc nào, nên mục Shorts ở trang xem hiện đang ẩn).
 
+### Giao diện Lưu kiểu YouTube + trang Shorts trống (anh yêu cầu 25/10; chỉ client, deploy 10:39 giờ VN)
+- `4fd3b78` trang xem: Xem sau / Lưu / Chia sẻ thành nút tròn chỉ có icon (đồng hồ, dấu lưu, chia sẻ), rê chuột hiện tên; đồng hồ tô đậm khi đã lưu, có toast; khách bấm Xem sau thì nhắc đăng nhập. Modal "Lưu vào..." (`save-to-playlist-dialog.tsx`, dùng ở trang xem, ⋮ thẻ video, ⋮ hàng ở trang danh sách): Xem sau + danh sách tự tạo, ảnh bìa (trống thì ô xám "..."), Riêng tư / Công khai, dấu lưu bật / tắt ngay (lưu được nhiều danh sách); "+ Danh sách phát mới" → tiêu đề + Chế độ hiển thị, Hủy quay lại, Tạo thì lưu video và đóng modal. Màu sáng theo web, không làm nền tối như YouTube.
+- Lỗi em thấy, sửa cùng commit: icon Xem sau luôn bắt đầu ở "chưa lưu" kể cả khi video đã có trong Xem sau (bấm lần đầu thêm lại thay vì bỏ ra). Giờ đọc trạng thái thật lúc mở trang và sau khi đóng modal.
+- `65b9143` `/shorts` không có Shorts (hoặc lỗi tải): dòng chữ nhỏ trên nền đen → khung nền trắng giữa màn hình có icon, tiêu đề, giải thích.
+
+**Đã kiểm tra:** client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`; bản build trên Vibe Host đúng commit `65b9143`; sau deploy `/`, `/watch/{id}` của 2 video, `/shorts`, `/playlists/allplaylists`, `/playlists/watchlater` trả 200. **Chưa kiểm tra:** giao diện trên trình duyệt.
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
