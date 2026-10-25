@@ -240,6 +240,13 @@ Thiết kế: `docs/superpowers/specs/2026-10-25-playlist-playback-design.md`; k
 **Đã kiểm tra:** test backend mới `PlaylistDetailTest` (thêm 2: thứ tự / chủ sở hữu / số video bị ẩn, danh sách rỗng), `PlaylistEditTest` (6: đổi tên + chế độ, chặn danh sách hệ thống, tên / chế độ sai, trùng tên, chặn xoá danh sách hệ thống, chặn xoá video khỏi Video đã tải lên / Lịch sử), cả bộ backend xanh; hàm thuần client `lib/playlistOrder.ts` kiểm bằng script `node` (sắp xếp 5 kiểu, chip, trộn, video sau / trước, danh sách rỗng, video không có trong danh sách, danh sách 1 video); `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`; chạy bản build ở máy: `/playlists/{id}`, `/playlists/allplaylists`, `/playlists/liked`, tab danh sách của kênh, `/watch/{id}` và `/watch/{id}?list=khong-ton-tai` trả 200. **Chưa kiểm tra:** giao diện và luồng phát trên trình duyệt, khi đã đăng nhập.
 - **Sau deploy:** log backend không có Exception; `PUT` / `DELETE /api/playlists/{id}` trả 401 khi chưa đăng nhập, chi tiết danh sách không tồn tại trả 404; các trang client (`/`, `/watch/{id}`, `/watch/{id}?list=…`, `/playlists/allplaylists`, `/playlists/liked`, `/playlists/watchlater`, `/playlists/{id}`, tab danh sách của kênh, `/search`, `/studio`) trả 200.
 
+### Sửa lỗi anh báo 25/10 (sau gói 16; deploy backend 10:14, client 10:17 giờ VN)
+- `c86430d` hộp thoại "Lưu video vào…": ô Riêng tư / Công khai là `<select>` gốc của trình duyệt (menu xanh kiểu Windows) → `Select` của shadcn như hộp thoại Chỉnh sửa danh sách phát.
+- `54149ff` mục Shorts ở trang xem hiện mọi video gợi ý (có từ commit đầu tiên), kể cả video ngang 7:30 → `RecommendVideoDto` thêm `isShort` (trang xem, trang chủ, Elasticsearch), mục Shorts chỉ giữ Shorts; không có Shorts thì ẩn mục.
+- `940cbcb` danh sách gợi ý bên dưới và "video tiếp theo" (tự phát, màn hình kết thúc) bỏ Shorts, vì Shorts đã có mục riêng.
+
+**Đã kiểm tra:** backend `compileJava compileTestJava`; client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`. Sau deploy: log backend không có Exception; `GET /api/videos/{id}/detail` của cả 2 video công khai trả gợi ý kèm `"isShort":false`; các trang client (`/`, `/watch/{id}` của 2 video, `/shorts`, `/playlists/allplaylists`, `/playlists/watchlater`) trả 200. **Chưa kiểm tra:** giao diện trên trình duyệt; mục Shorts khi có Shorts thật (production chưa có video dọc nào, nên mục Shorts ở trang xem hiện đang ẩn).
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
