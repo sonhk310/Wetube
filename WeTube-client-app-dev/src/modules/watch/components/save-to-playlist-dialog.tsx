@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
 import { playlistApi } from "@/app/api/playlistApi";
 import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
@@ -153,14 +154,15 @@ export default function SaveToPlaylistDialog({
                 placeholder="Tên danh sách phát"
                 onChange={(e) => setNewTitle(e.target.value)}
               />
-              <select
-                value={newPrivacy}
-                onChange={(e) => setNewPrivacy(e.target.value as "private" | "public")}
-                className="border rounded px-3 py-2 text-sm"
-              >
-                <option value="private">Riêng tư</option>
-                <option value="public">Công khai</option>
-              </select>
+              <Select value={newPrivacy} onValueChange={(v) => v && setNewPrivacy(v as "private" | "public")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="private">Riêng tư</SelectItem>
+                  <SelectItem value="public">Công khai</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 type="button"
                 onClick={handleCreate}
