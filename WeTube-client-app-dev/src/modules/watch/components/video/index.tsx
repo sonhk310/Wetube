@@ -201,7 +201,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   // Chương đọc từ mô tả (quy tắc YouTube); không đủ điều kiện thì []
   const chapters = useMemo(() => parseChapters(description, duration), [description, duration]);
   const chapter = chapters[chapterIndexAt(chapters, currentTime)];
-  const toggleChaptersPanel = useChaptersPanelStore((s) => s.toggle);
+  const showChaptersPanel = useChaptersPanelStore((s) => s.show);
 
   const idleTimer = useRef<number | undefined>(undefined);
   const startApplied = useRef(false);
@@ -922,7 +922,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
             <button
               type="button"
               title={chapter.title}
-              onClick={toggleChaptersPanel}
+              onClick={showChaptersPanel}
               className="ml-1 hidden min-w-0 items-center gap-0.5 rounded px-1 text-sm text-white/90 hover:text-white sm:flex"
             >
               <span className="text-white/60">•</span>

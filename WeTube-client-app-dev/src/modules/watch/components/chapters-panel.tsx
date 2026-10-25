@@ -48,7 +48,10 @@ export default function ChaptersPanel({ videoId }: { videoId: string }) {
   if (!open || !video || !chapters.length) return null;
 
   return (
-    <section ref={panelRef} className="overflow-hidden rounded-xl border border-gray-200">
+    <section
+      ref={panelRef}
+      className="animate-in fade-in-0 slide-in-from-top-2 overflow-hidden rounded-xl border border-gray-200 duration-200"
+    >
       <div className="flex items-center gap-2 bg-gray-50 px-4 py-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold">Chương</h2>
