@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, Fragment } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProgressRouter } from "@/hooks/use-progress-router";
 import Image from "next/image";
@@ -34,6 +34,7 @@ interface VideoDto {
     name: string;
     picture: string;
   };
+  isShort?: boolean;
 }
 
 interface ChannelResult {
@@ -98,6 +99,7 @@ interface VideoResult {
   views: string;
   uploadTime: string;
   description?: string;
+  isShort: boolean;
 }
 
 /** Khung chờ của danh sách kết quả: ảnh bên trái, tiêu đề + thông tin bên phải. */
@@ -211,6 +213,7 @@ function SearchResultsContent() {
                 name: dto.author?.name || "Unknown",
                 picture: dto.author?.picture || "/default-avatar.png",
               },
+              isShort: !!dto.isShort,
             }));
 
           setResults(mappedResults);
@@ -233,7 +236,7 @@ function SearchResultsContent() {
     }
   }, [query, isChannel, type, duration, uploaded, sort, hasFilter]);
 
-  const handleClick = async (videoId: string) => {
+  const handleClick = async (videoId: string, isShort = false) => {
     try {
       if (user?.sub) {
         await saveInteraction({
@@ -245,9 +248,30 @@ function SearchResultsContent() {
     } catch (err) {
       console.error("❌ Failed to save interaction:", err);
     } finally {
-      router.push(`/watch/${videoId}`);
+      router.push(isShort ? `/shorts/${videoId}` : `/watch/${videoId}`);
     }
   };
+
+  // Như YouTube: Shorts gom thành một hàng thẻ dọc, đặt sau 2 video đầu
+  const shortResults = results.filter((v) => v.isShort);
+  const videoResults = results.filter((v) => !v.isShort);
+  const shelfAt = Math.min(2, videoResults.length);
+  const shortsShelf = shortResults.length > 0 && (
+    <section className="py-2">
+      <h2 className="mb-3 text-xl font-bold">Shorts</h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {shortResults.map((s) => (
+          <div key={s.id} onClick={() => handleClick(s.id, true)} className="cursor-pointer">
+            <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-gray-300">
+              <Image src={s.thumbnail} alt={s.title} fill sizes="(max-width: 640px) 50vw, 220px" className="object-cover" />
+            </div>
+            <h3 className="mt-2 line-clamp-2 font-medium">{s.title}</h3>
+            <p className="text-sm text-gray-600">{s.views}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 
   const filterBar = (
     <div className="mb-4">
@@ -386,9 +410,10 @@ function SearchResultsContent() {
         </div>
       )}
       <div className="space-y-4">
-        {results.map((video) => (
+        {videoResults.map((video, index) => (
+          <Fragment key={video.id}>
+          {index === shelfAt && shortsShelf}
           <div
-            key={video.id}
             onClick={() => handleClick(video.id)}
             onMouseEnter={() => setHoveredId(video.id)}
             onMouseLeave={() => setHoveredId(null)}
@@ -445,7 +470,9 @@ function SearchResultsContent() {
               )}
             </div>
           </div>
+          </Fragment>
         ))}
+        {shelfAt === videoResults.length && shortsShelf}
       </div>
     </main>
   );

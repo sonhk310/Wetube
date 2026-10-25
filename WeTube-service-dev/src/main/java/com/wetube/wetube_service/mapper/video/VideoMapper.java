@@ -52,6 +52,7 @@ public interface VideoMapper {
     @Mapping(target = "author.id", source = "user.id")
     @Mapping(target = "author.name", source = "user.channel.name")
     @Mapping(target = "author.picture", source = "user.channel.picture")
+    @Mapping(target = "isShort", expression = "java(entity.isShort())")
     VideoDto toDto(Video entity);
 
     @Mapping(source = "id", target = "id")

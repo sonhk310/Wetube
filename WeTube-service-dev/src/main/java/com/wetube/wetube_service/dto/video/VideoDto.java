@@ -35,4 +35,6 @@ public class VideoDto {
     private UserDto user;
     private List<VideoSubtitleDto> subtitles;
     private AuthorDto author;
+    /** Boolean (không phải boolean) để JSON có khoá "isShort" thay vì "short". */
+    private Boolean isShort;
 }
