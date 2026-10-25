@@ -45,16 +45,17 @@ Cập nhật: 2026-10-25. Không chứa mật khẩu hay khoá nào.
 - **Gói 18, sửa video trong Studio** (`0194133`, `d174519`, `5a72c75`, `ac5e35a`, `174cb13`): bản nháp mở lại hộp thoại tải lên, đóng thì lưu nháp; trang Chi tiết dùng lại các bước tải lên; bản nháp phủ tối ✅.
 - **Gói 19, bảng "Xem tất cả"** (`68550b8`, `0e18730`, `3255a87`): `/studio/content?tab=video|shorts`, lọc, sắp xếp, phân trang 30; chọn nhiều để đổi chế độ (`PATCH /api/videos/visibility`) hoặc xoá ✅ (bảng); đổi chế độ / xoá hàng loạt chưa thử.
 
-### 25/10, đã push nhưng CHƯA lên production (Vibe Host lỗi build, xem 2.2)
-- **Ô nhập khi tải lên** (`2242738`): Tiêu đề một dòng; Mô tả cao cố định, không kéo giãn, dài thì cuộn trong ô. Kiểm tra: `tsc`, eslint, `next build`.
-- **B3, chương** (`fa17adf`): đọc từ mô tả theo quy tắc YouTube (`modules/watch/lib/chapters.ts`: mốc đầu `0:00`, ≥ 3 mốc, tăng dần, mỗi chương ≥ 10 giây; số trong link không tính). Thanh tua chia đoạn, tên chương khi rê chuột, "• Tên chương ›" cạnh giờ, hàng "Chương" dưới mô tả (khung hình Cloudinary `so_`). Kiểm tra: 15 phép thử bằng `node`, `tsc`, eslint, `next build`.
+- **Ô nhập khi tải lên + B3 chương** (deploy client v63 lúc 19:25 giờ VN, trễ vì Vibe Host lỗi build, xem 2.2):
+  - `2242738` ô nhập: Tiêu đề một dòng; Mô tả cao cố định, không kéo giãn, dài thì cuộn trong ô.
+  - `fa17adf` B3: đọc chương từ mô tả theo quy tắc YouTube (`modules/watch/lib/chapters.ts`: mốc đầu `0:00`, ≥ 3 mốc, tăng dần, mỗi chương ≥ 10 giây; số trong link không tính). Thanh tua chia đoạn, tên chương khi rê chuột, "• Tên chương ›" cạnh giờ, hàng "Chương" dưới mô tả (khung hình Cloudinary `so_`).
+  - Kiểm tra: 15 phép thử bằng `node`, `tsc`, eslint, `next build`; sau deploy: bản build lấy `fa17adf`, các trang chính trả 200, JS trang xem có code chương, CSS có `field-sizing-fixed`, log không lỗi. Chưa thử trên trình duyệt.
 
 ---
 
 ## 2. CÒN DỞ / CHƯA KIỂM CHỨNG
 
 ### 2.1 Cần anh thử
-- Sau khi deploy được: ô nhập khi tải lên; B3 (dán mô tả `0:00 Mở đầu` / `1:30 Phần giữa` / `5:00 Kết` vào video "Ông Putin…"; đổi mốc đầu thành `0:05` thì chương phải mất).
+- Ô nhập khi tải lên; B3 (dán mô tả `0:00 Mở đầu` / `1:30 Phần giữa` / `5:00 Kết` vào video "Ông Putin…"; đổi mốc đầu thành `0:05` thì chương phải mất).
 - Gói 19: đổi chế độ hiển thị / xoá hàng loạt.
 - Gói 17 trình phát Shorts (Short "Xiaochaomeng…", `b0203ec5…`).
 - Gói 16: đếm ngược 5 giây sang video sau (cả khi tắt Tự phát), Lặp lại ở video cuối, Shift+N / P, người khác không thấy nút sửa / xoá.
@@ -62,7 +63,7 @@ Cập nhật: 2026-10-25. Không chứa mật khẩu hay khoá nào.
 - `TEST_CHECKLIST.md` mục 1–15 (2 tài khoản; mục 1–10 chưa thử hết).
 
 ### 2.2 Em theo dõi
-- **Vibe Host không build được client từ 25/10 18:36:** mọi lượt deploy dừng ở bước Build, không có output Docker nào, mỗi 5 phút báo `fetch failed` (job hỏng `cmvnr4rse15oj0i5fwk24jx1t`, job thử lại `cmvnsfwo315u00i5f440xr7gk`). Lần thành công trước (v61, 17:23) có output Docker đầy đủ; code build được ở máy. Đã nhờ anh báo hỗ trợ Mắt Bão. Production vẫn chạy v61.
+- **Vibe Host lỗi build 25/10 18:36–19:25:** lượt deploy dừng ở bước Build, không có output Docker, mỗi 5 phút báo `fetch failed`; job `cmvnr4rse15oj0i5fwk24jx1t` hỏng sau 6/6 lần, job deploy lại `cmvnsfwo315u00i5f440xr7gk` thành công ở lần thử lại thứ 2 (v63). Lỗi phía nền tảng, không phải code. Gặp lại thì chờ thử lại / deploy lại, kéo dài thì báo hỗ trợ Mắt Bão.
 - Lần deploy backend lỗi của gói 11 (24/10 13:52) chưa rõ nguyên nhân (log bị cắt).
 - Khách đổi `anonId` liên tục có thể thổi phồng thời gian xem. Chấp nhận (đã chặn 60 lượt / phút / IP).
 - Redis: code xong, mọi key có TTL. Cấu hình đề xuất: 0,25 core, 64–128 MB, `allkeys-lru`, tắt lưu đĩa.
