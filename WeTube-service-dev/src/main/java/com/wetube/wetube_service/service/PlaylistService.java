@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.wetube.wetube_service.dto.request.CreatePlaylistRequest;
 import com.wetube.wetube_service.dto.request.PlaylistaddRequest;
+import com.wetube.wetube_service.dto.request.UpdatePlaylistRequest;
 import com.wetube.wetube_service.dto.response.playlist.PlaylistDetailDto;
 import com.wetube.wetube_service.dto.response.playlist.PlaylistVideoDetailDto;
 import com.wetube.wetube_service.dto.response.playlist.PlaylistVideoDto;
@@ -39,6 +40,9 @@ public interface PlaylistService {
     void removeVideoFromPlaylist(UUID videoId, UUID playlistVideoId);
 
     void removePlaylist(UUID playlistId);
+
+    /** Đổi tên / chế độ của danh sách tự tạo; lỗi thì IllegalArgumentException (400) kèm thông báo tiếng Việt. */
+    UserPlaylistDto updatePlaylist(UUID playlistId, UpdatePlaylistRequest request);
 
     String getTopViewUserUploaded(UUID userId);
 

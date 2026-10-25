@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wetube.wetube_service.dto.request.CreatePlaylistRequest;
 import com.wetube.wetube_service.dto.request.PlaylistaddRequest;
+import com.wetube.wetube_service.dto.request.UpdatePlaylistRequest;
 import com.wetube.wetube_service.dto.response.playlist.PlaylistDetailDto;
 import com.wetube.wetube_service.dto.response.playlist.PlaylistVideoDetailDto;
 import com.wetube.wetube_service.dto.response.playlist.PlaylistVideoDto;
@@ -124,6 +125,16 @@ public class PlaylistController {
         Map<String, String> response = new HashMap<>();
         response.put("message", "Video removed from playlist successfully");
         return ResponseEntity.ok(response);
+    }
+
+    /** Đổi tên / chế độ hiển thị (chỉ chủ, chỉ danh sách tự tạo). */
+    @PutMapping("/{playlistId}")
+    public ResponseEntity<UserPlaylistDto> updatePlaylist(
+            @PathVariable UUID playlistId,
+            @RequestBody UpdatePlaylistRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        ownershipGuard.playlistOwner(playlistId, jwt);
+        return ResponseEntity.ok(playlistService.updatePlaylist(playlistId, request));
     }
 
     @DeleteMapping("/{playlistId}")

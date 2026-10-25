@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.wetube.wetube_service.dto.request.CreatePlaylistRequest;
 import com.wetube.wetube_service.dto.request.PlaylistaddRequest;
+import com.wetube.wetube_service.dto.request.UpdatePlaylistRequest;
 import com.wetube.wetube_service.dto.response.playlist.PlaylistDetailDto;
 import com.wetube.wetube_service.dto.response.playlist.PlaylistVideoDetailDto;
 import com.wetube.wetube_service.dto.response.playlist.PlaylistVideoDto;
@@ -285,22 +286,51 @@ public class PlaylistServiceImpl implements PlaylistService {
                         "PlaylistVideo",
                         "playlistId/videoId",
                         playlistId + " / " + videoId));
-
-        playlistVideoRepo.delete(playlistVideo);
-        // Xoá khỏi lịch sử thì quên luôn vị trí đang xem (giống YouTube)
-        Playlist playlist = playlistVideo.getPlaylist();
-        if (playlist.getPlaylistType() == PlaylistType.HISTORY) {
-            redisService.delete(WatchProgressService.redisKey(playlist.getUser().getId(), videoId));
+        // "Video đã tải lên" là danh sách video của kênh (Studio); lịch sử xoá qua removeFromHistory
+        PlaylistType type = playlistVideo.getPlaylist().getPlaylistType();
+        if (type == PlaylistType.USER_UPLOADED || type == PlaylistType.HISTORY) {
+            throw new IllegalArgumentException("Không xoá được video khỏi danh sách này");
         }
+        playlistVideoRepo.delete(playlistVideo);
     }
 
 
     @Override
     public void removePlaylist(UUID playlistId) {
-        if (!playlistRepo.existsById(playlistId)) {
-            throw new ResourceNotFoundException("Playlist", "id", playlistId.toString());
+        Playlist playlist = playlistRepo.findById(playlistId)
+                .orElseThrow(() -> new ResourceNotFoundException("Playlist", "id", playlistId.toString()));
+        if (playlist.getPlaylistType() != PlaylistType.USER_PLAYLIST) {
+            throw new IllegalArgumentException("Không xoá được danh sách phát hệ thống");
         }
         playlistRepo.deleteById(playlistId);
+    }
+
+    private static final int MAX_TITLE_LENGTH = 150;
+
+    @Override
+    public UserPlaylistDto updatePlaylist(UUID playlistId, UpdatePlaylistRequest request) {
+        Playlist playlist = playlistRepo.findById(playlistId)
+                .orElseThrow(() -> new ResourceNotFoundException("Playlist", "id", playlistId.toString()));
+        if (playlist.getPlaylistType() != PlaylistType.USER_PLAYLIST) {
+            throw new IllegalArgumentException("Không sửa được danh sách phát hệ thống");
+        }
+        String title = request.title() == null ? "" : request.title().trim();
+        if (title.isEmpty() || title.length() > MAX_TITLE_LENGTH) {
+            throw new IllegalArgumentException("Tên danh sách phát phải có 1–150 ký tự");
+        }
+        if (!"PUBLIC".equals(request.privacy()) && !"PRIVATE".equals(request.privacy())) {
+            throw new IllegalArgumentException("Chế độ hiển thị không hợp lệ");
+        }
+        UUID ownerId = playlist.getUser().getId();
+        playlistRepo.findByUser_IdAndTitle(ownerId, title)
+                .filter(other -> !other.getId().equals(playlistId))
+                .ifPresent(other -> {
+                    throw new IllegalArgumentException("Bạn đã có danh sách phát tên này");
+                });
+        playlist.setTitle(title);
+        playlist.setPrivacy(request.privacy());
+        Playlist saved = playlistRepo.save(playlist);
+        return toVisibleDtos(List.of(saved), ownerId, false).get(0);
     }
 
 @Override
