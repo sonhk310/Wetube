@@ -63,7 +63,7 @@ export const ThumbnailSelector: React.FC<ThumbnailSelectorProps> = ({
         )}
       </label>
 
-      <div className={vertical ? "w-36" : "flex-1"}>
+      <div className={vertical ? "w-36" : "w-64"}>
         <button
           type="button"
           onClick={handleButtonClick}
