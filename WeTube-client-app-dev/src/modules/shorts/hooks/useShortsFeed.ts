@@ -16,8 +16,11 @@ export interface ShortVideo {
 
 const PAGE_SIZE = 10;
 
-/** Shorts thật từ backend (GET /api/videos/shorts), tải thêm khi cuộn tới cuối. */
-export function useShortsFeed() {
+/**
+ * Shorts thật từ backend (GET /api/videos/shorts), tải thêm khi cuộn tới cuối.
+ * Mở link `/shorts/{id}` thì Short đó đứng đầu.
+ */
+export function useShortsFeed(startId?: string) {
   const [shorts, setShorts] = useState<ShortVideo[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -46,7 +49,29 @@ export function useShortsFeed() {
   }, [loading, hasMore, page]);
 
   useEffect(() => {
-    loadMore();
+    (async () => {
+      if (startId) {
+        try {
+          const res = await apiFetch(`${API_PREFIX}/videos/${startId}/detail`);
+          if (res.ok) {
+            const { detail } = await res.json();
+            setShorts([
+              {
+                id: detail.id,
+                videoUrl: detail.videoUrl,
+                title: detail.title,
+                totalView: detail.totalView,
+                user: { id: detail.channelId, name: detail.name, picture: detail.picture },
+              },
+            ]);
+          }
+        } catch (err) {
+          // Không tải được Short của link: vẫn hiện danh sách như /shorts
+          console.error("Load short failed:", err);
+        }
+      }
+      loadMore();
+    })();
     // chỉ tải trang đầu khi mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

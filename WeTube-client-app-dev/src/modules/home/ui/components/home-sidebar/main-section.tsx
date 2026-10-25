@@ -71,7 +71,8 @@ export const MainSection = () => {
                                     <SidebarMenuButton
                                         tooltip={item.title}
                                         asChild
-                                        isActive={pathname === item.url}
+                                        // Trang Shorts đổi URL thành /shorts/{id} theo Short đang xem
+                                        isActive={pathname === item.url || (item.url === pageUrls.SHORTS && pathname.startsWith(`${pageUrls.SHORTS}/`))}
                                     >
                                         <Link
                                             prefetch
