@@ -264,7 +264,7 @@ Thiết kế: `docs/superpowers/specs/2026-10-25-playlist-playback-design.md`; k
 
 ### Trang danh sách phát trống kiểu YouTube (anh báo 25/10 kèm ảnh YouTube; chỉ client, deploy 11:02 giờ VN)
 - `5ddede0` danh sách không còn video: bỏ thẻ ảnh bìa + nền màu (trước hiện ảnh mặc định và 2 nút Phát tất cả / Trộn bài bị mờ). Cột trái: tên lớn, "của {kênh}", "Danh sách phát · Riêng tư / Công khai · Không có video", nút "+ Thêm video" (anh chọn: về trang chủ; chỉ chủ danh sách tự tạo / Xem sau), Chỉnh sửa (chủ danh sách tự tạo), Chia sẻ (sao chép link `/playlists/{id}`), ⋮ Xoá danh sách phát. Cột phải: chỉ ô sắp xếp + đường kẻ, không chip, không dòng chữ trống.
-- **Khác YouTube, em quyết:** không có avatar chủ kênh (API chi tiết danh sách chưa trả ảnh, cần sửa backend); không có "0 lượt xem" (WeTube không đếm lượt xem danh sách); không có kiểu sắp xếp "Thủ công" (thuộc D2); giữ màu sáng của web.
+- **Khác YouTube, em quyết:** không có avatar chủ kênh (anh quyết không cần); không có "0 lượt xem" (WeTube không đếm lượt xem danh sách); không có kiểu sắp xếp "Thủ công" (thuộc D2); giữ màu sáng của web.
 
 **Đã kiểm tra:** `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`; sau deploy `/`, `/playlists/allplaylists`, `/playlists/watchlater`, `/playlists/liked` trả 200. **Chưa kiểm tra:** giao diện trên trình duyệt.
 
