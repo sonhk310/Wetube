@@ -42,6 +42,8 @@ const HIDE_CONTROLS_MS = 2500;
 const SCRUB_SEEK_MS = 120;
 /** Đang phát thì gửi vị trí đang xem mỗi khoảng này (người đã đăng nhập). */
 const PROGRESS_INTERVAL_MS = 15_000;
+/** Tua xong chừng này mới gửi vị trí mới (gom các lần tua liên tiếp). */
+const SEEK_REPORT_DELAY_MS = 1000;
 /** Xem chưa tới chừng này giây thì chưa tính vào lịch sử. */
 const MIN_PROGRESS_SECONDS = 3;
 
@@ -213,11 +215,17 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
   progressRef.current.userId = user?.sub;
   progressRef.current.videoId = video?.id;
 
+  // Thời điểm đang xem gần nhất: khi rời trang, React đã gỡ thẻ video (videoRef = null) trước khi
+  // hàm dọn dẹp chạy, nên lượt gửi cuối cùng phải dùng giá trị này
+  const lastTimeRef = useRef(0);
+  const seekReportTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(seekReportTimer.current), []);
+
   const reportProgress = useCallback((final: boolean) => {
     const v = videoRef.current;
     const p = progressRef.current;
-    if (!v || !p.videoId || scrubState.current) return;
-    const t = v.ended ? v.duration : v.currentTime;
+    if (!p.videoId || scrubState.current) return;
+    const t = v ? (v.ended ? v.duration : v.currentTime) : lastTimeRef.current;
     if (!Number.isFinite(t) || t < MIN_PROGRESS_SECONDS) return;
     if (Math.abs(t - p.lastSent) < 1) return;
     p.lastSent = t;
@@ -687,9 +695,16 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
         onWaiting={() => setWaiting(true)}
         onPlaying={() => setWaiting(false)}
         onCanPlay={() => setWaiting(false)}
-        onSeeked={() => setWaiting(false)}
+        onSeeked={() => {
+          setWaiting(false);
+          // Tua (kéo thanh, phím, mốc thời gian) thì lưu vị trí mới, không chờ lượt gửi 15 giây.
+          // Gom các lần tua liên tiếp (giữ phím →) thành một lượt, để không vượt giới hạn 60 lượt/phút
+          window.clearTimeout(seekReportTimer.current);
+          seekReportTimer.current = window.setTimeout(() => reportProgress(false), SEEK_REPORT_DELAY_MS);
+        }}
         onTimeUpdate={() => {
           const v = videoRef.current;
+          if (v) lastTimeRef.current = v.currentTime;
           if (v && !scrubState.current) setCurrentTime(v.currentTime);
           updateBuffered();
         }}
