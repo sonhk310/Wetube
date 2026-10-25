@@ -376,7 +376,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
               />
             </div>
 
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-6 overflow-y-auto pb-12">
               <div className="bg-muted/30 rounded-2xl overflow-hidden">
                 {video.isShort ? (
                   // Shorts: khung dọc 9:16 như lúc tải lên
