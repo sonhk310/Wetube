@@ -227,6 +227,17 @@ Thiết kế: `docs/superpowers/specs/2026-10-24-search-relevance-design.md`.
 
 **Đã kiểm tra:** backend `compileJava compileTestJava`, cả bộ test (15 lớp); client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint các file đã sửa (0 lỗi, 8 cảnh báo có từ trước), `next build`; HTML dựng sẵn của mọi trang tĩnh không còn chữ "Đang tải" (chỉ còn `aria-label` của spinner). **Chưa kiểm tra:** thanh đỏ và skeleton trên trình duyệt thật.
 
+### Gói 16: B6 phát theo danh sách phát + giao diện danh sách phát (nhánh `feature/b6-playlist`, commit `a5dc292`…`61c29f4`; **chưa push / deploy, chờ anh duyệt**)
+Thiết kế: `docs/superpowers/specs/2026-10-25-playlist-playback-design.md`; kế hoạch: `docs/superpowers/plans/2026-10-25-playlist-playback.md`.
+- **Thẻ danh sách phát** (`modules/playlists/ui/components/playlist-tile.tsx`, dùng ở `/playlists/allplaylists` và tab Danh sách phát của kênh): vạch xếp chồng, "≡ N video", rê chuột "▶ Phát tất cả", "Riêng tư · Danh sách phát" / "{kênh} · Danh sách phát", "Xem toàn bộ danh sách"; ⋮ Xoá / Chỉnh sửa (tên + Công khai / Riêng tư) cho chủ danh sách tự tạo.
+- **Trang danh sách phát** (`playlistdetail-list.tsx`, kể cả Đã thích / Xem sau): cột trái nền theo màu ảnh, tên (tiếng Việt cho danh sách hệ thống), chủ sở hữu, "N video · Cập nhật lần cuối vào …", Phát tất cả / Trộn bài; "Đã ẩn N video không xem được"; sắp xếp (Ngày thêm mới / cũ, Phổ biến nhất, Ngày xuất bản mới / cũ) + chip Tất cả / Video / Shorts; mỗi hàng có thanh đỏ đã xem, "kênh · lượt xem · x trước", ⋮ Lưu vào danh sách phát / Xoá khỏi {tên} / Chia sẻ.
+- **Phát theo danh sách** (`/watch/{id}?list=…&shuffle=1`): khung danh sách ở đầu cột phải (`playlist-panel.tsx`): vị trí "3/70", Lặp lại danh sách, Trộn bài, thu gọn, hàng đang phát tô sáng; hết video thì thẻ "Tiếp theo" phát video sau trong danh sách kể cả khi tắt Tự phát; hết danh sách không lặp thì màn hình kết thúc như cũ; `Shift+N` / `Shift+P`. Thứ tự phát = thứ tự đang hiển thị ở trang danh sách (store `usePlaylistPlaybackStore`); mở link từ chỗ khác thì "Ngày thêm (mới nhất)".
+- **Backend:** `GET /api/playlists/detail/{id}` thêm `ownerId`, `ownerName`, `privacy`, `hiddenCount`, `lastUpdatedAt`, `videos[].addedAt`, video mới thêm trước; danh sách tóm tắt thêm `ownerName`, ảnh bìa = video mới thêm nhất. Mới `PUT /api/playlists/{id}` (tên 1–150 ký tự, không trùng, `PUBLIC` | `PRIVATE`, chỉ danh sách tự tạo). Chặn xoá danh sách hệ thống (trước đây API cho xoá cả Lịch sử / Đã thích / Xem sau / Video đã tải lên) và chặn xoá video khỏi "Video đã tải lên" / Lịch sử (400).
+- **Em quyết** (ghi trong spec): "Xoá khỏi danh sách" có ở danh sách tự tạo và Xem sau, không có ở Video đã thích / Video đã tải lên / Lịch sử; xoá danh sách ở trang chi tiết thì về `/playlists/allplaylists`; danh sách 1 video bật lặp thì phát lại chính nó.
+- **Để lượt sau:** hàng chờ phát, Tải xuống, Chuyển lên đầu / xuống dưới, sắp xếp Thủ công, kéo thả (D2), mô tả danh sách.
+
+**Đã kiểm tra:** test backend mới `PlaylistDetailTest` (thêm 2: thứ tự / chủ sở hữu / số video bị ẩn, danh sách rỗng), `PlaylistEditTest` (6: đổi tên + chế độ, chặn danh sách hệ thống, tên / chế độ sai, trùng tên, chặn xoá danh sách hệ thống, chặn xoá video khỏi Video đã tải lên / Lịch sử), cả bộ backend xanh; hàm thuần client `lib/playlistOrder.ts` kiểm bằng script `node` (sắp xếp 5 kiểu, chip, trộn, video sau / trước, danh sách rỗng, video không có trong danh sách, danh sách 1 video); `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`; chạy bản build ở máy: `/playlists/{id}`, `/playlists/allplaylists`, `/playlists/liked`, tab danh sách của kênh, `/watch/{id}` và `/watch/{id}?list=khong-ton-tai` trả 200. **Chưa kiểm tra:** giao diện và luồng phát trên trình duyệt, khi đã đăng nhập.
+
 ---
 
 ## 2. ĐANG LÀM / DỞ DANG
@@ -270,7 +281,7 @@ Những dòng ghi "chưa xem kỹ" là em chưa đọc code phần đó, hiện 
 | B3 | Chương (chapters) lấy từ mốc thời gian trong mô tả | FE | M | Thanh tua chia đoạn, tên chương |
 | B4 | ✅ Mốc thời gian / link trong mô tả bấm được | FE | S | Gói 9, cả trong bình luận |
 | B5 | Miniplayer khi rời trang xem (video vẫn chạy ở góc) | FE | L | Hiện chỉ có PiP của trình duyệt |
-| B6 | Phát theo playlist (`?list=`): hàng chờ, tự sang video sau, lặp / trộn | FE | M | |
+| B6 | ✅ Phát theo playlist (`?list=`): tự sang video sau, lặp / trộn | BE+FE | M | Gói 16 (kèm xoá video khỏi danh sách, thẻ + trang danh sách kiểu YouTube). Hàng chờ phát riêng chưa làm |
 | B7 | ✅ Lặp video, chuột phải ra menu (sao chép link tại thời điểm…) | FE | S | |
 
 ### C. Khám phá & tìm kiếm
