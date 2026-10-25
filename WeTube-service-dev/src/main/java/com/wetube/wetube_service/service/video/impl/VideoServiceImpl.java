@@ -131,10 +131,14 @@ public VideoDto createVideo(MultipartFile videoFile,
     }
     String videoUrl = uploaded.url();
 
+    boolean isShort = ShortsRule.isShort(
+            uploaded.duration() != null ? uploaded.duration() : videoDto.getDuration(),
+            uploaded.width(), uploaded.height());
+
     String thumbnailUrl = null;
     if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
         try {
-            thumbnailUrl = cloudinaryService.uploadThumbnail(thumbnailFile);
+            thumbnailUrl = cloudinaryService.uploadThumbnail(thumbnailFile, isShort);
         } catch (Exception e) {
             log.warn("⚠️ Upload thumbnail thất bại: {}", e.getMessage());
             // tuỳ bạn: hoặc tiếp tục flow, hoặc throw new UploadFailedException(...)
@@ -146,9 +150,7 @@ public VideoDto createVideo(MultipartFile videoFile,
     entity.setVideoUrl(videoUrl);
     entity.setThumbnailUrl(thumbnailUrl);
     entity.setVideosStatus(visibility);
-    entity.setShort(ShortsRule.isShort(
-            uploaded.duration() != null ? uploaded.duration() : videoDto.getDuration(),
-            uploaded.width(), uploaded.height()));
+    entity.setShort(isShort);
 
     LocalDateTime now = LocalDateTime.now();
     if (entity.getCreatedAt() == null) entity.setCreatedAt(now);
@@ -536,6 +538,7 @@ private static String draftTitle(String fileName) {
                 .createdAt(video.getCreatedAt())
                 .updatedAt(video.getUpdatedAt())
                 .tags(tags)
+                .isShort(video.isShort())
                 .build();
     }
 
@@ -567,7 +570,7 @@ private static String draftTitle(String fileName) {
 
         if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
             try {
-                String newThumbnailUrl = cloudinaryService.uploadThumbnail(thumbnailFile);
+                String newThumbnailUrl = cloudinaryService.uploadThumbnail(thumbnailFile, video.isShort());
                 video.setThumbnailUrl(newThumbnailUrl);
             } catch (Exception e) {
                 log.error("Failed to upload new thumbnail for video {}", videoId, e);

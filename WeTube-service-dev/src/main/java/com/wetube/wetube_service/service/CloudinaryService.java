@@ -106,7 +106,22 @@ public class CloudinaryService {
         return value instanceof Number n ? n.floatValue() : null;
     }
 
-    public String uploadThumbnail(MultipartFile thumbnailFile) {
+    /** Link ảnh thu nhỏ: video ngang 300x200, Shorts 360x640 (9:16). */
+    static String thumbnailUrl(Cloudinary cloudinary, String publicId, boolean vertical) {
+        return cloudinary.url()
+                .resourceType("image")
+                .format("webp")
+                .transformation(
+                        new Transformation()
+                                .width(vertical ? 360 : 300)
+                                .height(vertical ? 640 : 200)
+                                .crop("fill")
+                )
+                .secure(true)
+                .generate(publicId);
+    }
+
+    public String uploadThumbnail(MultipartFile thumbnailFile, boolean vertical) {
         if (thumbnailFile == null || thumbnailFile.isEmpty()) {
             throw new IllegalArgumentException("File thumbnail is required");
         }
@@ -127,19 +142,7 @@ public class CloudinaryService {
         if (publicIdObj == null) {
             throw new IllegalStateException("No public_id returned from Cloudinary");
         }
-        String publicId = publicIdObj.toString();
-
-        return cloudinary.url()
-                .resourceType("image")
-                .format("webp")
-                .transformation(
-                        new Transformation()
-                                .width(300)
-                                .height(200)
-                                .crop("fill")
-                )
-                .secure(true)
-                .generate(publicId);
+        return thumbnailUrl(cloudinary, publicIdObj.toString(), vertical);
     }
 
     public String uploadImage(MultipartFile imageFile) {

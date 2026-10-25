@@ -198,4 +198,5 @@ export interface VideoFormDetail {
   updatedAt: string;
   tags: Tag[];
   duration: number;
+  isShort?: boolean;
 }

@@ -50,6 +50,15 @@ class CloudinaryPlaybackTest {
     }
 
     @Test
+    void thumbnailIsLandscapeForVideosAndPortraitForShorts() {
+        assertThat(CloudinaryService.thumbnailUrl(cloudinary, "img", false))
+                .isEqualTo("https://res.cloudinary.com/demo/image/upload/c_fill,h_200,w_300/img.webp");
+        // Shorts: khung dọc 9:16, không cắt ảnh dọc thành ảnh ngang
+        assertThat(CloudinaryService.thumbnailUrl(cloudinary, "img", true))
+                .isEqualTo("https://res.cloudinary.com/demo/image/upload/c_fill,h_640,w_360/img.webp");
+    }
+
+    @Test
     void publicIdStillReadableFromBothUrls() {
         assertThat(CloudinaryService.publicIdFromDeliveryUrl("https://res.cloudinary.com/demo/video/upload/abc.mp4"))
                 .isEqualTo("abc");

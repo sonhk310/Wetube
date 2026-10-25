@@ -346,6 +346,7 @@ export default function FormSection({ videoId }: FormSectionProps) {
                           thumbnailPreview={thumbnailPreview}
                           onThumbnailChange={handleThumbnailChange}
                           disabled={isUpdating}
+                          vertical={!!video.isShort}
                         />
                       </div>
                     </FormControl>
@@ -377,19 +378,30 @@ export default function FormSection({ videoId }: FormSectionProps) {
 
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-muted/30 rounded-2xl overflow-hidden">
-                <div className="aspect-video">
-                  <video
-                    src={video.videoUrl}
-                    controls
-                    className="w-full rounded-2xl bg-black aspect-video"
-                  />
-                </div>
+                {video.isShort ? (
+                  // Shorts: khung dọc 9:16 như lúc tải lên
+                  <div className="flex justify-center rounded-2xl bg-black">
+                    <video
+                      src={video.videoUrl}
+                      controls
+                      className="aspect-[9/16] max-h-[60vh] w-auto bg-black"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-video">
+                    <video
+                      src={video.videoUrl}
+                      controls
+                      className="w-full rounded-2xl bg-black aspect-video"
+                    />
+                  </div>
+                )}
                 <div className="p-4 space-y-2 bg-gray-300 mt-4 rounded-2xl">
                   <p className="text-xs text-muted-foreground">Liên kết video</p>
                   <Link
-                    href={`/watch/${video.id}`}
+                    href={`/${video.isShort ? "shorts" : "watch"}/${video.id}`}
                     className="text-sm text-blue-600 break-all"
-                  >{`${window.location.origin}/watch/${video.id}`}</Link>
+                  >{`${window.location.origin}/${video.isShort ? "shorts" : "watch"}/${video.id}`}</Link>
 
                   {/* Progress Bar */}
                   {isUpdating && (
