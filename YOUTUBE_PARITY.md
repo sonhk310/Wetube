@@ -245,7 +245,7 @@ Thiết kế: `docs/superpowers/specs/2026-10-25-playlist-playback-design.md`; k
 - `54149ff` mục Shorts ở trang xem hiện mọi video gợi ý (có từ commit đầu tiên), kể cả video ngang 7:30 → `RecommendVideoDto` thêm `isShort` (trang xem, trang chủ, Elasticsearch), mục Shorts chỉ giữ Shorts; không có Shorts thì ẩn mục.
 - `940cbcb` danh sách gợi ý bên dưới và "video tiếp theo" (tự phát, màn hình kết thúc) bỏ Shorts, vì Shorts đã có mục riêng.
 
-**Đã kiểm tra:** backend `compileJava compileTestJava`; client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`. Sau deploy: log backend không có Exception; `GET /api/videos/{id}/detail` của cả 2 video công khai trả gợi ý kèm `"isShort":false`; các trang client (`/`, `/watch/{id}` của 2 video, `/shorts`, `/playlists/allplaylists`, `/playlists/watchlater`) trả 200. **Chưa kiểm tra:** giao diện trên trình duyệt; mục Shorts khi có Shorts thật (production chưa có video dọc nào, nên mục Shorts ở trang xem hiện đang ẩn).
+**Đã kiểm tra:** backend `compileJava compileTestJava`; client `tsc` (chỉ 12 lỗi TS7006 cũ), eslint, `next build`. Sau deploy: log backend không có Exception; `GET /api/videos/{id}/detail` của cả 2 video công khai trả gợi ý kèm `"isShort":false`; các trang client (`/`, `/watch/{id}` của 2 video, `/shorts`, `/playlists/allplaylists`, `/playlists/watchlater`) trả 200. **Anh đã thử trên trình duyệt: OK.** **Chưa kiểm tra:** mục Shorts khi có Shorts thật (production chưa có video dọc nào, nên mục Shorts ở trang xem hiện đang ẩn).
 
 ---
 
