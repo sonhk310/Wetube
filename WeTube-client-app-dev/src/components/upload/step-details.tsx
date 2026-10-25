@@ -36,9 +36,8 @@ export function StepDetails({
         <label htmlFor="upload-title" className="mb-2 block font-medium">
           Tiêu đề (bắt buộc)
         </label>
-        <Textarea
+        <Input
           id="upload-title"
-          rows={2}
           value={form.title}
           onChange={(e) => setForm({ title: e.target.value })}
           className={errors.title ? "border-red-500" : ""}
@@ -55,10 +54,11 @@ export function StepDetails({
         </label>
         <Textarea
           id="upload-description"
-          rows={5}
           value={form.description}
           onChange={(e) => setForm({ description: e.target.value })}
           placeholder="Giới thiệu về video của bạn cho người xem"
+          // Chiều cao cố định, nội dung dài thì cuộn trong ô
+          className="h-32 resize-none field-sizing-fixed overflow-y-auto"
         />
         <FieldError message={errors.description} />
       </div>
