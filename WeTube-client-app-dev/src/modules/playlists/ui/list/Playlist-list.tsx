@@ -1,35 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@radix-ui/react-tabs";
-import PlaylistCard, { Playlists } from "./playlist-card";
 import { playlistService } from "./playlist-API";
 import { Skeleton } from "@/components/ui/skeleton";
 import { get } from "http";
+import { PlaylistTile, PlaylistTileData } from "../components/playlist-tile";
+
+type Playlists = PlaylistTileData & { createdAt: string };
 
 export default function Playlistlist({ userId }: { userId: string }) {
   const [playlists, setPlaylists] = useState<Playlists[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPlaylists = async () => {
-      try {
-        if (!userId) {
-          console.error("Missing userId!");
-          return;
-        }
-
-        const data = await playlistService.getByUser(userId);
-        setPlaylists(data);
-      } catch (err) {
-        console.error("Failed to fetch playlists:", err);
-      } finally {
-        setLoading(false);
+  const fetchPlaylists = useCallback(async () => {
+    try {
+      if (!userId) {
+        console.error("Missing userId!");
+        return;
       }
-    };
 
-    fetchPlaylists();
+      const data = await playlistService.getByUser(userId);
+      setPlaylists(data);
+    } catch (err) {
+      console.error("Failed to fetch playlists:", err);
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
+
+  useEffect(() => {
+    fetchPlaylists();
+  }, [fetchPlaylists]);
 
   const tabs = [
     { label: "Danh sách phát", value: "playlists", playlistType: null },
@@ -106,10 +108,11 @@ export default function Playlistlist({ userId }: { userId: string }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {getPlaylistsForTab(tab.value, tab.playlistType).map(
                 (playlist) => (
-                  <PlaylistCard
+                  <PlaylistTile
                     key={playlist.playlistId}
-                    playlists={playlist}
-                    category={tab.value}
+                    playlist={playlist}
+                    isOwner
+                    onChanged={fetchPlaylists}
                   />
                 )
               )}
