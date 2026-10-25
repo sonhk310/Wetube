@@ -27,12 +27,12 @@ export default function PlaylistPanel({ videoId }: { videoId: string }) {
   const [collapsed, setCollapsed] = useState(false);
   const activeRef = useRef<HTMLDivElement>(null);
 
-  // Đổi video: cuộn hàng đang phát vào giữa khung (chỉ cuộn trong khung, không cuộn cả trang)
+  // Đổi video / trộn bài: cuộn hàng đang phát vào giữa khung (chỉ cuộn trong khung, không cuộn cả trang)
   useEffect(() => {
     const row = activeRef.current;
     const box = row?.parentElement;
     if (row && box) box.scrollTop = row.offsetTop - box.clientHeight / 2 + row.clientHeight / 2;
-  }, [videoId, collapsed, queue.detail?.playlistId]);
+  }, [videoId, collapsed, queue.detail?.playlistId, order]);
 
   const detail = queue.detail;
   if (!detail) return null;
