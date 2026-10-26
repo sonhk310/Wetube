@@ -270,9 +270,9 @@ Dùng tài khoản chủ kênh (A), thêm tài khoản B để xem. Ảnh thử:
 
 | # | Việc cần làm | Kết quả mong đợi | Kết quả |
 |---|---|---|---|
-| 19.11 | Bấm "Đổi ảnh đại diện", chọn một ảnh chữ nhật lớn (kể cả ảnh chụp điện thoại trên 6 MB) | Hiện hộp thoại "Cắt ảnh đại diện" với khung tròn; kéo ảnh và kéo thanh Thu phóng thì vùng đổi theo | |
-| 19.12 | Chọn vùng khác với giữa ảnh (vd. một góc), bấm "Cắt và tải lên" | Ảnh đại diện mới đúng vùng đã chọn, ảnh ở thanh trên cùng đổi ngay | |
+| 19.11 | Bấm "Đổi ảnh đại diện", chọn một ảnh chữ nhật lớn (kể cả ảnh chụp điện thoại trên 6 MB) | Hiện hộp thoại "Cắt ảnh đại diện": **ảnh đứng yên**, có khung tròn đặt sẵn ở giữa; kéo khung thì khung dời trên ảnh, kéo góc thì khung đổi cỡ (vẫn tròn / vuông) | |
+| 19.12 | Dời khung sang một góc ảnh và thu nhỏ khung, bấm "Cắt và tải lên" | Ảnh đại diện mới đúng vùng trong khung, ảnh ở thanh trên cùng đổi ngay | |
 | 19.13 | Bấm "Huỷ" ở hộp thoại cắt | Đóng hộp thoại, ảnh không đổi, không có gì được tải lên | |
-| 19.14 | "Tải ảnh bìa lên", chọn ảnh ngang, chọn vùng, tải lên | Khung cắt hình chữ nhật dài (6:1); trang kênh trên máy tính hiện đúng vùng đã chọn; thu nhỏ cửa sổ về cỡ điện thoại thì chỉ hiện phần giữa | |
+| 19.14 | "Tải ảnh bìa lên", chọn ảnh ngang, dời / đổi cỡ khung chữ nhật dài (6:1), tải lên | Trang kênh trên máy tính hiện đúng vùng trong khung; thu nhỏ cửa sổ về cỡ điện thoại thì chỉ hiện phần giữa | |
 | 19.15 | Chọn ảnh PNG trong suốt làm ảnh đại diện | Phần trong suốt thành nền trắng, không bị đen | |
 | 19.16 | Đổi ảnh đại diện (hoặc ảnh bìa) lần thứ hai, rồi xem thư mục `channels/` trên Cloudinary | Ảnh của lần đổi trước đã biến mất, chỉ còn ảnh đang dùng (lưu ý ảnh tải lên trước khi có bản này vẫn còn) | |
