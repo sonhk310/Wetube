@@ -11,6 +11,8 @@ const LOCAL_ACTION_GRACE_MS = 1500;
 const DRIFT_CHECK_MS = 500;
 /** Gom nhiều lần tua liên tiếp (kéo thanh tua) thành một thao tác. */
 const SEEK_DEBOUNCE_MS = 250;
+/** Nút "Bật tiếng" / "Bấm để xem cùng phòng" ở trang phòng gửi sự kiện này (lần bấm đó là thao tác của người xem nên trình duyệt cho phát). */
+export const ROOM_UNBLOCK_EVENT = "wetube:room-unblock";
 /** Cờ "do mình gây ra" tự hết hạn phòng khi trình duyệt không bắn sự kiện. */
 const EXPECT_TTL_MS = 1500;
 
@@ -53,6 +55,40 @@ export function useRoomPlayback(videoRef: RefObject<HTMLVideoElement | null>, en
       return Number.isFinite(v.duration) ? Math.min(target, v.duration) : target;
     };
 
+    // Trình duyệt chặn phát có tiếng khi người xem chưa bấm gì trong tab này (lệnh Phát đến từ người khác):
+    // phát không tiếng; vẫn bị chặn (vd. Brave chặn cả khi tắt tiếng) thì chờ người xem bấm nút ở trang phòng
+    let blocked = false;
+    const setAutoplay = useRoomStore.getState().setAutoplay;
+    const tryPlay = () => {
+      mark("play");
+      v.play()
+        .then(() => {
+          blocked = false;
+          if (!v.muted) setAutoplay("ok");
+        })
+        .catch((err: unknown) => {
+          expect.play = false;
+          if ((err as { name?: string } | null)?.name !== "NotAllowedError") return;
+          if (v.muted) {
+            blocked = true;
+            setAutoplay("blocked");
+            return;
+          }
+          v.muted = true;
+          mark("play");
+          v.play()
+            .then(() => {
+              blocked = false;
+              setAutoplay("muted");
+            })
+            .catch(() => {
+              expect.play = false;
+              blocked = true;
+              setAutoplay("blocked");
+            });
+        });
+    };
+
     const apply = () => {
       const playback = useRoomStore.getState().playback;
       const target = expectedNow();
@@ -62,11 +98,7 @@ export function useRoomPlayback(videoRef: RefObject<HTMLVideoElement | null>, en
         v.currentTime = target;
       }
       if (playback.playing && v.paused) {
-        mark("play");
-        v.play().catch(() => {
-          // Trình duyệt chặn tự phát: người xem bấm nút phát, vị trí lúc đó vẫn đúng nên không lệch
-          expect.play = false;
-        });
+        tryPlay();
       } else if (!playback.playing && !v.paused) {
         mark("pause");
         v.pause();
@@ -78,7 +110,11 @@ export function useRoomPlayback(videoRef: RefObject<HTMLVideoElement | null>, en
       const target = expectedNow();
       if (!playback || target === null || v.seeking || buffering || v.readyState < 3) return;
       if (Date.now() - lastLocalAction < LOCAL_ACTION_GRACE_MS) return;
-      if (playback.playing && v.paused) return; // chưa phát được (bị chặn tự phát): đợi người xem bấm
+      // Phòng đang phát mà máy này đứng yên (bị chặn tự phát, trình duyệt tự dừng...): thử phát lại
+      if (playback.playing && v.paused) {
+        if (!blocked && !v.ended) tryPlay();
+        return;
+      }
       if (Number.isFinite(v.duration) && target >= v.duration - 0.25) return;
       const fix = correction(v.currentTime, target, playback.playing, seekThreshold);
       if (fix.kind === "seek") {
@@ -101,6 +137,7 @@ export function useRoomPlayback(videoRef: RefObject<HTMLVideoElement | null>, en
     };
 
     const onPlay = () => {
+      blocked = false;
       if (consume("play")) return;
       window.clearTimeout(seekTimer);
       send("PLAY", v.currentTime);
@@ -133,6 +170,15 @@ export function useRoomPlayback(videoRef: RefObject<HTMLVideoElement | null>, en
     v.addEventListener("playing", onPlaying);
     v.addEventListener("loadedmetadata", apply);
 
+    const onUnblock = () => {
+      blocked = false;
+      v.muted = false;
+      setAutoplay("ok");
+      const playback = useRoomStore.getState().playback;
+      if (playback?.playing && v.paused) tryPlay();
+    };
+    window.addEventListener(ROOM_UNBLOCK_EVENT, onUnblock);
+
     const unsubscribe = useRoomStore.subscribe((state, previous) => {
       if (state.playback !== previous.playback) apply();
     });
@@ -147,6 +193,8 @@ export function useRoomPlayback(videoRef: RefObject<HTMLVideoElement | null>, en
       window.clearTimeout(expectTimers.pause);
       window.clearTimeout(expectTimers.seek);
       unsubscribe();
+      window.removeEventListener(ROOM_UNBLOCK_EVENT, onUnblock);
+      setAutoplay("ok");
       v.removeEventListener("play", onPlay);
       v.removeEventListener("pause", onPause);
       v.removeEventListener("seeked", onSeeked);

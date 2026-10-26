@@ -21,12 +21,15 @@ interface RoomState {
   /** Giờ server ≈ giờ máy + clockOffset (ms). */
   clockOffset: number;
   reactions: { id: number; emoji: string; name: string }[];
+  /** ok; muted: trình duyệt chặn phát có tiếng nên đang phát không tiếng; blocked: chặn cả phát không tiếng. */
+  autoplay: "ok" | "muted" | "blocked";
 
   open: (code: string) => void;
   close: () => void;
   setOffset: (offset: number) => void;
   apply: (event: RoomEvent) => void;
   dropReaction: (id: number) => void;
+  setAutoplay: (autoplay: "ok" | "muted" | "blocked") => void;
 }
 
 const empty = {
@@ -42,6 +45,7 @@ const empty = {
   chat: [],
   clockOffset: 0,
   reactions: [],
+  autoplay: "ok" as const,
 };
 
 let reactionId = 0;
@@ -52,6 +56,7 @@ export const useRoomStore = create<RoomState>((set) => ({
   open: (code) => set({ ...empty, code, status: "connecting" }),
   close: () => set({ ...empty }),
   setOffset: (offset) => set({ clockOffset: offset }),
+  setAutoplay: (autoplay) => set({ autoplay }),
   dropReaction: (id) => set((s) => ({ reactions: s.reactions.filter((r) => r.id !== id) })),
 
   apply: (event) =>

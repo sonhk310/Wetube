@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, LogOut, UserPlus, XCircle } from "lucide-react";
+import { Crown, LogOut, Play, UserPlus, VolumeX, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useGetVideoDetailQuery } from "@/app/api/videoApi";
@@ -15,6 +15,7 @@ import { useRoomStore } from "@/store/zustand/useRoomStore";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import { inviteFlagKey } from "../lib/createRoom";
 import { sendRoom } from "../lib/roomSocket";
+import { ROOM_UNBLOCK_EVENT } from "../lib/useRoomPlayback";
 import { useRoomConnection } from "../lib/useRoomConnection";
 import InviteDialog from "./invite-dialog";
 import RoomChat from "./room-chat";
@@ -96,6 +97,38 @@ export default function RoomView({ code }: { code: string }) {
   return <JoinedRoom code={code} />;
 }
 
+/** Trình duyệt chặn tự phát khi người xem chưa bấm gì trong tab này: một lần bấm là đủ. */
+function AutoplayNotice() {
+  const autoplay = useRoomStore((s) => s.autoplay);
+  const unblock = () => window.dispatchEvent(new Event(ROOM_UNBLOCK_EVENT));
+
+  if (autoplay === "muted") {
+    return (
+      <button
+        type="button"
+        onClick={unblock}
+        className="absolute left-3 top-3 z-40 flex items-center gap-2 rounded-full bg-black/75 px-4 py-2 text-sm font-medium text-white hover:bg-black"
+      >
+        <VolumeX className="size-4" /> Trình duyệt đã tắt tiếng. Bấm để bật tiếng
+      </button>
+    );
+  }
+  if (autoplay === "blocked") {
+    return (
+      <div className="absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-black/60">
+        <button
+          type="button"
+          onClick={unblock}
+          className="flex items-center gap-2 rounded-full bg-white px-5 py-3 font-semibold text-black hover:bg-gray-100"
+        >
+          <Play className="size-5" fill="currentColor" /> Bấm để xem cùng phòng
+        </button>
+      </div>
+    );
+  }
+  return null;
+}
+
 function JoinedRoom({ code }: { code: string }) {
   const router = useProgressRouter();
   const { user } = useAuth();
@@ -149,6 +182,7 @@ function JoinedRoom({ code }: { code: string }) {
             </div>
           )}
           <ReactionOverlay />
+          <AutoplayNotice />
         </div>
 
         {roomVideo && (
