@@ -30,7 +30,12 @@ public class RateLimiter {
         COMMENT(10, Duration.ofMinutes(1), "Bạn bình luận quá nhanh, vui lòng chờ một chút."),
         REPORT(20, Duration.ofHours(1), "Bạn đã gửi quá nhiều báo cáo trong giờ này, vui lòng thử lại sau."),
         /** Trình phát báo vị trí đang xem (bình thường ~4 lần/phút). */
-        PROGRESS(60, Duration.ofMinutes(1), "Quá nhiều yêu cầu, vui lòng thử lại sau.");
+        PROGRESS(60, Duration.ofMinutes(1), "Quá nhiều yêu cầu, vui lòng thử lại sau."),
+        /** Phòng xem chung: tạo phòng, thao tác phát / hàng chờ, chat, thả cảm xúc (theo người dùng). */
+        ROOM_CREATE(10, Duration.ofHours(1), "Bạn tạo phòng quá nhiều, vui lòng thử lại sau."),
+        ROOM_CONTROL(20, Duration.ofSeconds(10), "Bạn thao tác quá nhanh."),
+        ROOM_CHAT(10, Duration.ofSeconds(10), "Bạn nhắn quá nhanh."),
+        ROOM_REACTION(10, Duration.ofSeconds(5), "Bạn thả cảm xúc quá nhanh.");
 
         private final int max;
         private final Duration window;
