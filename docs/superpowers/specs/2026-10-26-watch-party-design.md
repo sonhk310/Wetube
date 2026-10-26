@@ -58,7 +58,7 @@ PRD luồng 2 và mục 4.1.3 yêu cầu:
   - Tin dài tối đa 500 ký tự. Phòng giữ 100 tin gần nhất, người mới vào thấy lại các tin đó.
   - Mốc thời gian như `3:20` trong tin bấm được để tua (dùng lại code link mốc thời gian ở bình luận).
   - Có dòng hệ thống "Lan đã vào phòng", "Lan đã rời phòng".
-- **Thả cảm xúc:** hàng nút 👍 ❤️ 😂 😮 😢 🔥 dưới trình phát. Bấm thì biểu tượng bay lên trên trình phát của mọi người (không lưu, tối đa 1 lần / 0,5 giây / người).
+- ~~**Thả cảm xúc**~~: đã làm rồi bỏ (anh quyết 26/10: không cần thiết).
 - **Chủ phòng:**
   - Là người tạo phòng. Chủ phòng rời đi thì người vào sớm nhất còn lại thành chủ phòng.
   - Chỉ chủ phòng **mời ra** được một người (người đó không vào lại được phòng này) và **đóng phòng** (mọi người thấy "Chủ phòng đã đóng phòng").

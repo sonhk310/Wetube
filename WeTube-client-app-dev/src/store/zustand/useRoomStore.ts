@@ -20,7 +20,6 @@ interface RoomState {
   chat: RoomChatMessage[];
   /** Giờ server ≈ giờ máy + clockOffset (ms). */
   clockOffset: number;
-  reactions: { id: number; emoji: string; name: string }[];
   /** ok; muted: trình duyệt chặn phát có tiếng nên đang phát không tiếng; blocked: chặn cả phát không tiếng. */
   autoplay: "ok" | "muted" | "blocked";
 
@@ -28,7 +27,6 @@ interface RoomState {
   close: () => void;
   setOffset: (offset: number) => void;
   apply: (event: RoomEvent) => void;
-  dropReaction: (id: number) => void;
   setAutoplay: (autoplay: "ok" | "muted" | "blocked") => void;
 }
 
@@ -44,11 +42,8 @@ const empty = {
   queue: [],
   chat: [],
   clockOffset: 0,
-  reactions: [],
   autoplay: "ok" as const,
 };
-
-let reactionId = 0;
 
 export const useRoomStore = create<RoomState>((set) => ({
   ...empty,
@@ -57,7 +52,6 @@ export const useRoomStore = create<RoomState>((set) => ({
   close: () => set({ ...empty }),
   setOffset: (offset) => set({ clockOffset: offset }),
   setAutoplay: (autoplay) => set({ autoplay }),
-  dropReaction: (id) => set((s) => ({ reactions: s.reactions.filter((r) => r.id !== id) })),
 
   apply: (event) =>
     set((s) => {
@@ -87,11 +81,6 @@ export const useRoomStore = create<RoomState>((set) => ({
           if (!message || s.chat.some((c) => c.id === message.id)) return {};
           return { chat: [...s.chat, message].slice(-MAX_CHAT) };
         }
-        case "REACTION":
-          if (!event.emoji) return {};
-          return {
-            reactions: [...s.reactions.slice(-30), { id: ++reactionId, emoji: event.emoji, name: event.name ?? "" }],
-          };
         case "CLOSED":
           return { status: "closed" };
         case "KICKED":

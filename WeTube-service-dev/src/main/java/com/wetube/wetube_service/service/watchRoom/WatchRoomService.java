@@ -5,7 +5,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -61,7 +60,6 @@ public class WatchRoomService {
     private static final long EMPTY_ROOM_MS = 5 * 60_000;
     private static final long MAX_ROOM_LIFE_MS = 24 * 3600_000L;
 
-    private static final Set<String> REACTIONS = Set.of("like", "love", "laugh", "wow", "sad", "fire");
     private static final String CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -314,28 +312,6 @@ public class WatchRoomService {
             chat.setAvatar(me.getAvatar());
             appendChat(room, chat);
             persist(room);
-        }
-    }
-
-    public void reaction(String code, String userId, RoomIn.Reaction msg) {
-        WatchRoom room = find(code);
-        if (room == null || msg.getEmoji() == null || !REACTIONS.contains(msg.getEmoji())) {
-            return;
-        }
-        if (!rateLimiter.tryAcquire(Limit.ROOM_REACTION, userId)) {
-            return;
-        }
-        synchronized (room) {
-            Member me = room.getMembers().get(userId);
-            if (me == null) {
-                return;
-            }
-            broadcast(room, RoomEvent.builder()
-                    .type("REACTION")
-                    .emoji(msg.getEmoji())
-                    .userId(userId)
-                    .name(me.getName())
-                    .build());
         }
     }
 

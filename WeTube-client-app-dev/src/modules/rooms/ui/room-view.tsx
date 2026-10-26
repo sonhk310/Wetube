@@ -22,7 +22,6 @@ import InviteDialog from "./invite-dialog";
 import RoomChat from "./room-chat";
 import RoomMembers from "./room-members";
 import RoomQueue from "./room-queue";
-import { ReactionBar, ReactionOverlay } from "./room-reactions";
 
 /** Khung thông báo giữa trang (không vào được phòng, phòng đã đóng, chưa đăng nhập...). */
 function Notice({ title, text, children }: { title: string; text?: string; children?: React.ReactNode }) {
@@ -179,7 +178,6 @@ function JoinedRoom({ code }: { code: string }) {
               Phòng chưa có video. Tìm và thêm video ở khung Hàng chờ để cả phòng cùng xem.
             </div>
           )}
-          <ReactionOverlay />
           <AutoplayNotice />
         </div>
 
@@ -190,8 +188,7 @@ function JoinedRoom({ code }: { code: string }) {
           </div>
         )}
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <ReactionBar />
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)}>
               <UserPlus className="size-4" /> Mời

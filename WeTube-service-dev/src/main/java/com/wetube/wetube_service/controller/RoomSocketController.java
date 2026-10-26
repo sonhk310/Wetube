@@ -44,11 +44,6 @@ public class RoomSocketController {
         rooms.chat(code, principal.getName(), body);
     }
 
-    @MessageMapping("/rooms/{code}/reaction")
-    public void reaction(@DestinationVariable String code, @Payload RoomIn.Reaction body, Principal principal) {
-        rooms.reaction(code, principal.getName(), body);
-    }
-
     @MessageMapping("/rooms/{code}/queue")
     public void queue(@DestinationVariable String code, @Payload RoomIn.QueueOp body, Principal principal) {
         rooms.queue(code, principal.getName(), body);

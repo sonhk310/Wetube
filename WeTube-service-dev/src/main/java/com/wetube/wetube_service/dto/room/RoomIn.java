@@ -22,12 +22,6 @@ public final class RoomIn {
         private String content;
     }
 
-    /** emoji: like, love, laugh, wow, sad, fire. */
-    @Data
-    public static class Reaction {
-        private String emoji;
-    }
-
     /** op: ADD hoặc REMOVE. */
     @Data
     public static class QueueOp {

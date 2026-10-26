@@ -9,7 +9,7 @@ import lombok.Getter;
 
 /**
  * Tin server gửi cho client: `/topic/rooms/{code}` (cả phòng) hoặc `/user/queue/rooms` (riêng một người).
- * type: SNAPSHOT, STATE, MEMBERS, QUEUE, CHAT, REACTION, TIME, CLOSED, KICKED, ERROR.
+ * type: SNAPSHOT, STATE, MEMBERS, QUEUE, CHAT, TIME, CLOSED, KICKED, ERROR.
  */
 @Getter
 @Builder
@@ -28,7 +28,6 @@ public class RoomEvent {
     private final List<VideoRoom> queue;
     private final List<WatchRoom.Chat> chat;
     private final WatchRoom.Chat message;
-    private final String emoji;
     private final String userId;
     private final String name;
     private final Long serverTime;

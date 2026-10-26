@@ -37,7 +37,7 @@ export interface RoomChatMessage {
 
 /** Tin server gửi (dto/room/RoomEvent của backend); chỉ các trường của từng type mới có mặt. */
 export interface RoomEvent {
-  type: "SNAPSHOT" | "STATE" | "MEMBERS" | "QUEUE" | "CHAT" | "REACTION" | "TIME" | "CLOSED" | "KICKED" | "ERROR";
+  type: "SNAPSHOT" | "STATE" | "MEMBERS" | "QUEUE" | "CHAT" | "TIME" | "CLOSED" | "KICKED" | "ERROR";
   code?: string;
   state?: RoomPlayback;
   video?: RoomVideo | null;
@@ -46,7 +46,6 @@ export interface RoomEvent {
   queue?: RoomVideo[];
   chat?: RoomChatMessage[];
   message?: RoomChatMessage;
-  emoji?: string;
   userId?: string;
   name?: string;
   serverTime?: number;
@@ -56,15 +55,6 @@ export interface RoomEvent {
   text?: string;
 }
 
-export type RoomAction = "leave" | "control" | "chat" | "reaction" | "queue" | "kick" | "close" | "time";
+export type RoomAction = "leave" | "control" | "chat" | "queue" | "kick" | "close" | "time";
 
 export type RoomControlType = "PLAY" | "PAUSE" | "SEEK" | "CHANGE" | "ENDED";
-
-export const REACTIONS = [
-  { key: "like", emoji: "👍" },
-  { key: "love", emoji: "❤️" },
-  { key: "laugh", emoji: "😂" },
-  { key: "wow", emoji: "😮" },
-  { key: "sad", emoji: "😢" },
-  { key: "fire", emoji: "🔥" },
-] as const;

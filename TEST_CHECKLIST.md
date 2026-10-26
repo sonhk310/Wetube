@@ -185,7 +185,7 @@ Cần 2 tài khoản đăng nhập ở 2 cửa sổ (A = chủ phòng, B = khác
 | 16.4 | A bấm Phát, rồi tua tới 3:00 | B phát theo, rồi nhảy tới 3:00; chat có dòng "A đã tua tới 3:00" | |
 | 16.5 | A và B cùng bấm Dừng / Phát gần như cùng lúc | Cả hai máy kết thúc ở cùng một trạng thái, không bị giật qua lại | |
 | 16.6 | Nhắn tin ở hai bên; gõ "2:30" trong tin rồi bấm vào mốc đó | Tin hiện ở cả hai bên; bấm mốc thời gian thì cả phòng tua tới 2:30 | |
-| 16.7 | B bấm một biểu tượng cảm xúc | Biểu tượng bay lên trên trình phát của cả A và B, kèm tên B | |
+| 16.7 | (Đã bỏ: thả cảm xúc, anh quyết 26/10) | | |
 | 16.8 | Ở "Hàng chờ", tìm một video khác rồi bấm để thêm; bấm "Phát ngay" ở video đó | Cả hai thấy hàng chờ đổi; "Phát ngay" thì cả phòng chuyển sang video mới từ giây 0 | |
 | 16.9 | Thêm một video vào hàng chờ rồi để video hiện tại chạy tới hết | Cả hai tự sang video trong hàng chờ, chỉ nhảy **một** video (không bỏ qua video thứ hai) | |
 | 16.10 | B bấm F5 (tải lại trang) | B vào lại phòng trong vài giây, chat không có dòng "B đã rời phòng" rồi "B đã vào phòng" | |
