@@ -1,6 +1,7 @@
 "use client";
 
 import { Crown } from "lucide-react";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRoomStore } from "@/store/zustand/useRoomStore";
 import { sendRoom } from "../lib/roomSocket";
 import type { RoomMember } from "../types";
+import ConfirmDialog from "./confirm-dialog";
 
 function MemberAvatar({ member }: { member: RoomMember }) {
   return (
@@ -30,6 +32,7 @@ export default function RoomMembers() {
   const { user } = useAuth();
   const members = useRoomStore((s) => s.members);
   const iAmHost = members.some((m) => m.host && m.userId === user?.sub);
+  const [kickTarget, setKickTarget] = useState<RoomMember | null>(null);
 
   return (
     <div className="flex items-center gap-3">
@@ -45,20 +48,14 @@ export default function RoomMembers() {
             );
           }
           return (
-            <DropdownMenu key={m.userId}>
+            <DropdownMenu key={m.userId} modal={false}>
               <DropdownMenuTrigger asChild>
                 <button type="button" title={label} aria-label={label} className="rounded-full">
                   <MemberAvatar member={m} />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (window.confirm(`Mời ${m.name} ra khỏi phòng? Họ sẽ không vào lại được phòng này.`)) {
-                      sendRoom("kick", { userId: m.userId });
-                    }
-                  }}
-                >
+                <DropdownMenuItem onSelect={() => setKickTarget(m)}>
                   Mời {m.name} ra khỏi phòng
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -66,6 +63,14 @@ export default function RoomMembers() {
           );
         })}
       </div>
+      <ConfirmDialog
+        open={!!kickTarget}
+        onOpenChange={(open) => !open && setKickTarget(null)}
+        title={`Mời ${kickTarget?.name ?? ""} ra khỏi phòng?`}
+        description="Người này sẽ không vào lại được phòng này, kể cả khi có liên kết mời."
+        confirmLabel="Mời ra"
+        onConfirm={() => kickTarget && sendRoom("kick", { userId: kickTarget.userId })}
+      />
     </div>
   );
 }

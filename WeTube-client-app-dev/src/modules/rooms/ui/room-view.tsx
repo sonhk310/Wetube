@@ -17,6 +17,7 @@ import { inviteFlagKey } from "../lib/createRoom";
 import { sendRoom } from "../lib/roomSocket";
 import { ROOM_UNBLOCK_EVENT } from "../lib/useRoomPlayback";
 import { useRoomConnection } from "../lib/useRoomConnection";
+import ConfirmDialog from "./confirm-dialog";
 import InviteDialog from "./invite-dialog";
 import RoomChat from "./room-chat";
 import RoomMembers from "./room-members";
@@ -138,6 +139,7 @@ function JoinedRoom({ code }: { code: string }) {
   const setVideoDetail = useVideoStore((s) => s.setVideoDetail);
   const clearVideoDetail = useVideoStore((s) => s.clearVideoDetail);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [closeOpen, setCloseOpen] = useState(false);
   const [tab, setTab] = useState<"chat" | "queue">("chat");
 
   // Trình phát đọc chi tiết video (đường dẫn, phụ đề, chương) từ store dùng chung với trang xem
@@ -162,10 +164,6 @@ function JoinedRoom({ code }: { code: string }) {
   const leave = () => {
     sendRoom("leave", { immediate: true });
     router.push(videoId ? `/watch/${videoId}` : "/");
-  };
-
-  const closeRoom = () => {
-    if (window.confirm("Đóng phòng? Mọi người đang xem sẽ bị đưa ra khỏi phòng.")) sendRoom("close");
   };
 
   const panel = "flex min-h-0 flex-col overflow-hidden rounded-xl border bg-white";
@@ -202,7 +200,7 @@ function JoinedRoom({ code }: { code: string }) {
               <LogOut className="size-4" /> Rời phòng
             </Button>
             {iAmHost && (
-              <Button variant="destructive" size="sm" onClick={closeRoom}>
+              <Button variant="destructive" size="sm" onClick={() => setCloseOpen(true)}>
                 <XCircle className="size-4" /> Đóng phòng
               </Button>
             )}
@@ -242,6 +240,14 @@ function JoinedRoom({ code }: { code: string }) {
       </aside>
 
       <InviteDialog code={code} open={inviteOpen} onOpenChange={setInviteOpen} />
+      <ConfirmDialog
+        open={closeOpen}
+        onOpenChange={setCloseOpen}
+        title="Đóng phòng?"
+        description="Mọi người đang xem sẽ bị đưa ra khỏi phòng và liên kết mời không dùng được nữa."
+        confirmLabel="Đóng phòng"
+        onConfirm={() => sendRoom("close")}
+      />
     </section>
   );
 }
