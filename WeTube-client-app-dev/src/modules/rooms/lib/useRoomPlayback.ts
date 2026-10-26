@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, type RefObject } from "react";
-import { correction, expectedPosition } from "@/lib/roomSync";
+import { correction, expectedPosition, RESUME_SEEK_THRESHOLD } from "@/lib/roomSync";
 import { useRoomStore } from "@/store/zustand/useRoomStore";
 import { sendRoom } from "./roomSocket";
 import type { RoomControlType } from "../types";
 
 /** Sau thao tác của chính mình, chưa sửa lệch trong khoảng này để không kéo ngược lại lúc server chưa kịp xác nhận. */
 const LOCAL_ACTION_GRACE_MS = 1500;
-const DRIFT_CHECK_MS = 1000;
+const DRIFT_CHECK_MS = 500;
 /** Gom nhiều lần tua liên tiếp (kéo thanh tua) thành một thao tác. */
 const SEEK_DEBOUNCE_MS = 250;
 /** Cờ "do mình gây ra" tự hết hạn phòng khi trình duyệt không bắn sự kiện. */
@@ -73,6 +73,24 @@ export function useRoomPlayback(videoRef: RefObject<HTMLVideoElement | null>, en
       }
     };
 
+    const sync = (seekThreshold?: number) => {
+      const playback = useRoomStore.getState().playback;
+      const target = expectedNow();
+      if (!playback || target === null || v.seeking || buffering || v.readyState < 3) return;
+      if (Date.now() - lastLocalAction < LOCAL_ACTION_GRACE_MS) return;
+      if (playback.playing && v.paused) return; // chưa phát được (bị chặn tự phát): đợi người xem bấm
+      if (Number.isFinite(v.duration) && target >= v.duration - 0.25) return;
+      const fix = correction(v.currentTime, target, playback.playing, seekThreshold);
+      if (fix.kind === "seek") {
+        mark("seek");
+        v.currentTime = fix.to;
+      } else if (fix.kind === "rate") {
+        v.playbackRate = fix.rate;
+      } else if (v.playbackRate !== 1) {
+        v.playbackRate = 1;
+      }
+    };
+
     const send = (type: RoomControlType, position: number) => {
       lastLocalAction = Date.now();
       sendRoom("control", {
@@ -100,7 +118,12 @@ export function useRoomPlayback(videoRef: RefObject<HTMLVideoElement | null>, en
     };
     const onEnded = () => send("ENDED", Number.isFinite(v.duration) ? v.duration : v.currentTime);
     const onWaiting = () => (buffering = true);
-    const onPlaying = () => (buffering = false);
+    // Video vừa chạy được (tải xong, vừa phát lại): máy nhận lệnh luôn chậm hơn một chút vì phải tải dữ liệu rồi mới chạy,
+    // và dữ liệu lúc này đã có sẵn nên tua rẻ: sửa lệch ngay thay vì chờ chỉnh tốc độ từ từ
+    const onPlaying = () => {
+      buffering = false;
+      sync(RESUME_SEEK_THRESHOLD);
+    };
 
     v.addEventListener("play", onPlay);
     v.addEventListener("pause", onPause);
@@ -115,23 +138,7 @@ export function useRoomPlayback(videoRef: RefObject<HTMLVideoElement | null>, en
     });
     apply();
 
-    const drift = window.setInterval(() => {
-      const playback = useRoomStore.getState().playback;
-      const target = expectedNow();
-      if (!playback || target === null || v.seeking || buffering || v.readyState < 3) return;
-      if (Date.now() - lastLocalAction < LOCAL_ACTION_GRACE_MS) return;
-      if (playback.playing && v.paused) return; // chưa phát được (bị chặn tự phát): đợi người xem bấm
-      if (Number.isFinite(v.duration) && target >= v.duration - 0.25) return;
-      const fix = correction(v.currentTime, target, playback.playing);
-      if (fix.kind === "seek") {
-        mark("seek");
-        v.currentTime = fix.to;
-      } else if (fix.kind === "rate") {
-        v.playbackRate = fix.rate;
-      } else if (v.playbackRate !== 1) {
-        v.playbackRate = 1;
-      }
-    }, DRIFT_CHECK_MS);
+    const drift = window.setInterval(() => sync(), DRIFT_CHECK_MS);
 
     return () => {
       window.clearInterval(drift);

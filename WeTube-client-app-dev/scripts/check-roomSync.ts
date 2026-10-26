@@ -5,6 +5,7 @@ import {
   estimateOffset,
   expectedPosition,
   formatClock,
+  RESUME_SEEK_THRESHOLD,
   parseRoomCode,
 } from "../src/lib/roomSync.ts";
 
@@ -46,16 +47,24 @@ check("độ lệch đồng hồ: không có mẫu hợp lệ thì 0", () => {
 
 check("sửa lệch: nhỏ thì để yên", () => {
   assert.deepEqual(correction(10.05, 10, true), { kind: "none" });
-  assert.deepEqual(correction(9.9, 10, false), { kind: "none" });
+  assert.deepEqual(correction(9.95, 10, false), { kind: "none" });
 });
 
-check("sửa lệch: vừa thì chỉnh tốc độ 5%", () => {
-  assert.deepEqual(correction(10.3, 10, true), { kind: "rate", rate: 0.95 }); // nhanh hơn: chậm lại
-  assert.deepEqual(correction(9.7, 10, true), { kind: "rate", rate: 1.05 }); // chậm hơn: nhanh lên
+check("sửa lệch: lệch ít thì chỉnh tốc độ 5%, lệch vừa thì 10%", () => {
+  assert.deepEqual(correction(10.15, 10, true), { kind: "rate", rate: 0.95 }); // nhanh hơn: chậm lại
+  assert.deepEqual(correction(9.85, 10, true), { kind: "rate", rate: 1.05 }); // chậm hơn: nhanh lên
+  assert.deepEqual(correction(10.25, 10, true), { kind: "rate", rate: 0.9 });
+  assert.deepEqual(correction(9.75, 10, true), { kind: "rate", rate: 1.1 });
+});
+
+check("sửa lệch: vừa bắt đầu chạy thì ngưỡng tua thấp hơn", () => {
+  assert.deepEqual(correction(9.8, 10, true, RESUME_SEEK_THRESHOLD), { kind: "seek", to: 10 });
+  assert.deepEqual(correction(9.9, 10, true, RESUME_SEEK_THRESHOLD), { kind: "rate", rate: 1.05 });
 });
 
 check("sửa lệch: lớn thì tua thẳng", () => {
   assert.deepEqual(correction(12, 10, true), { kind: "seek", to: 10 });
+  assert.deepEqual(correction(9.6, 10, true), { kind: "seek", to: 10 });
   assert.deepEqual(correction(5, 10, false), { kind: "seek", to: 10 });
 });
 

@@ -42,10 +42,15 @@ export function estimateOffset(samples: ClockSample[]): number {
 }
 
 /** Lệch trên mức này thì tua thẳng tới vị trí đúng (giây). */
-export const SEEK_THRESHOLD = 0.5;
+export const SEEK_THRESHOLD = 0.3;
 /** Lệch trong khoảng (MIN_DRIFT, SEEK_THRESHOLD] thì chỉnh tốc độ phát nhẹ cho khớp (giây). */
-export const MIN_DRIFT = 0.15;
+export const MIN_DRIFT = 0.08;
+/** Chỉnh tốc độ 5%; lệch hơn FAST_DRIFT thì chỉnh 10% cho kịp nhanh hơn. */
 export const RATE_ADJUST = 0.05;
+export const RATE_ADJUST_FAST = 0.1;
+export const FAST_DRIFT = 0.2;
+/** Ngay sau khi video bắt đầu chạy (vừa tải xong, vừa phát lại) dữ liệu đã có sẵn nên tua rẻ: ngưỡng tua thấp hơn. */
+export const RESUME_SEEK_THRESHOLD = 0.15;
 
 export type Correction =
   | { kind: "none" }
@@ -56,12 +61,20 @@ export type Correction =
  * Máy này đang ở `actual`, đáng ra ở `expected`. Đang tạm dừng thì chỉ sửa khi lệch hẳn (không chỉnh tốc độ).
  * actual > expected nghĩa là phát nhanh hơn mọi người: giảm tốc độ.
  */
-export function correction(actual: number, expected: number, playing: boolean): Correction {
+export function correction(
+  actual: number,
+  expected: number,
+  playing: boolean,
+  seekThreshold: number = SEEK_THRESHOLD
+): Correction {
   const drift = actual - expected;
   const size = Math.abs(drift);
-  if (size > SEEK_THRESHOLD) return { kind: "seek", to: Math.max(0, expected) };
+  if (size > seekThreshold) return { kind: "seek", to: Math.max(0, expected) };
   if (!playing) return size > MIN_DRIFT ? { kind: "seek", to: Math.max(0, expected) } : { kind: "none" };
-  if (size > MIN_DRIFT) return { kind: "rate", rate: drift > 0 ? 1 - RATE_ADJUST : 1 + RATE_ADJUST };
+  if (size > MIN_DRIFT) {
+    const adjust = size > FAST_DRIFT ? RATE_ADJUST_FAST : RATE_ADJUST;
+    return { kind: "rate", rate: drift > 0 ? 1 - adjust : 1 + adjust };
+  }
   return { kind: "none" };
 }
 
