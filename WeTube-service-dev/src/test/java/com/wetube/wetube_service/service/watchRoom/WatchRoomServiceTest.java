@@ -187,6 +187,24 @@ class WatchRoomServiceTest {
     }
 
     @Test
+    void firstVideoAddedToAnEmptyRoomStartsPlayingInsteadOfQueueing() {
+        String code = service.create(hostId, null, null);
+        service.join(code, "s-host", hostId.toString());
+        RoomIn.QueueOp add = new RoomIn.QueueOp();
+        add.setOp("ADD");
+        add.setVideoId("v1");
+
+        service.queue(code, hostId.toString(), add);
+        add.setVideoId("v2");
+        service.queue(code, hostId.toString(), add);
+
+        RoomEvent snapshot = joinAgain(code, "s-third", thirdId);
+        assertThat(snapshot.getState().getVideoId()).isEqualTo("v1");
+        assertThat(snapshot.getState().isPlaying()).isTrue();
+        assertThat(snapshot.getQueue()).extracting(VideoRoom::getId).containsExactly("v2");
+    }
+
+    @Test
     void changeVideoRejectsUnavailableVideo() {
         String code = roomWithHostAndGuest();
         long version = lastSnapshot(hostId.toString()).getState().getVersion();

@@ -366,6 +366,19 @@ public class WatchRoomService {
                     if (room.getQueue().stream().anyMatch(v -> v.getId().equals(video.getId()))) {
                         return;
                     }
+                    if (room.getCurrentVideo() == null) {
+                        // Phòng chưa có video: video đầu tiên được thêm phát luôn
+                        long now = System.currentTimeMillis();
+                        switchVideo(room, video);
+                        Playback state = room.getState();
+                        state.setUpdatedAt(now);
+                        state.setVersion(state.getVersion() + 1);
+                        state.setLastActor(userId);
+                        broadcast(room, stateEvent(room, "STATE"));
+                        addSystem(room, me.getName() + " đã chọn \"" + video.getTitle() + "\" để cả phòng cùng xem");
+                        persist(room);
+                        return;
+                    }
                     room.getQueue().add(video);
                     broadcast(room, queueEvent(room));
                     addSystem(room, me.getName() + " đã thêm \"" + video.getTitle() + "\" vào hàng chờ");
