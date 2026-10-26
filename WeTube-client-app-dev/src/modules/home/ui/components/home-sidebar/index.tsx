@@ -22,7 +22,7 @@ const HomeSidebar = () => {
     }, [pathname, setOpenMobile]);
 
     return (
-        <Sidebar className="pt-16 z-40 " collapsible="icon">
+        <Sidebar className="pt-16 z-40 group-data-[side=left]:border-r-0" collapsible="icon">
             {isMobile && (
                 // Đầu drawer giống thanh trên cùng: nút đóng + logo
                 <SidebarHeader className="h-16 flex-row items-center gap-1 px-2 py-0">
