@@ -1,6 +1,6 @@
 # WeTube → "YouTube của riêng mình": đã làm, còn dở, sẽ làm
 
-Cập nhật: 2026-10-25. Không chứa mật khẩu hay khoá nào.
+Cập nhật: 2026-10-26. Không chứa mật khẩu hay khoá nào.
 
 - Client: https://wetube.vibe.tinhgon.xyz (Vibe Host `cmvkg1ilo084w0i5fhrmxxz90`)
 - Backend: https://wetube-service.vibe.tinhgon.xyz (Vibe Host `cmvkfhypr07ra0i5f5b51wed1`)
@@ -57,12 +57,17 @@ Cập nhật: 2026-10-25. Không chứa mật khẩu hay khoá nào.
 ## 2. CÒN DỞ / CHƯA KIỂM CHỨNG
 
 ### 2.1 Cần anh thử
-- Ô nhập khi tải lên; B3 (dán mô tả `0:00 Mở đầu` / `1:30 Phần giữa` / `5:00 Kết` vào video "Ông Putin…"; bấm "• Mở đầu ›" mở khung Chương bên phải, bấm hàng để tua; đổi mốc đầu thành `0:05` thì chương phải mất).
-- Gói 19: đổi chế độ hiển thị / xoá hàng loạt.
-- Gói 17 trình phát Shorts (Short "Xiaochaomeng…", `b0203ec5…`).
-- Gói 16: đếm ngược 5 giây sang video sau (cả khi tắt Tự phát), Lặp lại ở video cuối, Shift+N / P, người khác không thấy nút sửa / xoá.
-- Đăng xuất, ⋮ thẻ video → "Lưu vào Xem sau": toast "Hãy đăng nhập để lưu video".
-- `TEST_CHECKLIST.md` mục 1–15 (2 tài khoản; mục 1–10 chưa thử hết).
+- Ô nhập khi tải lên (tiêu đề một dòng, mô tả cố định chiều cao).
+- Lịch sử xem của Shorts (commit chưa push, xem 2.3): lướt một Short quá 3 giây rồi mở `/playlists/history`.
+- `TEST_CHECKLIST.md` mục 1–15 (2 tài khoản; anh để sau).
+
+Anh đã thử trên trình duyệt: OK (26/10): B3 chương (khung Chương bên phải), đổi chế độ hiển thị / xoá hàng loạt (gói 19), trình phát Shorts (gói 17, trừ phần lịch sử ở 2.3), các mục còn lại của gói 16, toast "Hãy đăng nhập để lưu video".
+
+### 2.3 Đang làm: lịch sử xem của Shorts
+- Anh báo (26/10): trình phát Shorts chưa lưu lịch sử. Nguyên nhân: `shorts-video-card.tsx` chỉ gọi `useViewCounter`, không gọi `saveWatchProgress` như trình phát trang xem. Backend (`POST /api/videos/{id}/progress`) dùng chung nên không phải sửa.
+- Sửa ở client: `modules/shorts/hooks/useShortsHistory.ts`. Short đang hiện gửi vị trí một lần sau 3 giây và một lần cuối khi vuốt sang Short khác / rời trang / ẩn tab (chưa đủ 3 giây thì không gửi, nên vuốt nhanh không tốn hạn mức 60 lượt / phút). Khách chưa đăng nhập chỉ gửi thời gian xem cho chủ kênh, giống trang xem.
+- Hệ quả: lịch sử lưu giây đang xem, nên mở lại Short đó bằng `/watch/{id}` sẽ phát tiếp từ giây ấy. Trình phát Shorts luôn phát từ đầu.
+- Trạng thái: chưa commit / push / deploy.
 
 ### 2.2 Em theo dõi
 - **Vibe Host lỗi build 25/10 18:36–19:25:** lượt deploy dừng ở bước Build, không có output Docker, mỗi 5 phút báo `fetch failed`; job `cmvnr4rse15oj0i5fwk24jx1t` hỏng sau 6/6 lần, job deploy lại `cmvnsfwo315u00i5f440xr7gk` thành công ở lần thử lại thứ 2 (v63). Lỗi phía nền tảng, không phải code. Gặp lại thì chờ thử lại / deploy lại, kéo dài thì báo hỗ trợ Mắt Bão.

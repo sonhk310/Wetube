@@ -21,6 +21,7 @@ import SaveToPlaylistDialog from "@/modules/watch/components/save-to-playlist-di
 import ReportDialog from "@/modules/reports/report-dialog";
 import type { ShortVideo } from "@/modules/shorts/hooks/useShortsFeed";
 import { useShortsVolume } from "@/modules/shorts/hooks/useShortsVolume";
+import { useShortsHistory } from "@/modules/shorts/hooks/useShortsHistory";
 import { ShortsActions } from "./shorts-actions";
 import { ShortsProgress } from "./shorts-progress";
 
@@ -75,6 +76,7 @@ export default function ShortsVideoCard({
 
   // Short hiện trên màn hình đủ 3 giây thì tính 1 lượt xem
   useViewCounter(id, active, 3000);
+  useShortsHistory(id, active, videoRef);
 
   // Chi tiết (kênh, đã đăng ký chưa) và bình luận chỉ tải cho Short đang xem
   const { data: detail } = useGetVideoDetailQuery({ videoId: id }, { skip: !active });
