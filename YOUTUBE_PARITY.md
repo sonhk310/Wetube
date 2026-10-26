@@ -67,7 +67,8 @@ Anh đã thử trên trình duyệt: OK (26/10): B3 chương (khung Chương bê
 - Anh báo (26/10): trình phát Shorts chưa lưu lịch sử. Nguyên nhân: `shorts-video-card.tsx` chỉ gọi `useViewCounter`, không gọi `saveWatchProgress` như trình phát trang xem. Backend (`POST /api/videos/{id}/progress`) dùng chung nên không phải sửa.
 - Sửa ở client: `modules/shorts/hooks/useShortsHistory.ts`. Short đang hiện gửi vị trí một lần sau 3 giây và một lần cuối khi vuốt sang Short khác / rời trang / ẩn tab (chưa đủ 3 giây thì không gửi, nên vuốt nhanh không tốn hạn mức 60 lượt / phút). Khách chưa đăng nhập chỉ gửi thời gian xem cho chủ kênh, giống trang xem.
 - Hệ quả: lịch sử lưu giây đang xem, nên mở lại Short đó bằng `/watch/{id}` sẽ phát tiếp từ giây ấy. Trình phát Shorts luôn phát từ đầu.
-- Trạng thái: chưa commit / push / deploy.
+- Trạng thái: `9190584` đã push và deploy client 09:22 giờ VN 26/10 (các trang trả 200, log không lỗi). Chưa thử trên trình duyệt.
+- Anh yêu cầu thêm (26/10, sau khi đối chiếu với YouTube): trang Lịch sử xem có hàng Shorts riêng. `modules/playlists/ui/sections/history-shorts.tsx`: hàng thẻ dọc 9:16 cuộn ngang (nút ›), có tiêu đề "Shorts", ⋮ → "Xoá khỏi nhật ký xem", bấm thẻ mở `/shorts/{id}`; video thường nằm trong danh sách bên dưới; tab "Shorts" xếp thẻ nhiều hàng. Bỏ tab Podcast / Âm nhạc (backend không trả `type` nên chưa bao giờ hiện). Ô tìm kiếm ở cột phải bỏ khung và viền focus, chỉ còn gạch chân như YouTube (`SideBar.tsx`). Mới commit ở máy, chưa push, chưa thử trên trình duyệt.
 
 ### 2.2 Em theo dõi
 - **Vibe Host lỗi build 25/10 18:36–19:25:** lượt deploy dừng ở bước Build, không có output Docker, mỗi 5 phút báo `fetch failed`; job `cmvnr4rse15oj0i5fwk24jx1t` hỏng sau 6/6 lần, job deploy lại `cmvnsfwo315u00i5f440xr7gk` thành công ở lần thử lại thứ 2 (v63). Lỗi phía nền tảng, không phải code. Gặp lại thì chờ thử lại / deploy lại, kéo dài thì báo hỗ trợ Mắt Bão.

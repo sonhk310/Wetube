@@ -70,7 +70,7 @@ const Sidebar = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Tìm kiếm trong nhật ký xem"
-          className="pl-10 bg-gray-50 border-gray-300 text-black placeholder-gray-500 focus:border-blue-500"
+          className="h-9 rounded-none border-0 border-b border-gray-300 bg-transparent pl-10 shadow-none text-black placeholder-gray-500 focus-visible:border-black focus-visible:ring-0"
         />
       </div>
 

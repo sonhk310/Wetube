@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { playlistService } from "../list/playlist-API";
 import VideoItem from "./VideoItem";
+import HistoryShorts from "./history-shorts";
 import { useHistoryStore } from "@/store/zustand/useHistoryStore";
 import { useWatchProgressStore } from "@/lib/watchProgress";
 import { toastEmitter } from "@/lib/toastEmitter";
@@ -81,17 +82,15 @@ export default function HistoryList({ userId }: { userId: string }) {
     : videos;
   if (!matched.length) return <p className="pl-12 pt-6">Không tìm thấy video nào khớp với &quot;{query.trim()}&quot;</p>;
 
-  const tabs = [
-    { label: "Tất cả", value: "all", type: null },
-    { label: "Video", value: "video", type: "VIDEO" },
-    { label: "Podcast", value: "podcast", type: "PODCAST" },
-    { label: "Âm nhạc", value: "music", type: "MUSIC" },
-  ];
+  // Như YouTube: Shorts có hàng thẻ dọc riêng, video thường nằm trong danh sách bên dưới
+  const shorts = matched.filter((v) => v.isShort === true);
+  const regular = matched.filter((v) => v.isShort !== true);
 
-  const getVideosForTab = (tab: { value: string; type: string | null }) => {
-    if (!tab.type) return matched;
-    return matched.filter((v) => v.type === tab.type);
-  };
+  const tabs = [
+    { label: "Tất cả", value: "all", count: matched.length },
+    { label: "Video", value: "video", count: regular.length },
+    { label: "Shorts", value: "shorts", count: shorts.length },
+  ];
 
   return (
     <div className="max-w-4xl pl-12 pt-6 text-black">
@@ -100,7 +99,7 @@ export default function HistoryList({ userId }: { userId: string }) {
       <Tabs defaultValue="all">
         <TabsList className="border-none gap-2 flex-wrap">
           {tabs
-            .filter((tab) => getVideosForTab(tab).length > 0)
+            .filter((tab) => tab.count > 0)
             .map((tab) => (
               <TabsTrigger
                 key={tab.value}
@@ -113,12 +112,19 @@ export default function HistoryList({ userId }: { userId: string }) {
         </TabsList>
 
         {tabs
-          .filter((tab) => getVideosForTab(tab).length > 0)
+          .filter((tab) => tab.count > 0)
           .map((tab) => (
             <TabsContent key={tab.value} value={tab.value} className="mt-8">
-              <h2 className="text-xl font-bold mb-6">{tab.label}</h2>
+              {tab.value === "shorts" ? (
+                <HistoryShorts shorts={shorts} onRemove={handleRemove} wrap showTitle={false} />
+              ) : (
+              <>
+              {tab.value === "all" && <HistoryShorts shorts={shorts} onRemove={handleRemove} />}
+              {(tab.value === "video" || shorts.length === 0) && (
+                <h2 className="text-xl font-bold mb-6">{tab.label}</h2>
+              )}
               <div className="space-y-3">
-                {getVideosForTab(tab).map((v) => (
+                {regular.map((v) => (
                   <VideoItem
                     key={v.videoId}
                     videoId={v.videoId}
@@ -136,6 +142,8 @@ export default function HistoryList({ userId }: { userId: string }) {
                   />
                 ))}
               </div>
+              </>
+              )}
             </TabsContent>
           ))}
       </Tabs>
