@@ -3,9 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  BellIcon,
   BookmarkIcon,
-  ChevronDownIcon,
   ClockIcon,
   HandThumbDownIcon,
   HandThumbUpIcon,
@@ -20,14 +18,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useVideoStore } from "@/store/zustand/videoStore";
 import { formatCompact, timeAgo } from "@/lib/utils";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import {
-  useSubscribeMutation,
-  useUnsubscribeMutation,
-} from "@/app/api/subscriptionsApi";
 import { useGetLikeInfoQuery, useToggleLikeMutation } from "@/app/api/likeApi";
 import { useAuth } from "@/contexts/auth-context";
 import VideoMoreMenu from "./video-more-menu";
 import LinkifiedText from "./linkified-text";
+import SubscribeControl from "@/modules/channel/ui/subscribeControl";
 import ShareDialog from "./share-dialog";
 import SaveToPlaylistDialog from "./save-to-playlist-dialog";
 import { useToggleDislikeMutation } from "@/app/api/videoApi";
@@ -58,10 +53,8 @@ function IconAction({ label, onClick, children }: { label: string; onClick: () =
 
 export default function VideoMetadata() {
   const videoDetail = useVideoStore((state) => state.videoDetail);
-  const [isSubscribed, setIsSubscribed] = useState(false);
   // Số người đăng ký đổi ngay khi bấm Đăng ký / Huỷ (server chỉ trả số lúc tải trang)
   const [subscriberDelta, setSubscriberDelta] = useState(0);
-  const [subscribing, setSubscribing] = useState(false);
   const [savedLater, setSavedLater] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -79,14 +72,8 @@ export default function VideoMetadata() {
   const [toggleDislike] = useToggleDislikeMutation();
 
   useEffect(() => {
-    if (videoDetail?.detail?.subscribed !== undefined) {
-      setIsSubscribed(videoDetail.detail.subscribed);
-    }
     setSubscriberDelta(0);
   }, [videoDetail]);
-
-  const [subscribe] = useSubscribeMutation();
-  const [unsubscribe] = useUnsubscribeMutation();
 
   // Video đã nằm trong Xem sau chưa: kiểm lúc mở trang và sau khi đóng hộp thoại Lưu
   const userId = user?.sub;
@@ -201,40 +188,6 @@ export default function VideoMetadata() {
   // Trang kênh tự đổi thanh địa chỉ sang /@handle khi kênh có handle
   const channelHref = channelId ? `/channel/${channelId}` : "#";
 
-  const handleSubscribe = async () => {
-    if (!user?.sub) {
-      toast.error("Hãy đăng nhập để đăng ký kênh");
-      return;
-    }
-    if (subscribing) return;
-    setSubscribing(true);
-    try {
-      if (!isSubscribed) {
-        await subscribe({
-          subscriberId: user.sub,
-          channelId,
-          tierId: undefined,
-        }).unwrap();
-        setIsSubscribed(true);
-        setSubscriberDelta((d) => d + 1);
-        toast.success("Đã đăng ký kênh");
-      } else {
-        await unsubscribe({
-          subscriberId: user.sub,
-          channelId,
-        }).unwrap();
-        setIsSubscribed(false);
-        setSubscriberDelta((d) => d - 1);
-        toast.success("Đã huỷ đăng ký");
-      }
-    } catch (err) {
-      console.error("Failed to update subscription:", err);
-      toast.error("Không cập nhật được đăng ký, vui lòng thử lại");
-    } finally {
-      setSubscribing(false);
-    }
-  };
-
   return (
     <section className="w-full mt-2">
       {/* Title */}
@@ -270,21 +223,13 @@ export default function VideoMetadata() {
               Chỉnh sửa video
             </Link>
           ) : (
-            <button
-              onClick={handleSubscribe}
-              disabled={subscribing}
-              className={`shrink-0 whitespace-nowrap rounded-full flex gap-2 py-2 px-3 cursor-pointer disabled:opacity-70 ${
-                isSubscribed
-                  ? "bg-gray-100 hover:bg-gray-200"
-                  : "bg-black text-white hover:bg-gray-800"
-              } items-center`}
-            >
-              {isSubscribed && <BellIcon className="size-5" />}
-              <p className="text-sm font-bold">
-                {isSubscribed ? "Đã đăng ký" : "Đăng ký"}
-              </p>
-              {isSubscribed && <ChevronDownIcon className="size-4.5" />}
-            </button>
+            <SubscribeControl
+              key={channelId}
+              channelId={channelId}
+              subscribed={videoDetail.detail.subscribed}
+              notificationMode={videoDetail.detail.notificationMode}
+              onChanged={(subscribed) => setSubscriberDelta((d) => d + (subscribed ? 1 : -1))}
+            />
           )}
         </section>
 

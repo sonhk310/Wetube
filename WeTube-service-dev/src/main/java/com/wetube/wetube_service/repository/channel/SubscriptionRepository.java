@@ -36,6 +36,4 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Subs
             @Param("to") LocalDateTime to);
 
     Optional<Subscription> findFirstById_Subscriber_IdAndId_Tier_Channel_Id(UUID userId, UUID channelId);
-
-    boolean existsById_Subscriber_IdAndId_Tier_Channel_Id(UUID userId, UUID channelId);
 }

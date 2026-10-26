@@ -18,7 +18,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { apiErrorMessage } from "@/lib/apiError";
 import { toastEmitter } from "@/lib/toastEmitter";
-import type { ChannelInfo, NotificationMode } from "@/types/channel";
+import type { NotificationMode } from "@/types/channel";
 
 const MODES: { mode: NotificationMode; label: string; Icon: typeof Bell }[] = [
   { mode: "ALL", label: "Tất cả", Icon: BellRing },
@@ -27,18 +27,30 @@ const MODES: { mode: NotificationMode; label: string; Icon: typeof Bell }[] = [
 ];
 
 /**
- * Nút Đăng ký của trang kênh. Đã đăng ký thì thành "Đã đăng ký ▾" kèm chuông: chọn chế độ thông báo
+ * Nút Đăng ký của trang kênh và trang xem. Đã đăng ký thì thành "Đã đăng ký ▾" kèm chuông: chọn chế độ thông báo
  * hoặc huỷ đăng ký (như YouTube). Khách bấm thì mời đăng nhập.
  */
-export default function SubscribeControl({ channel, onChanged }: { channel: ChannelInfo; onChanged: () => void }) {
+export default function SubscribeControl({
+  channelId,
+  subscribed: serverSubscribed,
+  notificationMode,
+  onChanged,
+}: {
+  channelId: string;
+  /** Trạng thái lúc tải trang; bấm xong thì nút tự theo kết quả mới. */
+  subscribed: boolean;
+  notificationMode?: NotificationMode | null;
+  /** Gọi sau khi đăng ký / huỷ thành công (để chỗ dùng cập nhật số người đăng ký). */
+  onChanged?: (subscribed: boolean) => void;
+}) {
   const { user, login } = useAuth();
   const [subscribe, { isLoading: subscribing }] = useSubscribeMutation();
   const [unsubscribe, { isLoading: unsubscribing }] = useUnsubscribeMutation();
   const [setMode] = useSetNotificationModeMutation();
   // Trạng thái sau khi bấm; chưa bấm thì lấy từ server
   const [override, setOverride] = useState<{ subscribed: boolean; mode: NotificationMode | null } | null>(null);
-  const subscribed = override?.subscribed ?? channel.subscribed ?? false;
-  const mode = override ? override.mode : (channel.notificationMode ?? null);
+  const subscribed = override?.subscribed ?? serverSubscribed;
+  const mode = override ? override.mode : (notificationMode ?? null);
 
   const onSubscribe = async () => {
     if (!user?.sub) {
@@ -46,10 +58,11 @@ export default function SubscribeControl({ channel, onChanged }: { channel: Chan
       return;
     }
     try {
-      await subscribe({ subscriberId: user.sub, channelId: channel.id }).unwrap();
+      await subscribe({ subscriberId: user.sub, channelId }).unwrap();
       // Backend đặt chế độ mặc định là "Cá nhân hoá" khi mới đăng ký
       setOverride({ subscribed: true, mode: "PERSONALIZE" });
-      onChanged();
+      toast.success("Đã đăng ký kênh");
+      onChanged?.(true);
     } catch (err) {
       toastEmitter.error(apiErrorMessage(err, "Không đăng ký được kênh, vui lòng thử lại."));
     }
@@ -58,9 +71,10 @@ export default function SubscribeControl({ channel, onChanged }: { channel: Chan
   const onUnsubscribe = async () => {
     if (!user?.sub) return;
     try {
-      await unsubscribe({ subscriberId: user.sub, channelId: channel.id }).unwrap();
+      await unsubscribe({ subscriberId: user.sub, channelId }).unwrap();
       setOverride({ subscribed: false, mode: null });
-      onChanged();
+      toast.success("Đã huỷ đăng ký");
+      onChanged?.(false);
     } catch (err) {
       toastEmitter.error(apiErrorMessage(err, "Không huỷ đăng ký được, vui lòng thử lại."));
     }
@@ -69,7 +83,7 @@ export default function SubscribeControl({ channel, onChanged }: { channel: Chan
   const onPickMode = async (next: NotificationMode) => {
     if (next === mode) return;
     try {
-      await setMode({ channelId: channel.id, mode: next }).unwrap();
+      await setMode({ channelId, mode: next }).unwrap();
       setOverride({ subscribed: true, mode: next });
     } catch (err) {
       toastEmitter.error(apiErrorMessage(err, "Không đổi được chế độ thông báo, vui lòng thử lại."));

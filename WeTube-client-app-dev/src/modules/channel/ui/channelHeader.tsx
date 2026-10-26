@@ -103,7 +103,13 @@ export default function ChannelHeader() {
                 </Link>
               </>
             ) : (
-              <SubscribeControl channel={channel} onChanged={() => void refetch()} />
+              <SubscribeControl
+                key={channel.id}
+                channelId={channel.id}
+                subscribed={channel.subscribed ?? false}
+                notificationMode={channel.notificationMode}
+                onChanged={() => void refetch()}
+              />
             )}
           </div>
         </div>

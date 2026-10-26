@@ -14,6 +14,8 @@ import com.wetube.wetube_service.entity.playlist.Playlist;
 import com.wetube.wetube_service.entity.playlist.PlaylistVideo;
 import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.enumeration.PlaylistType;
+import com.wetube.wetube_service.enumeration.SubscriptionType;
+import com.wetube.wetube_service.entity.channel.Subscription;
 import com.wetube.wetube_service.exception.ResourceNotFoundException;
 import com.wetube.wetube_service.exception.UploadFailedException;
 import com.wetube.wetube_service.repository.PlaylistRepository;
@@ -428,10 +430,11 @@ private static String draftTitle(String fileName) {
 
         Integer totalSubscribers = subscriptionRepository.countById_Tier_Channel_Id(channelId);
 
-        boolean subscribed = false;
-        if (userId != null) {
-            subscribed = subscriptionRepository.existsById_Subscriber_IdAndId_Tier_Channel_Id(userId, channelId);
-        }
+        Subscription subscription = userId == null ? null
+                : subscriptionRepository.findFirstById_Subscriber_IdAndId_Tier_Channel_Id(userId, channelId).orElse(null);
+        // Đăng ký từ trước khi có chế độ thông báo thì coi như "Cá nhân hoá" (mặc định lúc đăng ký)
+        SubscriptionType notificationMode = subscription == null ? null
+                : subscription.getNotificationMode() != null ? subscription.getNotificationMode() : SubscriptionType.PERSONALIZE;
 
         var subtitles = videoSubtitleService.getSubtitlesByVideo(videoId);
 
@@ -449,7 +452,8 @@ private static String draftTitle(String fileName) {
                 .picture(video.getUser().getPicture())
                 .like(likeInfo)
                 .totalSubscribers(totalSubscribers)
-                .subscribed(subscribed)
+                .subscribed(subscription != null)
+                .notificationMode(notificationMode)
                 .channelId(channelId)
                 .comments(comments)
                 .subtitles(subtitles)

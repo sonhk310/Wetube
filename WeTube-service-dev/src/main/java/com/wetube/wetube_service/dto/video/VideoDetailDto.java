@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.wetube.wetube_service.dto.LikeDto;
+import com.wetube.wetube_service.enumeration.SubscriptionType;
 import com.wetube.wetube_service.dto.CommentDto.CommentResponseDto;
 
 import lombok.AllArgsConstructor;
@@ -31,6 +32,8 @@ public class VideoDetailDto {
     private LikeDto like;
     private int totalSubscribers;
     private boolean subscribed;
+    /** Chế độ thông báo của người xem với kênh; null nếu chưa đăng ký. */
+    private SubscriptionType notificationMode;
     private UUID channelId;
     private List<CommentResponseDto> comments;
     private List<VideoSubtitleDto> subtitles;

@@ -1,3 +1,4 @@
+import type { NotificationMode } from "./channel";
 import { VideoSubtitleDto } from "./videoSubtitleDto";
 
 export interface Author {
@@ -90,6 +91,8 @@ export interface VideoDetailDto {
   totalSubscribers: number;
   comments: ApiComment[];
   subscribed: boolean;
+  /** Chế độ thông báo của người xem với kênh; null nếu chưa đăng ký. */
+  notificationMode?: NotificationMode | null;
   channelId: string;
   like?: { likeCount: number; liked: boolean | null; disliked?: boolean | null };
   subtitles: VideoSubtitleDto[]; // ✅ subtitles
