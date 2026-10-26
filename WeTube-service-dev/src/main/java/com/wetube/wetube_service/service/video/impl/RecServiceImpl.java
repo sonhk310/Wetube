@@ -6,6 +6,7 @@ import com.wetube.wetube_service.entity.video.UserTag;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.repository.video.TagRepository;
 import com.wetube.wetube_service.repository.video.UserTagRepository;
+import com.wetube.wetube_service.search.SearchIndexes;
 import com.wetube.wetube_service.search.VideoDocument;
 import com.wetube.wetube_service.service.RedisService;
 import com.wetube.wetube_service.service.video.RecService;
@@ -37,6 +38,8 @@ public class RecServiceImpl implements RecService {
     private final UserTagRepository userTagRepo;
     private final TagRepository tagRepo;
     private final ElasticsearchOperations elasticOps;
+    /** Chỉ mục video đang dùng (videos_v2); không đặt tên chỉ mục thì Spring Data lấy chỉ mục cũ "videos" ghi trên VideoDocument. */
+    private final SearchIndexes indexes;
     private final VideoMapper videoMapper;
     private final RedisService redisService;
 
@@ -107,7 +110,7 @@ public class RecServiceImpl implements RecService {
         CriteriaQuery query = new CriteriaQuery(new Criteria());
         query.setPageable(Pageable.ofSize(this.poolSize));
         query.addSort(Sort.by(Sort.Order.desc("createdAt")));
-        return elasticOps.search(query, VideoDocument.class).getSearchHits().stream()
+        return elasticOps.search(query, VideoDocument.class, indexes.videos()).getSearchHits().stream()
                 .map(hit -> hit.getContent().getId())
                 .toList();
     }
@@ -161,7 +164,7 @@ public class RecServiceImpl implements RecService {
         query.addSort(Sort.by(Sort.Order.desc("_score")));
         query.addSort(Sort.by(Sort.Order.desc("createdAt")));
 
-        return elasticOps.search(query, VideoDocument.class);
+        return elasticOps.search(query, VideoDocument.class, indexes.videos());
     }
 
     private List<VideoDocument> scoreAndSortVideos(List<VideoDocument> docs, List<String> userTags) {
@@ -205,7 +208,7 @@ public class RecServiceImpl implements RecService {
 
         Criteria criteria = new Criteria("id").in(ids);
         CriteriaQuery query = new CriteriaQuery(criteria);
-        SearchHits<VideoDocument> hits = elasticOps.search(query, VideoDocument.class);
+        SearchHits<VideoDocument> hits = elasticOps.search(query, VideoDocument.class, indexes.videos());
 
         Map<String, VideoDocument> docMap = hits.getSearchHits().stream()
                 .map(SearchHit::getContent)
