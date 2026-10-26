@@ -225,3 +225,5 @@ Cần 2 tài khoản đăng nhập (A và B). Sau deploy, mọi kênh cũ đã c
 | 17.9 | B viết bình luận có `@handle` của A (không phải trả lời A) | A thấy chuông "B đã nhắc đến bạn trong một bình luận"; chỉ một thông báo, không trùng | |
 | 17.10 | Viết bình luận có email (`abc@gmail.com`) | Email không bị biến thành link kênh, không ai nhận thông báo | |
 | 17.11 | A và B vào cùng phòng xem chung, nhắn tin | Tên trong chat kèm `@handle`; rê chuột vào ảnh ở "Đang xem" thấy `Tên (@handle)` | |
+| 17.12 | Trong phòng, B gõ `@` ở cuối ô chat | Hiện danh sách người trong phòng có handle (không có B); gõ thêm chữ thì lọc; ↑↓ chọn, Enter hoặc Tab chèn `@handle `, Esc đóng | |
+| 17.13 | B gửi tin có `@handle` của A | Trên máy A, tin đó có nền tím nhạt; trên máy B (người gửi) không tô; `@handle` trong tin màu tím, bấm mở kênh | |

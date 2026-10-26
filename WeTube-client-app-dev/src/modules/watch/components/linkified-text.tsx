@@ -11,6 +11,12 @@ const TOKEN =
 // Dấu câu ở cuối thường không thuộc link ("xem tại https://a.b/c.")
 const URL_TRAILING = /[.,;:!?)\]}'"]+$/;
 
+/** Văn bản có nhắc @handle này không (cùng cách nhận diện với phần hiển thị bên dưới). */
+export function mentionsHandle(text: string, handle: string): boolean {
+  const escaped = handle.replace(/\./g, "\\.");
+  return new RegExp(`(?<![\\p{L}\\p{N}_.@-])@${escaped}(?![\\p{L}\\p{N}_@])`, "iu").test(text);
+}
+
 /** "1:02:03" -> 3723 */
 export function parseTimestamp(text: string): number {
   return text.split(":").reduce((total, part) => total * 60 + Number(part), 0);
