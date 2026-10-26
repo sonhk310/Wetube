@@ -33,6 +33,9 @@ import SaveToPlaylistDialog from "./save-to-playlist-dialog";
 import { useToggleDislikeMutation } from "@/app/api/videoApi";
 import { useControls } from "@/hooks/use-controls";
 import { toast } from "sonner";
+import { Users } from "lucide-react";
+import { useProgressRouter } from "@/hooks/use-progress-router";
+import { createRoom } from "@/modules/rooms/lib/createRoom";
 import { playlistService } from "@/modules/playlists/ui/list/playlist-API";
 
 /** Nút tròn chỉ có icon, rê chuột hiện tên. */
@@ -64,6 +67,8 @@ export default function VideoMetadata() {
   const [saveOpen, setSaveOpen] = useState(false);
   const { seek } = useControls();
   const { user } = useAuth();
+  const router = useProgressRouter();
+  const [creatingRoom, setCreatingRoom] = useState(false);
   const videoId = videoDetail?.detail?.id;
   const { data: likeInfo, refetch: refetchLike } = useGetLikeInfoQuery(
     { targetId: videoId ?? "", targetType: "VIDEO", userId: user?.sub ?? "" },
@@ -159,6 +164,19 @@ export default function VideoMetadata() {
       }
     }
     setShareOpen(true);
+  };
+
+  // Phòng xem chung bắt đầu bằng video này, ở đúng giây đang xem
+  const handleWatchTogether = async () => {
+    if (!user?.sub) {
+      toast.info("Hãy đăng nhập để tạo phòng xem chung");
+      return;
+    }
+    if (creatingRoom) return;
+    setCreatingRoom(true);
+    const code = await createRoom(videoDetail.detail.id, seek);
+    setCreatingRoom(false);
+    if (code) router.push(`/rooms/${code}`);
   };
 
   const handleWatchLater = async () => {
@@ -299,6 +317,9 @@ export default function VideoMetadata() {
           </IconAction>
           <IconAction label="Chia sẻ" onClick={handleShare}>
             <ShareIcon className="size-5" />
+          </IconAction>
+          <IconAction label="Xem chung với bạn bè" onClick={handleWatchTogether}>
+            <Users className="size-5" />
           </IconAction>
           <VideoMoreMenu videoId={videoDetail.detail.id} channelId={channelId} />
             {/*<TranscriptModal videoId={videoDetail.detail.id} />*/}

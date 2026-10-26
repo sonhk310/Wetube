@@ -34,6 +34,8 @@ interface SettingsMenuProps {
   onSubtitle: (index: number) => void;
   /** Chiều cao tối đa của bảng (để không tràn khỏi khung video). */
   maxHeight: number;
+  /** Trong phòng xem chung: không có Lặp lại và Tốc độ phát (làm lệch với người khác). */
+  inRoom?: boolean;
 }
 
 type Page = "main" | "rate" | "subtitles";
@@ -46,6 +48,7 @@ export default function SettingsMenu({
   onLoop,
   rate,
   onRate,
+  inRoom = false,
   subtitles,
   subtitleIndex,
   onSubtitle,
@@ -80,6 +83,7 @@ export default function SettingsMenu({
         >
           {page === "main" && (
             <>
+              {!inRoom && (
               <button type="button" role="menuitemcheckbox" aria-checked={loop} className={row} onClick={onLoop}>
                 <Repeat size={20} />
                 <span className="flex-1">Lặp lại</span>
@@ -97,12 +101,15 @@ export default function SettingsMenu({
                   />
                 </span>
               </button>
+              )}
+              {!inRoom && (
               <button type="button" role="menuitem" className={row} onClick={() => setPage("rate")}>
                 <Gauge size={20} />
                 <span className="flex-1">Tốc độ phát</span>
                 <span className="text-white/70">{rateLabel(rate)}</span>
                 <ChevronRight size={18} />
               </button>
+              )}
               {subtitles.length > 0 && (
                 <button type="button" role="menuitem" className={row} onClick={() => setPage("subtitles")}>
                   <Subtitles size={20} />

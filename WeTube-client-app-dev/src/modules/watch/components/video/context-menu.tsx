@@ -11,6 +11,8 @@ interface PlayerContextMenuProps {
   x: number;
   y: number;
   loop: boolean;
+  /** Phòng xem chung: không có Lặp lại. */
+  hideLoop?: boolean;
   /** "1:23" hiện cạnh "Sao chép URL video tại thời điểm hiện tại". */
   timeLabel: string;
   onToggleLoop: () => void;
@@ -25,6 +27,7 @@ export default function PlayerContextMenu({
   x,
   y,
   loop,
+  hideLoop = false,
   timeLabel,
   onToggleLoop,
   onCopyUrl,
@@ -70,11 +73,13 @@ export default function PlayerContextMenu({
       className="absolute z-40 rounded-xl bg-neutral-900/80 py-2 text-sm text-white shadow-lg ring-1 ring-white/15 backdrop-blur-xl"
       onContextMenu={(e) => e.preventDefault()}
     >
-      <button type="button" role="menuitemcheckbox" aria-checked={loop} className={row} onClick={choose(onToggleLoop)}>
-        <Repeat size={18} />
-        <span className="flex-1">Lặp lại</span>
-        {loop && <Check size={18} />}
-      </button>
+      {!hideLoop && (
+        <button type="button" role="menuitemcheckbox" aria-checked={loop} className={row} onClick={choose(onToggleLoop)}>
+          <Repeat size={18} />
+          <span className="flex-1">Lặp lại</span>
+          {loop && <Check size={18} />}
+        </button>
+      )}
       <button type="button" role="menuitem" className={row} onClick={choose(onCopyUrl)}>
         <Link2 size={18} />
         <span className="flex-1">Sao chép URL video</span>

@@ -68,6 +68,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         );
         console.log("❤ PLaylist Data:", historyPlaylist?.playlistId);
         setUser(user);
+        // Vừa đăng nhập từ liên kết mời phòng xem chung: quay lại đúng phòng
+        try {
+          const back = window.sessionStorage.getItem("wetube_after_login");
+          if (back) {
+            window.sessionStorage.removeItem("wetube_after_login");
+            if (back.startsWith("/rooms/") && window.location.pathname !== back) window.location.replace(back);
+          }
+        } catch {
+          // sessionStorage bị chặn: ở lại trang hiện tại
+        }
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
           console.log("User is not authenticated (handled gracefully).");

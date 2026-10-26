@@ -173,6 +173,33 @@ Ghi kết quả vào cột cuối. Nếu có lỗi, ghi lại màn hình + giờ
 | 15.4 | Mở kênh của A (B đã đăng ký ở 3.4), tải lại trang | Nút vẫn là "Đã đăng ký" | |
 | 15.5 | Bấm "Đã đăng ký" | Huỷ đăng ký, nút về "Đăng ký", số người đăng ký giảm | |
 
+## 16. Phòng xem chung (W1)
+
+Cần 2 tài khoản đăng nhập ở 2 cửa sổ (A = chủ phòng, B = khách). Dùng 2 trình duyệt hoặc 1 cửa sổ ẩn danh.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 16.1 | A mở một video, tua tới khoảng 1:00, bấm nút "Xem chung với bạn bè" (cạnh Chia sẻ) | Chuyển sang `/rooms/abc-defg-hij`, video phát tiếp từ khoảng 1:00, hiện hộp thoại "Mời bạn bè" có link | |
+| 16.2 | A bấm "Sao chép", B (đã đăng nhập) mở link | B vào phòng, thấy video ở cùng giây với A (lệch dưới khoảng 0,5 giây), cả hai thấy tên + ảnh nhau trong "Đang xem", A có vương miện | |
+| 16.3 | B bấm Dừng | Video của A cũng dừng ngay; chat có dòng "B đã dừng video" | |
+| 16.4 | A bấm Phát, rồi tua tới 3:00 | B phát theo, rồi nhảy tới 3:00; chat có dòng "A đã tua tới 3:00" | |
+| 16.5 | A và B cùng bấm Dừng / Phát gần như cùng lúc | Cả hai máy kết thúc ở cùng một trạng thái, không bị giật qua lại | |
+| 16.6 | Nhắn tin ở hai bên; gõ "2:30" trong tin rồi bấm vào mốc đó | Tin hiện ở cả hai bên; bấm mốc thời gian thì cả phòng tua tới 2:30 | |
+| 16.7 | B bấm một biểu tượng cảm xúc | Biểu tượng bay lên trên trình phát của cả A và B, kèm tên B | |
+| 16.8 | Ở "Hàng chờ", tìm một video khác rồi bấm để thêm; bấm "Phát ngay" ở video đó | Cả hai thấy hàng chờ đổi; "Phát ngay" thì cả phòng chuyển sang video mới từ giây 0 | |
+| 16.9 | Thêm một video vào hàng chờ rồi để video hiện tại chạy tới hết | Cả hai tự sang video trong hàng chờ, chỉ nhảy **một** video (không bỏ qua video thứ hai) | |
+| 16.10 | B bấm F5 (tải lại trang) | B vào lại phòng trong vài giây, chat không có dòng "B đã rời phòng" rồi "B đã vào phòng" | |
+| 16.11 | B mở thêm tab thứ hai cùng phòng rồi đóng tab đó | B vẫn trong phòng, danh sách chỉ có 1 B | |
+| 16.12 | B bấm "Rời phòng" | Về trang xem video; A thấy dòng "B đã rời phòng" ngay, danh sách chỉ còn A | |
+| 16.13 | B vào lại; A bấm vào ảnh B → "Mời B ra khỏi phòng" | B thấy "Bạn đã bị mời ra khỏi phòng"; B mở lại link thì báo không vào được | |
+| 16.14 | Khi B ở trong phòng, A bấm "Rời phòng" | B trở thành chủ phòng (có vương miện và nút "Đóng phòng") | |
+| 16.15 | Chủ phòng bấm "Đóng phòng" | Mọi người thấy "Chủ phòng đã đóng phòng"; mở lại link báo phòng không tồn tại | |
+| 16.16 | Đăng xuất rồi mở link mời | Hiện "Đăng nhập để vào phòng xem chung"; đăng nhập xong quay lại đúng phòng | |
+| 16.17 | Mở `/rooms/xxx-yyyy-zzz` (mã không có) | "Phòng không tồn tại hoặc đã đóng" | |
+| 16.18 | Mở `/rooms`: tạo phòng trống; dán link / mã vào "Vào phòng" | Tạo được phòng trống; thêm video đầu tiên thì phát luôn; dán mã sai thì báo lỗi | |
+| 16.19 | Trong phòng, mở menu cài đặt của trình phát và bấm chuột phải lên video | Không có "Lặp lại" và "Tốc độ phát"; không có công tắc Tự phát | |
+| 16.20 | Backend deploy lại khi cả hai đang trong phòng | Sau vài giây cả hai tự kết nối lại, vẫn đúng video và đúng giây, chat cũ còn | |
+
 ## Lỗi đã biết, chưa sửa
 
 - Chưa có: thông báo (chuông), nút "Cảm ơn", giao diện tối, chất lượng video / tự phát tiếp, trang Đăng ký dạng bảng tin video mới, thống kê trong Studio.

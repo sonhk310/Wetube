@@ -1,5 +1,5 @@
-"use client";
-import WatchRoomPageClient from "@/modules/rooms/watchRoomPageClient";
+import RoomsHub from "@/modules/rooms/ui/rooms-hub";
+
 export default function RoomsPage() {
-  return <WatchRoomPageClient />;
+  return <RoomsHub />;
 }

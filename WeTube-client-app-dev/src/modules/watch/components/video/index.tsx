@@ -27,6 +27,7 @@ import { saveAnonWatchTime, useViewCounter } from "@/lib/viewTracking";
 import { saveWatchProgress, useWatchProgressStore } from "@/lib/watchProgress";
 import { SEEK_EVENT } from "@/lib/watchSeek";
 import { useAuth } from "@/contexts/auth-context";
+import { useRoomPlayback } from "@/modules/rooms/lib/useRoomPlayback";
 import { useVideoStore } from "@/store/zustand/videoStore";
 import ProgressBar from "./progress-bar";
 import SettingsMenu, { PLAYBACK_RATES } from "./settings-menu";
@@ -134,7 +135,11 @@ const FLASH_ICONS: Record<FlashIcon, ReactNode> = {
 };
 
 /** Trình phát video trên trang xem, điều khiển giống YouTube. Dùng thẻ <video> của trình duyệt. */
-export default function ActiveVideo({ videoId }: { videoId: string }) {
+/**
+ * roomMode: trình phát của phòng xem chung. Trạng thái phát do phòng quyết định (modules/rooms/lib/useRoomPlayback),
+ * nên không tự phát, không nhớ vị trí xem, không lặp lại / đổi tốc độ, không có màn hình hết video.
+ */
+export default function ActiveVideo({ videoId, roomMode = false }: { videoId: string; roomMode?: boolean }) {
   const response = useVideoStore((s) => s.videoDetail);
   // Khi chuyển video, store còn giữ video cũ một lúc: chỉ phát khi đúng video của trang
   const video = response?.detail.id === videoId ? response.detail : undefined;
@@ -267,6 +272,8 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     if (p.userId) saveWatchProgress(p.videoId, t, final);
     else saveAnonWatchTime(p.videoId, t);
   }, []);
+
+  useRoomPlayback(videoRef, roomMode, video?.videoUrl);
 
   const track = subtitleIndex >= 0 ? subtitles[subtitleIndex] : undefined;
   const cues = useSubtitles(track?.subtitleUrl);
@@ -501,6 +508,8 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     const saved = readSavedVolume();
     v.volume = saved.volume;
     v.muted = saved.muted;
+    // Trong phòng: vị trí và phát / dừng do phòng quyết định
+    if (roomMode) return;
 
     // Liên kết chia sẻ dạng /watch/<id>?t=<giây>; không có thì phát tiếp từ chỗ đã dừng lần trước
     const t = Number(new URLSearchParams(window.location.search).get("t"));
@@ -655,10 +664,10 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
           seekTo(v.duration);
           break;
         case ">":
-          stepRate(1);
+          if (!roomMode) stepRate(1);
           break;
         case "<":
-          stepRate(-1);
+          if (!roomMode) stepRate(-1);
           break;
         default:
           if (/^[1-9]$/.test(e.key) && Number.isFinite(v.duration)) {
@@ -671,7 +680,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [togglePlay, seekBy, seekTo, changeVolume, toggleMute, toggleFullscreen, toggleCaptions, toggleTheater, stepRate, poke, openVideo]);
+  }, [togglePlay, seekBy, seekTo, changeVolume, toggleMute, toggleFullscreen, toggleCaptions, toggleTheater, stepRate, poke, openVideo, roomMode]);
 
   // Chạm (điện thoại): lần chạm đầu chỉ hiện điều khiển; chuột: bấm là phát/dừng
   const handleSurfacePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -744,7 +753,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
         }}
         onEnded={() => {
           setPlaying(false);
-          setEnded(true);
+          setEnded(!roomMode);
           reportProgress(true);
         }}
         onWaiting={() => setWaiting(true)}
@@ -933,6 +942,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
 
           <div className="flex-1" />
 
+          {!roomMode && (
           <button
             type="button"
             role="switch"
@@ -958,6 +968,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
               </span>
             </span>
           </button>
+          )}
 
           {subtitles.length > 0 && (
             <IconButton label={subtitleIndex >= 0 ? "Tắt phụ đề (c)" : "Bật phụ đề (c)"} onClick={toggleCaptions}>
@@ -982,6 +993,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
             subtitleIndex={subtitleIndex}
             onSubtitle={chooseSubtitle}
             maxHeight={settingsMaxHeight}
+            inRoom={roomMode}
           />
 
           {pipSupported && (
@@ -1011,6 +1023,7 @@ export default function ActiveVideo({ videoId }: { videoId: string }) {
           x={menuPos.x}
           y={menuPos.y}
           loop={loop}
+          hideLoop={roomMode}
           timeLabel={formatTime(currentTime)}
           onToggleLoop={() => setLoop((prev) => !prev)}
           onCopyUrl={() => void copyVideoUrl(false)}
