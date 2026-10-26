@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.wetube.wetube_service.entity.AppUser;
 import com.wetube.wetube_service.entity.notification.Notification;
 import com.wetube.wetube_service.entity.video.Video;
+import com.wetube.wetube_service.enumeration.SubscriptionType;
 import com.wetube.wetube_service.repository.NotificationRepository;
 import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
@@ -42,12 +43,15 @@ public class NotificationServiceImpl implements NotificationService {
     // REQUIRES_NEW: lỗi khi ghi thông báo không làm hỏng việc upload / bình luận đang chạy
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void notifyNewVideo(UUID videoId, UUID ownerId, UUID channelId) {
+    public void notifyNewVideo(UUID videoId, UUID ownerId, UUID channelId, boolean isShort) {
         if (channelId == null || notificationRepo.existsByTypeAndVideoId(Notification.Type.NEW_VIDEO, videoId)) {
             return;
         }
         LocalDateTime now = LocalDateTime.now();
-        List<Notification> items = subscriptionRepo.findNotifiableSubscriberIds(channelId).stream()
+        List<SubscriptionType> modes = isShort
+                ? List.of(SubscriptionType.ALL)
+                : List.of(SubscriptionType.ALL, SubscriptionType.PERSONALIZE);
+        List<Notification> items = subscriptionRepo.findNotifiableSubscriberIds(channelId, modes).stream()
                 .filter(id -> !id.equals(ownerId))
                 .map(id -> Notification.builder()
                         .recipientId(id)

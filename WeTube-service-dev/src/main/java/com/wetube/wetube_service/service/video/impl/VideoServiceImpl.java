@@ -672,7 +672,7 @@ private static String draftTitle(String fileName) {
         try {
             var channel = video.getUser().getChannel();
             notificationService.notifyNewVideo(video.getId(), video.getUser().getId(),
-                    channel != null ? channel.getId() : null);
+                    channel != null ? channel.getId() : null, video.isShort());
         } catch (Exception e) {
             log.warn("Không gửi được thông báo video mới {}: {}", video.getId(), e.getMessage());
         }

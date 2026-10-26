@@ -25,8 +25,11 @@ public interface NotificationService {
     record NotificationPage(List<NotificationView> items, boolean hasMore, long unread) {
     }
 
-    /** Video vừa công khai lần đầu: báo cho người đăng ký kênh còn bật thông báo. */
-    void notifyNewVideo(UUID videoId, UUID ownerId, UUID channelId);
+    /**
+     * Video vừa công khai lần đầu: báo cho người đăng ký kênh theo chế độ chuông của họ. Tất cả = mọi video kể cả
+     * Shorts; Cá nhân hoá = chỉ video thường; Không có thông báo = không báo.
+     */
+    void notifyNewVideo(UUID videoId, UUID ownerId, UUID channelId, boolean isShort);
 
     /** Trả lời bình luận / bình luận video. Bỏ qua khi người nhận chính là người bình luận. */
     void notifyComment(Notification.Type type, UUID recipientId, UUID actorId, UUID videoId, UUID commentId, String text);

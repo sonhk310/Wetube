@@ -2,6 +2,7 @@ package com.wetube.wetube_service.service.video;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -84,7 +85,7 @@ class VideoDraftTest {
         assertThat(saved.isShort()).isTrue();
         assertThat(saved.getVideoUrl()).isEqualTo("https://x/v.mp4");
         verify(videoIndexer, never()).index(any());
-        verify(notificationService, never()).notifyNewVideo(any(), any(), any());
+        verify(notificationService, never()).notifyNewVideo(any(), any(), any(), anyBoolean());
     }
 
     @Test
