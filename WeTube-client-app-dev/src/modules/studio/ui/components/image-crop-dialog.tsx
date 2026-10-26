@@ -102,7 +102,7 @@ export default function ImageCropDialog({
             {kind === "banner" && " Trên điện thoại ảnh bìa hẹp hơn nên chỉ hiện phần giữa của vùng này."}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex max-h-[60vh] justify-center overflow-auto rounded-lg bg-gray-100">
+        <div className="flex justify-center rounded-lg bg-gray-100">
           {url && (
             <ReactCrop
               crop={crop}
@@ -111,6 +111,9 @@ export default function ImageCropDialog({
               circularCrop={kind === "avatar"}
               keepSelection
               minWidth={32}
+              // Giới hạn chiều cao ở đây: CSS của thư viện cho ảnh `max-height: inherit` nên ảnh co theo khung này
+              // (đặt giới hạn trên chính thẻ img hoặc bọc thêm khung cuộn thì khung cắt lệch khỏi ảnh và hiện thanh cuộn)
+              style={{ maxHeight: "min(60vh, 480px)" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- ảnh xem tạm từ blob, không qua tối ưu của Next */}
               <img
@@ -118,7 +121,7 @@ export default function ImageCropDialog({
                 src={url}
                 alt="Ảnh đang cắt"
                 onLoad={onImageLoad}
-                className="max-h-[60vh] max-w-full select-none"
+                className="select-none"
               />
             </ReactCrop>
           )}
