@@ -237,7 +237,7 @@ Cần 2 tài khoản: A (chủ kênh, có vài video thường và vài Shorts) 
 | 18.1 | B mở kênh của A | Ảnh bìa rộng (nền xám nếu chưa có), avatar lớn, tên lớn, dòng `@handle • N người đăng ký • N video`, mô tả một dòng, nút Đăng ký | |
 | 18.2 | Bấm "...xem thêm" (hoặc "Tìm hiểu thêm về kênh này" nếu chưa có mô tả) | Hộp thoại Giới thiệu: mô tả đầy đủ, link `/@handle`, "Đã tham gia ngày ...", quốc gia (nếu có), số lượt xem | |
 | 18.3 | B bấm Đăng ký | Nút đổi thành "Đã đăng ký ▾" có chuông; mở menu thấy Tất cả / Cá nhân hoá (có dấu ✓) / Không có thông báo / Huỷ đăng ký | |
-| 18.4 | B chọn "Không có thông báo", tải lại trang | Biểu tượng chuông gạch chéo, menu vẫn tích "Không có thông báo". A đăng một video mới: B **không** nhận thông báo; đổi lại "Tất cả" rồi A đăng tiếp thì B nhận | |
+| 18.4 | B chọn "Không có thông báo", tải lại trang | Biểu tượng chuông gạch chéo, menu vẫn tích "Không có thông báo". A đăng một video thường mới: B **không** nhận thông báo | |
 | 18.5 | B chọn "Huỷ đăng ký" | Nút trở lại "Đăng ký", số người đăng ký giảm | |
 | 18.6 | Khách (chưa đăng nhập) bấm Đăng ký | Hiện thông báo mời đăng nhập có nút "Đăng nhập" | |
 | 18.7 | A mở kênh của mình | Thay nút Đăng ký bằng "Tuỳ chỉnh kênh" (sang Studio → Tuỳ chỉnh) và "Quản lý video" (sang Studio → Nội dung) | |
@@ -246,3 +246,5 @@ Cần 2 tài khoản: A (chủ kênh, có vài video thường và vài Shorts) 
 | 18.10 | Thẻ Video: bấm chip Phổ biến / Cũ nhất | Thứ tự đổi theo lượt xem / ngày; không có Shorts lẫn trong đó; kênh nhiều video thì có nút "Tải thêm" | |
 | 18.11 | Thẻ Shorts | Chỉ có Shorts, thẻ dọc 9:16; bấm một thẻ mở trình phát Shorts | |
 | 18.12 | Thu nhỏ cửa sổ cỡ điện thoại | Ảnh bìa thấp hơn, avatar nhỏ, tên và nút căn giữa, thanh thẻ cuộn ngang được, không tràn ngang trang | |
+| 18.13 | B chọn "Cá nhân hoá", A đăng một video thường rồi một Short | B nhận thông báo video thường, **không** nhận thông báo Short. Đổi B sang "Tất cả" rồi A đăng thêm một Short: B nhận | |
+| 18.14 | B mở một video của kênh A ở trang xem, bấm "Đã đăng ký" | Mở menu chuông giống trang kênh (không còn huỷ đăng ký ngay); chọn chế độ ở đây thì mở lại trang kênh thấy đúng chế độ đó; "Huỷ đăng ký" thì số người đăng ký giảm ngay | |
