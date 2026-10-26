@@ -265,3 +265,14 @@ Dùng tài khoản chủ kênh (A), thêm tài khoản B để xem. Ảnh thử:
 | 19.8 | Xoá trống ô tên; gõ tên dài quá 50 ký tự | Nút Lưu bị khoá khi trống; ô nhập không cho gõ quá 50 ký tự | |
 | 19.9 | Đăng xuất rồi đăng nhập lại bằng Google | Tên và ảnh vẫn là bản đã đặt ở Studio, **không** quay về tên / ảnh Google | |
 | 19.10 | A vào một phòng xem chung mới (hoặc phòng đang có A thì thoát vào lại), nhắn tin | Danh sách người xem và chat hiện tên và ảnh mới | |
+
+### 19b. Cắt ảnh và xoá ảnh cũ (thêm sau 19)
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 19.11 | Bấm "Đổi ảnh đại diện", chọn một ảnh chữ nhật lớn (kể cả ảnh chụp điện thoại trên 6 MB) | Hiện hộp thoại "Cắt ảnh đại diện" với khung tròn; kéo ảnh và kéo thanh Thu phóng thì vùng đổi theo | |
+| 19.12 | Chọn vùng khác với giữa ảnh (vd. một góc), bấm "Cắt và tải lên" | Ảnh đại diện mới đúng vùng đã chọn, ảnh ở thanh trên cùng đổi ngay | |
+| 19.13 | Bấm "Huỷ" ở hộp thoại cắt | Đóng hộp thoại, ảnh không đổi, không có gì được tải lên | |
+| 19.14 | "Tải ảnh bìa lên", chọn ảnh ngang, chọn vùng, tải lên | Khung cắt hình chữ nhật dài (6:1); trang kênh trên máy tính hiện đúng vùng đã chọn; thu nhỏ cửa sổ về cỡ điện thoại thì chỉ hiện phần giữa | |
+| 19.15 | Chọn ảnh PNG trong suốt làm ảnh đại diện | Phần trong suốt thành nền trắng, không bị đen | |
+| 19.16 | Đổi ảnh đại diện (hoặc ảnh bìa) lần thứ hai, rồi xem thư mục `channels/` trên Cloudinary | Ảnh của lần đổi trước đã biến mất, chỉ còn ảnh đang dùng (lưu ý ảnh tải lên trước khi có bản này vẫn còn) | |

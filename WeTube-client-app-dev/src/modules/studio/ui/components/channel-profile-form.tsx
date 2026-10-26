@@ -15,14 +15,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
 import { apiErrorMessage } from "@/lib/apiError";
 import { toastEmitter } from "@/lib/toastEmitter";
+import ImageCropDialog, { CropKind } from "./image-crop-dialog";
 
 const NAME_MAX = 50;
 const DESCRIPTION_MAX = 1000;
-// Khớp giới hạn của backend (ChannelServiceImpl); kiểm trước để khỏi tải ảnh to lên rồi mới bị từ chối
-const AVATAR_MAX_MB = 4;
-const BANNER_MAX_MB = 6;
+// Ảnh gốc được cắt và thu nhỏ ngay trong trình duyệt nên cho chọn ảnh khá lớn (ảnh chụp từ điện thoại)
+const SOURCE_MAX_MB = 25;
 
-type ImageKind = "avatar" | "banner";
+type ImageKind = CropKind;
 
 /** Khung "Thông tin cơ bản" ở Studio → Tuỳ chỉnh: ảnh bìa, ảnh đại diện, tên và mô tả kênh. */
 export function ChannelProfileForm() {
@@ -32,6 +32,8 @@ export function ChannelProfileForm() {
   const [updateChannel, { isLoading: isSaving }] = useUpdateChannelMutation();
   const [uploadImage] = useUploadChannelImageMutation();
   const [uploading, setUploading] = useState<ImageKind | null>(null);
+  // Ảnh vừa chọn, đang chờ chủ kênh chọn vùng cắt
+  const [cropping, setCropping] = useState<{ file: File; kind: ImageKind } | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const avatarInput = useRef<HTMLInputElement>(null);
@@ -58,17 +60,22 @@ export function ChannelProfileForm() {
     }
   };
 
-  const onPickImage = async (kind: ImageKind, file: File | undefined) => {
+  const onPickImage = (kind: ImageKind, file: File | undefined) => {
     if (!file) return;
-    const maxMb = kind === "avatar" ? AVATAR_MAX_MB : BANNER_MAX_MB;
     if (!file.type.startsWith("image/")) {
       toastEmitter.error("Tệp phải là ảnh.");
       return;
     }
-    if (file.size > maxMb * 1024 * 1024) {
-      toastEmitter.error(`Ảnh quá lớn (tối đa ${maxMb} MB).`);
+    if (file.size > SOURCE_MAX_MB * 1024 * 1024) {
+      toastEmitter.error(`Ảnh quá lớn (tối đa ${SOURCE_MAX_MB} MB).`);
       return;
     }
+    setCropping({ file, kind });
+  };
+
+  /** Chủ kênh đã chọn vùng cắt: tải ảnh đã cắt lên rồi gắn vào kênh. */
+  const onCropped = async (kind: ImageKind, file: File) => {
+    setCropping(null);
     setUploading(kind);
     try {
       const { url } = await uploadImage({ file, kind }).unwrap();
@@ -93,7 +100,7 @@ export function ChannelProfileForm() {
       <div className="space-y-2">
         <Label>Ảnh bìa</Label>
         <p className="text-sm text-muted-foreground">
-          Nên dùng ảnh ngang, kích thước 2048 × 1152 px trở lên, tối đa {BANNER_MAX_MB} MB. Trên trang kênh ảnh được cắt theo chiều ngang.
+          Nên dùng ảnh ngang, từ 2048 px bề ngang trở lên. Sau khi chọn ảnh, anh chọn vùng muốn giữ (khung ngang 6:1).
         </p>
         <div className="relative aspect-[16/5] w-full max-w-2xl overflow-hidden rounded-xl bg-gradient-to-r from-gray-200 via-gray-100 to-gray-300 md:aspect-[6/1]">
           {channel.backgroundImgUrl && (
@@ -121,7 +128,7 @@ export function ChannelProfileForm() {
           accept="image/*"
           className="hidden"
           onChange={(e) => {
-            void onPickImage("banner", e.target.files?.[0]);
+            onPickImage("banner", e.target.files?.[0]);
             e.target.value = "";
           }}
         />
@@ -130,7 +137,7 @@ export function ChannelProfileForm() {
       <div className="space-y-2">
         <Label>Ảnh đại diện</Label>
         <p className="text-sm text-muted-foreground">
-          Nên dùng ảnh vuông, tối thiểu 98 × 98 px, tối đa {AVATAR_MAX_MB} MB. Ảnh này hiện cả ở bình luận và trong các phòng xem chung.
+          Sau khi chọn ảnh, anh chọn vùng muốn giữ (khung tròn). Ảnh này hiện cả ở bình luận và trong các phòng xem chung.
         </p>
         <div className="flex items-center gap-4">
           <Image
@@ -150,7 +157,7 @@ export function ChannelProfileForm() {
           accept="image/*"
           className="hidden"
           onChange={(e) => {
-            void onPickImage("avatar", e.target.files?.[0]);
+            onPickImage("avatar", e.target.files?.[0]);
             e.target.value = "";
           }}
         />
@@ -177,6 +184,13 @@ export function ChannelProfileForm() {
           {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
         </Button>
       </div>
+
+      <ImageCropDialog
+        file={cropping?.file ?? null}
+        kind={cropping?.kind ?? "avatar"}
+        onCancel={() => setCropping(null)}
+        onConfirm={(cropped) => cropping && void onCropped(cropping.kind, cropped)}
+      />
     </div>
   );
 }

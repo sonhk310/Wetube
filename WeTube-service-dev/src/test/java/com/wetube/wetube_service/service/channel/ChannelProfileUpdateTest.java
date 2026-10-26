@@ -46,6 +46,8 @@ import com.wetube.wetube_service.service.channel.impl.ChannelServiceImpl;
 class ChannelProfileUpdateTest {
 
     private static final String OK_IMAGE = "https://res.cloudinary.com/demo/image/upload/v1/channels/a.jpg";
+    private static final String NEW_IMAGE = "https://res.cloudinary.com/demo/image/upload/v2/channels/b.jpg";
+    private static final String GOOGLE_IMAGE = "https://lh3.googleusercontent.com/old";
 
     @Mock UserRepository userRepository;
     @Mock ChannelRepository channelRepository;
@@ -124,6 +126,9 @@ class ChannelProfileUpdateTest {
         assertBadRequest(new ChannelUpdateRequest("x".repeat(51), null, null, null));
         assertBadRequest(new ChannelUpdateRequest(null, "x".repeat(1001), null, null));
         assertBadRequest(new ChannelUpdateRequest(null, null, "https://evil.example/a.png", null));
+        // Ảnh thu nhỏ video (ngoài thư mục channels/) không được làm ảnh kênh
+        assertBadRequest(new ChannelUpdateRequest(null, null, "https://res.cloudinary.com/demo/image/upload/v1/thumb.webp", null));
+        assertBadRequest(new ChannelUpdateRequest(null, null, null, "https://res.cloudinary.com/demo/video/upload/v1/channels/a.mp4"));
         assertBadRequest(new ChannelUpdateRequest(null, null, "", null));
         assertBadRequest(new ChannelUpdateRequest(null, null, null, "http://res.cloudinary.com/insecure.png"));
     }
@@ -134,6 +139,52 @@ class ChannelProfileUpdateTest {
 
         assertThat(channel.getName()).hasSize(50);
         assertThat(channel.getDescription()).hasSize(1000);
+    }
+
+    @Test
+    void replacingTheBannerDeletesTheOldOneFromCloudinary() {
+        service.updateChannel(userId, new ChannelUpdateRequest(null, null, null, NEW_IMAGE));
+
+        verify(cloudinaryService).deleteImage(OK_IMAGE);
+    }
+
+    @Test
+    void removingTheBannerDeletesItFromCloudinaryToo() {
+        service.updateChannel(userId, new ChannelUpdateRequest(null, null, null, ""));
+
+        verify(cloudinaryService).deleteImage(OK_IMAGE);
+    }
+
+    @Test
+    void googleAvatarIsNeverDeletedWhenReplaced() {
+        service.updateChannel(userId, new ChannelUpdateRequest(null, null, NEW_IMAGE, null));
+
+        assertThat(channel.getPicture()).isEqualTo(NEW_IMAGE);
+        verify(cloudinaryService, never()).deleteImage(GOOGLE_IMAGE);
+        verify(cloudinaryService, never()).deleteImage(any());
+    }
+
+    @Test
+    void oldImageStillUsedByAnotherChannelIsKept() {
+        when(channelRepository.existsByPictureOrBackgroundImgUrl(OK_IMAGE, OK_IMAGE)).thenReturn(true);
+
+        service.updateChannel(userId, new ChannelUpdateRequest(null, null, null, NEW_IMAGE));
+
+        verify(cloudinaryService, never()).deleteImage(any());
+    }
+
+    @Test
+    void sameImageSentAgainDeletesNothing() {
+        service.updateChannel(userId, new ChannelUpdateRequest(null, null, null, OK_IMAGE));
+
+        verify(cloudinaryService, never()).deleteImage(any());
+    }
+
+    @Test
+    void failedValidationDeletesNothing() {
+        assertBadRequest(new ChannelUpdateRequest("x".repeat(51), null, null, NEW_IMAGE));
+
+        verify(cloudinaryService, never()).deleteImage(any());
     }
 
     @Test

@@ -32,6 +32,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -55,8 +57,6 @@ public class ChannelServiceImpl implements ChannelService {
     private static final int DESCRIPTION_MAX = 1000;
     private static final long AVATAR_MAX_BYTES = 4L * 1024 * 1024;
     private static final long BANNER_MAX_BYTES = 6L * 1024 * 1024;
-    /** Ảnh kênh chỉ được là ảnh đã tải lên Cloudinary (qua uploadChannelImage), không nhận link tuỳ ý. */
-    private static final String IMAGE_URL_PREFIX = "https://res.cloudinary.com/";
     /** Số video của kênh được đẩy lại vào chỉ mục tìm kiếm khi đổi tên / ảnh. */
     private static final int REINDEX_VIDEOS_MAX = 200;
 
@@ -193,6 +193,8 @@ public class ChannelServiceImpl implements ChannelService {
             }
             channel.setDescription(description.isEmpty() ? null : description);
         }
+        String oldPicture = channel.getPicture();
+        String oldBanner = channel.getBackgroundImgUrl();
         if (request.picture() != null) {
             requireUploadedImage(request.picture(), "Ảnh đại diện không hợp lệ");
             channel.setPicture(request.picture());
@@ -210,6 +212,8 @@ public class ChannelServiceImpl implements ChannelService {
 
         channelRepository.save(channel);
         userRepository.save(user);
+        deleteReplacedImage(oldPicture, channel.getPicture());
+        deleteReplacedImage(oldBanner, channel.getBackgroundImgUrl());
         if (displayChanged) {
             // Chỉ mục tìm kiếm giữ tên / ảnh của kênh trên từng video: đẩy lại để kết quả tìm kiếm khớp
             channelIndexer.index(channel);
@@ -238,9 +242,32 @@ public class ChannelServiceImpl implements ChannelService {
         return cloudinaryService.uploadChannelImage(file, banner);
     }
 
+    /** Ảnh kênh chỉ được là ảnh đã tải lên qua {@link #uploadChannelImage}, không nhận link tuỳ ý. */
     private static void requireUploadedImage(String url, String message) {
-        if (!url.startsWith(IMAGE_URL_PREFIX)) {
+        if (!CloudinaryService.isChannelImage(url)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
+    }
+
+    /**
+     * Ảnh cũ đã bị thay / xoá thì xoá luôn trên Cloudinary cho khỏi tốn dung lượng. Chỉ xoá ảnh kênh trong thư mục
+     * channels/ (ảnh Google và ảnh thu nhỏ video thì bỏ qua) và chỉ khi không kênh nào khác còn dùng link đó.
+     * Làm sau khi giao dịch lưu thành công để lỗi lưu không làm mất ảnh đang dùng.
+     */
+    private void deleteReplacedImage(String oldUrl, String newUrl) {
+        if (oldUrl == null || oldUrl.equals(newUrl) || !CloudinaryService.isChannelImage(oldUrl)
+                || channelRepository.existsByPictureOrBackgroundImgUrl(oldUrl, oldUrl)) {
+            return;
+        }
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    cloudinaryService.deleteImage(oldUrl);
+                }
+            });
+        } else {
+            cloudinaryService.deleteImage(oldUrl);
         }
     }
 

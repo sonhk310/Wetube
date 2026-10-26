@@ -22,6 +22,9 @@ public interface ChannelRepository extends CrudRepository<Channel, UUID> {
 
     boolean existsByHandle(String handle);
 
+    /** Có kênh nào đang dùng link này làm ảnh đại diện hoặc ảnh bìa (trước khi xoá ảnh trên Cloudinary). */
+    boolean existsByPictureOrBackgroundImgUrl(String picture, String backgroundImgUrl);
+
     @Query("select c.handle from Channel c where c.handle is not null")
     List<String> findAllHandles();
 

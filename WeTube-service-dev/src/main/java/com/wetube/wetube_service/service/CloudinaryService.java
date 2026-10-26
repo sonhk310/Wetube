@@ -283,6 +283,18 @@ public class CloudinaryService {
         }
     }
 
+    /**
+     * Link ảnh kênh do {@link #uploadChannelImage} tạo ra (thư mục channels/ trên Cloudinary). Chỉ loại ảnh này
+     * mới được đặt làm ảnh đại diện / ảnh bìa và mới bị xoá khi thay: ảnh thu nhỏ video hay ảnh của người khác
+     * thì không.
+     */
+    public static boolean isChannelImage(String url) {
+        return url != null
+                && url.startsWith("https://res.cloudinary.com/")
+                && url.contains("/image/upload/")
+                && publicIdFromDeliveryUrl(url).startsWith("channels/");
+    }
+
     private static boolean isCloudinaryUrl(String url) {
         return url != null && url.contains("/upload/");
     }
