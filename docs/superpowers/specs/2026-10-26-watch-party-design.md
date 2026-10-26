@@ -18,7 +18,7 @@ PRD luồng 2 và mục 4.1.3 yêu cầu:
 - Dùng thẻ `<video controls>` của trình duyệt, không phải trình phát mới (phụ đề, chương, phím tắt...).
 - Lỗi, em đã xác nhận trong code:
   - "Đã tạo phòng" phát lên `/topic/room/create` chung, nên mọi người đang mở hộp thoại Tạo phòng cùng lúc đều nhận phòng của người khác.
-  - `GET /api/rooms` (không cần đăng nhập) trả **mọi phòng kèm mã**, ai cũng vào được phòng riêng tư của người khác.
+  - `GET /api/rooms` trả **mọi phòng kèm mã** cho bất kỳ ai đã đăng nhập, nên ai cũng vào được phòng riêng tư của người khác.
   - `useVideoSync.ts` mở một kết nối thứ hai tới topic không ai gửi (`/topic/rooms.video.*`): code chết.
 
 **Thành công nghĩa là:**
