@@ -21,6 +21,7 @@ export interface RoomMember {
   userId: string;
   name: string;
   avatar?: string | null;
+  handle?: string | null;
   host: boolean;
 }
 
@@ -31,6 +32,7 @@ export interface RoomChatMessage {
   userId?: string | null;
   name?: string | null;
   avatar?: string | null;
+  handle?: string | null;
   content: string;
   at: number;
 }

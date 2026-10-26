@@ -1,10 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { ReactNode } from "react";
 import { requestSeek } from "@/lib/watchSeek";
 
 // Link http(s) hoặc mốc thời gian dạng m:ss / h:mm:ss
-const TOKEN = /(https?:\/\/[^\s<>"]+)|(?<![\w:])((?:\d{1,2}:)?[0-5]?\d:[0-5]\d)(?![\w:])/g;
+// và @handle của kênh (không bắt "abc@gmail.com")
+const TOKEN =
+  /(https?:\/\/[^\s<>"]+)|(?<![\w:])((?:\d{1,2}:)?[0-5]?\d:[0-5]\d)(?![\w:])|(?<![\p{L}\p{N}_.@-])@([a-z0-9][a-z0-9_.-]{1,28}[a-z0-9])(?![\p{L}\p{N}_@])/giu;
 // Dấu câu ở cuối thường không thuộc link ("xem tại https://a.b/c.")
 const URL_TRAILING = /[.,;:!?)\]}'"]+$/;
 
@@ -44,6 +47,17 @@ export default function LinkifiedText({ text, className }: { text: string; class
         >
           {token}
         </a>
+      );
+    } else if (match[3]) {
+      parts.push(
+        <Link
+          key={start}
+          href={`/@${match[3].toLowerCase()}`}
+          prefetch={false}
+          className="text-blue-600 hover:underline"
+        >
+          {token}
+        </Link>
       );
     } else {
       const seconds = parseTimestamp(token);

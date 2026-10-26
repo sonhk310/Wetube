@@ -71,6 +71,8 @@ public class WatchRoom {
         private String userId;
         private String name;
         private String avatar;
+        /** @handle của kênh (không có "@"), null nếu chưa có. */
+        private String handle;
         private long joinedAt;
         /** Các phiên WebSocket đang mở (một người có thể mở nhiều tab). */
         private Set<String> sessions = new HashSet<>();
@@ -93,6 +95,7 @@ public class WatchRoom {
         private String userId;
         private String name;
         private String avatar;
+        private String handle;
         private String content;
         private long at;
     }

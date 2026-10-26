@@ -18,6 +18,7 @@ ChannelResponseDto {
     private UUID id;
     private UUID userId;
     private String name;
+    private String handle;
     private String picture;
     private String backgroundImgUrl;
     private String description;

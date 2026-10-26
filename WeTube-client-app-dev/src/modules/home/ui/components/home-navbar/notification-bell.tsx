@@ -11,7 +11,7 @@ import { apiFetch } from "@/lib/apiFetch";
 import { cn, timeAgo } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 
-type NotificationType = "NEW_VIDEO" | "COMMENT_REPLY" | "VIDEO_COMMENT" | "COMMENT_HEART";
+type NotificationType = "NEW_VIDEO" | "COMMENT_REPLY" | "VIDEO_COMMENT" | "COMMENT_HEART" | "COMMENT_MENTION";
 
 interface NotificationItem {
   id: string;
@@ -46,6 +46,8 @@ function message(n: NotificationItem) {
       return `${who} đã trả lời bình luận của bạn: "${n.text ?? ""}"`;
     case "VIDEO_COMMENT":
       return `${who} đã bình luận về video "${n.videoTitle ?? ""}": "${n.text ?? ""}"`;
+    case "COMMENT_MENTION":
+      return `${who} đã nhắc đến bạn trong một bình luận: "${n.text ?? ""}"`;
     case "COMMENT_HEART":
       return `${who} đã thả ❤️ bình luận của bạn: "${n.text ?? ""}"`;
   }

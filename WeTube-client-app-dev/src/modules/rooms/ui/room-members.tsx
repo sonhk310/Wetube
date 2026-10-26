@@ -39,7 +39,8 @@ export default function RoomMembers() {
       <span className="text-sm text-gray-600">Đang xem ({members.length}):</span>
       <div className="flex flex-wrap items-center gap-1">
         {members.map((m) => {
-          const label = m.host ? `${m.name} (Chủ phòng)` : m.name;
+          const who = m.handle ? `${m.name} (@${m.handle})` : m.name;
+          const label = m.host ? `${who} (Chủ phòng)` : who;
           if (!iAmHost || m.userId === user?.sub) {
             return (
               <span key={m.userId} title={label}>

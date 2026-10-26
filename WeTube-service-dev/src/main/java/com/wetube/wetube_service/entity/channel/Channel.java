@@ -31,6 +31,12 @@ public class Channel {
     private String backgroundImgUrl;
     private String description;
 
+    /** @handle duy nhất, chữ thường, không lưu dấu "@". Null chỉ trong lúc runner khởi động chưa sinh xong. */
+    @Column(length = 30, unique = true)
+    private String handle;
+    /** Lần đổi handle gần nhất (null = handle còn là bản tự sinh, đổi tự do). */
+    private LocalDateTime handleChangedAt;
+
     @Column(length = 2)
     private String countryCode;
     @Enumerated(EnumType.STRING)

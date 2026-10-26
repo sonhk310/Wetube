@@ -151,6 +151,7 @@ public class WatchRoomService {
         AppUser user = userRepo.findById(UUID.fromString(userId)).orElse(null);
         String name = user != null && user.getName() != null ? user.getName() : "Người dùng";
         String avatar = user != null ? user.getPicture() : null;
+        String handle = userRepo.findHandleById(UUID.fromString(userId)).orElse(null);
 
         synchronized (room) {
             if (room.getKicked().contains(userId)) {
@@ -177,6 +178,7 @@ public class WatchRoomService {
             }
             member.setName(name);
             member.setAvatar(avatar);
+            member.setHandle(handle);
             member.getSessions().add(sessionId);
             member.setDisconnectedAt(0);
             room.setEmptySince(0);
@@ -310,6 +312,7 @@ public class WatchRoomService {
             chat.setUserId(userId);
             chat.setName(me.getName());
             chat.setAvatar(me.getAvatar());
+            chat.setHandle(me.getHandle());
             appendChat(room, chat);
             persist(room);
         }
@@ -624,7 +627,7 @@ public class WatchRoomService {
 
     private List<MemberView> memberViews(WatchRoom room) {
         return room.getMembers().values().stream()
-                .map(m -> new MemberView(m.getUserId(), m.getName(), m.getAvatar(), m.getUserId().equals(room.getHostUserId())))
+                .map(m -> new MemberView(m.getUserId(), m.getName(), m.getAvatar(), m.getHandle(), m.getUserId().equals(room.getHostUserId())))
                 .toList();
     }
 

@@ -2,6 +2,8 @@ export interface ChannelInfo {
   id: string;
   userId: string | null;
   name: string;
+  /** @handle của kênh, không có "@". */
+  handle?: string | null;
   picture: string | null;
   backgroundImgUrl: string | null;
   description: string | null;

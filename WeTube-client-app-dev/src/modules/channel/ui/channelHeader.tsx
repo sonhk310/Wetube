@@ -82,6 +82,7 @@ export default function ChannelHeader() {
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold">{channel.name}</h1>
           <p className="text-sm text-gray-500">
+            {channel.handle && `@${channel.handle} • `}
             {channel.totalSubscribers} người đăng ký • {channel.totalVideos} video
           </p>
           {channel.description && (

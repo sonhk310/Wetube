@@ -16,7 +16,7 @@ import lombok.Getter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RoomEvent {
 
-    public record MemberView(String userId, String name, String avatar, boolean host) {
+    public record MemberView(String userId, String name, String avatar, String handle, boolean host) {
     }
 
     private final String type;

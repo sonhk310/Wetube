@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: false,
+  async rewrites() {
+    // Link kênh dạng /@handle
+    return [{ source: "/@:handle", destination: "/at/:handle" }];
+  },
   /* config options here */
 };
 

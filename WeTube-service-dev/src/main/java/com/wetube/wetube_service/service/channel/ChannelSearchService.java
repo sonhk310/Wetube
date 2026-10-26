@@ -65,7 +65,7 @@ public class ChannelSearchService {
                 .filter(c -> c.getStatus() != ActiveStatus.INACTIVE && c.getStatus() != ActiveStatus.DELETED)
                 .limit(size)
                 .map(c -> new ChannelSearchDto(c.getId(), c.getName(), c.getPicture(), c.getDescription(),
-                        c.getTotalSubscribers(), c.getTotalVideos()))
+                        c.getTotalSubscribers(), c.getTotalVideos(), c.getHandle()))
                 .toList();
     }
 

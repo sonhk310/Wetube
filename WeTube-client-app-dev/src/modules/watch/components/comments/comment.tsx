@@ -40,6 +40,8 @@ export interface Comment {
     id: string;
     authorId?: string;
     commenter: string;
+    /** @handle của kênh người viết (không có "@"). */
+    handle?: string;
     comment: string;
     picture: string;
     commentedAt: string;
@@ -63,6 +65,7 @@ export const mapApiCommentToUI = (apiComment: any): Comment => ({
     id: apiComment.id,
     authorId: apiComment.user?.id,
     commenter: apiComment.user?.name ?? "Ẩn danh",
+    handle: apiComment.user?.handle ?? undefined,
     comment: apiComment.content,
     picture: apiComment.user?.picture ?? "",
     commentedAt: apiComment.createdAt,
@@ -259,9 +262,9 @@ export const CommentComponent = ({
         }
     }, [comment.id, isRepliesSectionOpen, replies.loaded, loadReplies]);
 
-    // Trả lời một phản hồi thì gắn vào bình luận gốc (kèm @tên); trả lời bình luận gốc thì gắn thẳng vào nó
+    // Trả lời một phản hồi thì gắn vào bình luận gốc (kèm @handle người được trả lời); trả lời bình luận gốc thì gắn thẳng vào nó
     const parentCommentId = rootId ?? comment.id;
-    const replyPrefix = rootId ? `@${comment.commenter} ` : "";
+    const replyPrefix = rootId && comment.handle ? `@${comment.handle} ` : "";
 
     const handleSubmitReply = async (content: string) => {
         if (!userId || !videoId || !content.trim()) return;
@@ -357,6 +360,7 @@ export const CommentComponent = ({
                             {comment.commenter}
                         </p>
                     )}
+                    {comment.handle && <p className="text-xs text-gray-500">@{comment.handle}</p>}
                     <p className="text-xs text-gray-600">
                         {timeAgo(comment.commentedAt)}
                         {isEdited && " (đã chỉnh sửa)"}

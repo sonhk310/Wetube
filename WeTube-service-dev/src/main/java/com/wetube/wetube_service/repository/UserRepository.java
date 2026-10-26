@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,6 +22,12 @@ public interface UserRepository extends JpaRepository<AppUser, UUID> {
         where u.id = :id
     """)
     Optional<AppUser> findByIdWithRoles(@Param("id") UUID id);
+
+    @Query("select u.id from AppUser u where u.channel.handle in :handles")
+    List<UUID> findIdsByChannelHandles(@Param("handles") Collection<String> handles);
+
+    @Query("select c.handle from AppUser u join u.channel c where u.id = :id")
+    Optional<String> findHandleById(@Param("id") UUID id);
 
     @Query("select coalesce(u.historyPaused, false) from AppUser u where u.id = :id")
     Optional<Boolean> findHistoryPaused(@Param("id") UUID id);

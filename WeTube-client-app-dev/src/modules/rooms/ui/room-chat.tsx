@@ -54,7 +54,10 @@ export default function RoomChat({ className }: { className?: string }) {
                 <AvatarFallback>{(m.name ?? "?").slice(0, 1).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 text-sm">
-                <span className="mr-2 font-semibold text-gray-700">{m.name}</span>
+                <span className="mr-2 font-semibold text-gray-700" title={m.handle ? `@${m.handle}` : undefined}>
+                  {m.name}
+                  {m.handle && <span className="ml-1 text-xs font-normal text-gray-500">@{m.handle}</span>}
+                </span>
                 <LinkifiedText text={m.content} className="break-words" />
               </div>
             </div>

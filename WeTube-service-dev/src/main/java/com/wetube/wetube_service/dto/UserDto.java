@@ -13,4 +13,6 @@ public class UserDto {
 //    private String email;
     private String name;
     private String picture;
+    /** @handle của kênh người này (không có "@"); null nếu chưa có kênh. */
+    private String handle;
 }

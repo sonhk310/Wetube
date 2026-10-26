@@ -16,6 +16,7 @@ import com.wetube.wetube_service.service.interaction.CommentService;
 import com.wetube.wetube_service.service.interaction.LikeService;
 import com.wetube.wetube_service.entity.notification.Notification;
 import com.wetube.wetube_service.repository.video.VideoRepository;
+import com.wetube.wetube_service.service.channel.ChannelHandles;
 import com.wetube.wetube_service.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -148,26 +149,45 @@ public class CommentServiceImpl implements CommentService {
         return toResponseWithReplies(saved, ownerId);
     }
 
-    /** Trả lời bình luận -> báo người viết bình luận gốc; bình luận mới trên video -> báo chủ video. */
+    /**
+     * Trả lời bình luận -> báo người viết bình luận gốc; bình luận mới trên video -> báo chủ video;
+     * nhắc @handle -> báo người được nhắc (mỗi người một thông báo).
+     */
     private void notifyAboutComment(Comment saved, UUID authorId) {
         if (saved.getTargetType() != Comment.TargetType.VIDEO) {
             return;
         }
         try {
             UUID videoId = saved.getTargetId();
+            UUID recipient;
             if (saved.getParentCommentId() != null) {
-                UUID parentAuthor = commentRepository.findById(saved.getParentCommentId())
+                recipient = commentRepository.findById(saved.getParentCommentId())
                         .map(c -> c.getUser() != null ? c.getUser().getId() : null)
                         .orElse(null);
-                notificationService.notifyComment(Notification.Type.COMMENT_REPLY, parentAuthor, authorId,
+                notificationService.notifyComment(Notification.Type.COMMENT_REPLY, recipient, authorId,
                         videoId, saved.getId(), saved.getContent());
             } else {
-                UUID owner = videoRepository.findById(videoId).map(v -> v.getUser().getId()).orElse(null);
-                notificationService.notifyComment(Notification.Type.VIDEO_COMMENT, owner, authorId,
+                recipient = videoRepository.findById(videoId).map(v -> v.getUser().getId()).orElse(null);
+                notificationService.notifyComment(Notification.Type.VIDEO_COMMENT, recipient, authorId,
                         videoId, saved.getId(), saved.getContent());
             }
+            notifyMentions(saved, authorId, videoId, recipient);
         } catch (Exception e) {
             log.warn("Không tạo được thông báo cho bình luận {}: {}", saved.getId(), e.getMessage());
+        }
+    }
+
+    /** Báo những người được nhắc bằng @handle, trừ người viết và người vừa nhận thông báo trả lời / bình luận. */
+    private void notifyMentions(Comment saved, UUID authorId, UUID videoId, UUID alreadyNotified) {
+        Set<String> handles = ChannelHandles.extractMentions(saved.getContent());
+        if (handles.isEmpty()) {
+            return;
+        }
+        for (UUID id : new LinkedHashSet<>(userRepository.findIdsByChannelHandles(handles))) {
+            if (!id.equals(alreadyNotified)) {
+                notificationService.notifyComment(Notification.Type.COMMENT_MENTION, id, authorId,
+                        videoId, saved.getId(), saved.getContent());
+            }
         }
     }
 

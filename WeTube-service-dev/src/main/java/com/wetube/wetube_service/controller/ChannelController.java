@@ -2,6 +2,8 @@ package com.wetube.wetube_service.controller;
 
 import com.wetube.wetube_service.dto.response.ChannelResponseDto;
 import com.wetube.wetube_service.dto.response.ChannelSearchDto;
+import com.wetube.wetube_service.dto.response.HandleCheckDto;
+import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.service.channel.ChannelSearchService;
 import com.wetube.wetube_service.service.channel.ChannelService;
 import lombok.RequiredArgsConstructor;
@@ -33,5 +35,25 @@ public class ChannelController {
         UUID viewerId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;
         ChannelResponseDto response = channelService.getChannelById(channelId, viewerId);
         return ResponseEntity.ok(response);
+    }
+
+    /** Trang kênh theo @handle (không có "@" trong đường dẫn). */
+    @GetMapping("/handle/{handle}")
+    public ResponseEntity<ChannelResponseDto> getChannelByHandle(@PathVariable String handle, @AuthenticationPrincipal Jwt jwt) {
+        UUID viewerId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;
+        return ResponseEntity.ok(channelService.getChannelByHandle(handle, viewerId));
+    }
+
+    @GetMapping("/handle-check")
+    public ResponseEntity<HandleCheckDto> checkHandle(@RequestParam("handle") String handle, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(channelService.checkHandle(CurrentUser.id(jwt), handle));
+    }
+
+    @PutMapping("/me/handle")
+    public ResponseEntity<ChannelResponseDto> changeHandle(@RequestBody HandleRequest request, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(channelService.changeHandle(CurrentUser.id(jwt), request.handle()));
+    }
+
+    public record HandleRequest(String handle) {
     }
 }

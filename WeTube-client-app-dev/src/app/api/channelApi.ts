@@ -19,6 +19,17 @@ export const channelApi = createApi({
       ],
     }),
 
+    /** Handle dùng được cho kênh của mình không (đúng quy tắc, còn trống, hết thời gian chờ đổi). */
+    checkHandle: builder.query<{ available: boolean; reason?: string | null }, string>({
+      query: (handle) => `/channels/handle-check?handle=${encodeURIComponent(handle)}`,
+      keepUnusedDataFor: 0,
+    }),
+
+    changeHandle: builder.mutation<ChannelInfo, { channelId: string; handle: string }>({
+      query: ({ handle }) => ({ url: "/channels/me/handle", method: "PUT", body: { handle } }),
+      invalidatesTags: (result, error, { channelId }) => [{ type: "ChannelInfo", id: channelId }],
+    }),
+
     getChannelVideos: builder.query<
       { content: ChannelVideo[]; last: boolean },
       { userId: string; page?: number; size?: number }
@@ -32,4 +43,6 @@ export const channelApi = createApi({
 export const {
   useGetChannelInfoQuery,
   useGetChannelVideosQuery,
+  useLazyCheckHandleQuery,
+  useChangeHandleMutation,
 } = channelApi;
