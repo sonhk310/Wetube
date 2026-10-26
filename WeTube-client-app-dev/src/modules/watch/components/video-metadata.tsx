@@ -198,6 +198,8 @@ export default function VideoMetadata() {
   };
 
   const isOwnChannel = !!user?.channelId && user.channelId === channelId;
+  // Trang kênh tự đổi thanh địa chỉ sang /@handle khi kênh có handle
+  const channelHref = channelId ? `/channel/${channelId}` : "#";
 
   const handleSubscribe = async () => {
     if (!user?.sub) {
@@ -241,16 +243,18 @@ export default function VideoMetadata() {
       {/* Cột hẹp: hàng nút xuống dòng dưới tên kênh (như YouTube), không bóp tên kênh / nút Đăng ký */}
       <div className="py-1 flex flex-wrap justify-between items-center gap-x-4 gap-y-3 mt-2">
         <section className="flex min-w-0 justify-start items-center gap-3">
-          <Image
-            className="rounded-full h-10 w-10 shrink-0 cursor-pointer"
-            src={picture}
-            alt={name}
-            height={40}
-            width={40}
-          />
+          <Link href={channelHref} className="shrink-0" aria-label={`Kênh ${name}`}>
+            <Image
+              className="rounded-full h-10 w-10"
+              src={picture}
+              alt={name}
+              height={40}
+              width={40}
+            />
+          </Link>
           <div className="min-w-0">
             <section className="flex flex-col tracking-tight mr-1">
-              <p className="max-w-[14rem] truncate font-bold font-lg cursor-pointer" title={name}>{name}</p>
+              <Link href={channelHref} className="max-w-[14rem] truncate font-bold font-lg" title={name}>{name}</Link>
 
               <p className="whitespace-nowrap text-gray-500 text-xs font-semibold">
                 {formatCompact(Math.max(0, (totalSubscribers ?? 0) + subscriberDelta))} người đăng ký
