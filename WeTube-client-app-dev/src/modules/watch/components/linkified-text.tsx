@@ -54,7 +54,7 @@ export default function LinkifiedText({ text, className }: { text: string; class
           key={start}
           href={`/@${match[3].toLowerCase()}`}
           prefetch={false}
-          className="text-blue-600 hover:underline"
+          className="font-medium text-violet-600 hover:underline"
         >
           {token}
         </Link>

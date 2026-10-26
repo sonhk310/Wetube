@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useGetChannelInfoQuery } from "@/app/api/channelApi";
 import {
   useSubscribeMutation,
@@ -10,12 +10,13 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { toastEmitter } from "@/lib/toastEmitter";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const FALLBACK_AVATAR = "https://placehold.co/160x160?text=W";
 
 export default function ChannelHeader() {
   const { channelId } = useParams<{ channelId: string }>();
+  const pathname = usePathname();
   const { user } = useAuth();
   const { data: channel, isLoading, error, refetch } = useGetChannelInfoQuery(channelId);
   const [subscribe, { isLoading: isSubscribing }] = useSubscribeMutation();
@@ -23,6 +24,14 @@ export default function ChannelHeader() {
   // Trạng thái sau khi bấm; chưa bấm thì lấy từ server (đã đăng ký hay chưa)
   const [override, setOverride] = useState<boolean | null>(null);
   const subscribed = override ?? channel?.subscribed ?? false;
+
+  // Mở bằng /channel/{id} mà kênh đã có handle thì đổi thanh địa chỉ sang /@handle (không tải lại trang)
+  const handle = channel?.handle;
+  useEffect(() => {
+    if (handle && channelId !== handle && pathname.startsWith(`/channel/${channelId}`)) {
+      window.history.replaceState(null, "", pathname.replace(`/channel/${channelId}`, `/@${handle}`) + window.location.search);
+    }
+  }, [handle, channelId, pathname]);
 
   if (isLoading) {
     return (

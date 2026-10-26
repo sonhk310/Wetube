@@ -215,13 +215,13 @@ Cần 2 tài khoản đăng nhập (A và B). Sau deploy, mọi kênh cũ đã c
 | # | Việc cần làm | Kết quả mong đợi | Kết quả |
 |---|---|---|---|
 | 17.1 | A mở trang kênh của mình | Dưới tên kênh hiện `@handle • N người đăng ký • N video` | |
-| 17.2 | Mở `/@handle` của A (gõ trên thanh địa chỉ) | Chuyển sang `/channel/...` đúng kênh A; gõ chữ hoa (`/@HuynhKySon`) vẫn ra; handle không có thì báo không tìm thấy | |
+| 17.2 | Mở `/@handle` của A (gõ trên thanh địa chỉ); rồi mở `/channel/{id}` của A | Cả hai cho ra trang kênh A và thanh địa chỉ hiện `/@handle`; bấm thẻ Video / Danh sách phát / Bài đăng thì địa chỉ là `/@handle/videos`...; chữ hoa (`/@HuynhKySon`) vẫn ra; handle không có thì báo "Không tìm thấy kênh này" | |
 | 17.3 | A vào Studio → Tuỳ chỉnh, gõ handle sai (`ab`, `có dấu`, `-abc`) | Báo lý do ngay dưới ô, nút Lưu bị khoá | |
 | 17.4 | A gõ handle của B | Báo "Handle đã có người dùng" | |
 | 17.5 | A gõ một handle còn trống rồi Lưu | Báo "Đã đổi handle"; trang kênh hiện handle mới; `/@cũ` không còn dùng được | |
 | 17.6 | A đổi handle lần nữa ngay sau đó | Báo "Bạn có thể đổi handle lại sau ngày ..." (14 ngày) | |
 | 17.7 | A bình luận video; B xem | Bình luận của A hiện tên kèm `@handle` xám nhỏ | |
-| 17.8 | B bấm Phản hồi bình luận của A, gửi; A bấm Phản hồi chính phản hồi của B | Ô nhập tự điền `@handle-của-B `, không phải tên đầy đủ; `@handle` trong bình luận màu xanh, bấm mở kênh | |
+| 17.8 | B bấm Phản hồi bình luận của A, gửi; A bấm Phản hồi chính phản hồi của B | Ô nhập tự điền `@handle-của-B `, không phải tên đầy đủ; `@handle` trong bình luận màu tím đậm (khác link xanh), bấm mở kênh | |
 | 17.9 | B viết bình luận có `@handle` của A (không phải trả lời A) | A thấy chuông "B đã nhắc đến bạn trong một bình luận"; chỉ một thông báo, không trùng | |
 | 17.10 | Viết bình luận có email (`abc@gmail.com`) | Email không bị biến thành link kênh, không ai nhận thông báo | |
 | 17.11 | A và B vào cùng phòng xem chung, nhắn tin | Tên trong chat kèm `@handle`; rê chuột vào ảnh ở "Đang xem" thấy `Tên (@handle)` | |

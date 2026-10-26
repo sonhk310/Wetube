@@ -1,6 +1,6 @@
 # Thiết kế: @handle cho kênh (H1)
 
-Ngày: 2026-10-26. Trạng thái: **anh đã duyệt 26/10** (hiện tên kèm @handle xám nhỏ; `/@handle` chuyển hướng; đổi 1 lần / 14 ngày). Đã làm ở máy, chờ anh duyệt push + deploy.
+Ngày: 2026-10-26. Trạng thái: **anh đã duyệt 26/10** (hiện tên kèm @handle xám nhỏ; `/@handle` chuyển hướng; đổi 1 lần / 14 ngày). **Sửa 26/10 sau khi anh thử:** giữ `/@handle` trên thanh địa chỉ (cách 2b: rewrite, không chuyển hướng), `@handle` trong văn bản có màu tím riêng. Đã làm ở máy, chờ anh duyệt push + deploy.
 
 ## 1. Vì sao
 Mỗi người cần một "@tên" duy nhất, không có dấu cách, để:

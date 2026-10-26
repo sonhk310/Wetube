@@ -30,11 +30,23 @@ public class ChannelController {
         return ResponseEntity.ok(channelSearchService.search(query, limit, strict));
     }
 
-    @GetMapping("/{channelId}")
-    public ResponseEntity<ChannelResponseDto> getChannelById(@PathVariable UUID channelId, @AuthenticationPrincipal Jwt jwt) {
+    /** Kênh theo id (UUID) hoặc theo @handle (không có "@"); trang /@handle của client gọi bằng handle. */
+    @GetMapping("/{channel}")
+    public ResponseEntity<ChannelResponseDto> getChannel(@PathVariable String channel, @AuthenticationPrincipal Jwt jwt) {
         UUID viewerId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;
-        ChannelResponseDto response = channelService.getChannelById(channelId, viewerId);
+        UUID channelId = parseUuid(channel);
+        ChannelResponseDto response = channelId != null
+                ? channelService.getChannelById(channelId, viewerId)
+                : channelService.getChannelByHandle(channel, viewerId);
         return ResponseEntity.ok(response);
+    }
+
+    private static UUID parseUuid(String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /** Trang kênh theo @handle (không có "@" trong đường dẫn). */

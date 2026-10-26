@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, usePathname } from "next/navigation";
+import { useGetChannelInfoQuery } from "@/app/api/channelApi";
 import { useProgressRouter } from "@/hooks/use-progress-router";
 
 const tabs = [
@@ -14,10 +15,15 @@ export default function ChannelTabs() {
   const pathname = usePathname();
   const router = useProgressRouter();
   const { channelId } = useParams<{ channelId: string }>();
-  const currentTab = pathname.split("/").pop();
+  const { data: channel } = useGetChannelInfoQuery(channelId);
+  const lastSegment = pathname.split("/").pop();
+  // Trang chủ của kênh là mọi đường dẫn không kết thúc bằng tên một thẻ khác
+  const currentTab = tabs.some((tab) => tab.slug && tab.slug === lastSegment) ? lastSegment : "";
+  // Có handle thì dùng /@handle, chưa có thì dùng id
+  const base = channel?.handle ? `/@${channel.handle}` : `/channel/${channelId}`;
 
   const handleTabClick = (slug: string) => {
-    router.push(`/channel/${channelId}/${slug}`);
+    router.push(slug ? `${base}/${slug}` : base);
   };
 
   return (
@@ -28,7 +34,6 @@ export default function ChannelTabs() {
             key={tab.slug}
             onClick={() => handleTabClick(tab.slug)}
             className={`cursor-pointer pb-2 ${
-              (tab.slug === "" && currentTab === channelId) ||
               currentTab === tab.slug
                 ? "text-black border-b-2 border-black"
                 : ""
