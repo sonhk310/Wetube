@@ -1,5 +1,6 @@
 package com.wetube.wetube_service.service.channel.impl;
 
+import com.wetube.wetube_service.dto.request.ChannelUpdateRequest;
 import com.wetube.wetube_service.dto.response.ChannelResponseDto;
 import com.wetube.wetube_service.dto.response.HandleCheckDto;
 import com.wetube.wetube_service.entity.AppUser;
@@ -17,6 +18,9 @@ import com.wetube.wetube_service.repository.channel.ChannelCategoryRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
 import com.wetube.wetube_service.repository.UserRepository;
+import com.wetube.wetube_service.repository.video.VideoRepository;
+import com.wetube.wetube_service.service.CloudinaryService;
+import com.wetube.wetube_service.service.VideoIndexer;
 import com.wetube.wetube_service.service.channel.ChannelIndexer;
 import com.wetube.wetube_service.service.channel.ChannelHandles;
 import com.wetube.wetube_service.service.channel.ChannelService;
@@ -24,9 +28,11 @@ import com.wetube.wetube_service.service.impl.GeoIPService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
@@ -45,6 +51,14 @@ import java.util.UUID;
 public class ChannelServiceImpl implements ChannelService {
     private static final Duration HANDLE_COOLDOWN = Duration.ofDays(14);
     private static final ZoneId VN = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final int NAME_MAX = 50;
+    private static final int DESCRIPTION_MAX = 1000;
+    private static final long AVATAR_MAX_BYTES = 4L * 1024 * 1024;
+    private static final long BANNER_MAX_BYTES = 6L * 1024 * 1024;
+    /** Ảnh kênh chỉ được là ảnh đã tải lên Cloudinary (qua uploadChannelImage), không nhận link tuỳ ý. */
+    private static final String IMAGE_URL_PREFIX = "https://res.cloudinary.com/";
+    /** Số video của kênh được đẩy lại vào chỉ mục tìm kiếm khi đổi tên / ảnh. */
+    private static final int REINDEX_VIDEOS_MAX = 200;
 
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
@@ -54,6 +68,9 @@ public class ChannelServiceImpl implements ChannelService {
     private final GeoIPService geoIPService;
     private final SubscriptionRepository subscriptionRepository;
     private final ChannelIndexer channelIndexer;
+    private final CloudinaryService cloudinaryService;
+    private final VideoRepository videoRepository;
+    private final VideoIndexer videoIndexer;
 
     @Override
     public ChannelResponseDto getChannelById(UUID channelId, UUID viewerId) {
@@ -152,6 +169,79 @@ public class ChannelServiceImpl implements ChannelService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Handle đã có người dùng");
         }
         return getChannelById(channel.getId(), userId);
+    }
+
+    @Override
+    public ChannelResponseDto updateChannel(UUID userId, ChannelUpdateRequest request) {
+        Channel channel = channelOf(userId);
+        AppUser user = channel.getUser();
+        boolean displayChanged = false;
+
+        if (request.name() != null) {
+            String name = request.name().trim();
+            if (name.isEmpty() || name.length() > NAME_MAX) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên kênh phải từ 1 đến " + NAME_MAX + " ký tự");
+            }
+            channel.setName(name);
+            user.setName(name);
+            displayChanged = true;
+        }
+        if (request.description() != null) {
+            String description = request.description().trim();
+            if (description.length() > DESCRIPTION_MAX) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mô tả tối đa " + DESCRIPTION_MAX + " ký tự");
+            }
+            channel.setDescription(description.isEmpty() ? null : description);
+        }
+        if (request.picture() != null) {
+            requireUploadedImage(request.picture(), "Ảnh đại diện không hợp lệ");
+            channel.setPicture(request.picture());
+            user.setPicture(request.picture());
+            displayChanged = true;
+        }
+        if (request.backgroundImgUrl() != null) {
+            if (request.backgroundImgUrl().isBlank()) {
+                channel.setBackgroundImgUrl(null);
+            } else {
+                requireUploadedImage(request.backgroundImgUrl(), "Ảnh bìa không hợp lệ");
+                channel.setBackgroundImgUrl(request.backgroundImgUrl());
+            }
+        }
+
+        channelRepository.save(channel);
+        userRepository.save(user);
+        if (displayChanged) {
+            // Chỉ mục tìm kiếm giữ tên / ảnh của kênh trên từng video: đẩy lại để kết quả tìm kiếm khớp
+            channelIndexer.index(channel);
+            videoRepository.findByUserId(user.getId(), PageRequest.of(0, REINDEX_VIDEOS_MAX)).forEach(videoIndexer::index);
+        }
+        return getChannelById(channel.getId(), userId);
+    }
+
+    @Override
+    public String uploadChannelImage(UUID userId, MultipartFile file, String kind) {
+        channelOf(userId);
+        boolean banner = "banner".equals(kind);
+        if (!banner && !"avatar".equals(kind)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "kind phải là avatar hoặc banner");
+        }
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hãy chọn một ảnh");
+        }
+        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tệp phải là ảnh");
+        }
+        long max = banner ? BANNER_MAX_BYTES : AVATAR_MAX_BYTES;
+        if (file.getSize() > max) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ảnh quá lớn (tối đa " + (max / 1024 / 1024) + " MB)");
+        }
+        return cloudinaryService.uploadChannelImage(file, banner);
+    }
+
+    private static void requireUploadedImage(String url, String message) {
+        if (!url.startsWith(IMAGE_URL_PREFIX)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
     }
 
     private Channel channelOf(UUID userId) {

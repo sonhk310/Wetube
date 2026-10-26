@@ -27,7 +27,25 @@ export const channelApi = createApi({
 
     changeHandle: builder.mutation<ChannelInfo, { channelId: string; handle: string }>({
       query: ({ handle }) => ({ url: "/channels/me/handle", method: "PUT", body: { handle } }),
-      invalidatesTags: (result, error, { channelId }) => [{ type: "ChannelInfo", id: channelId }],
+      invalidatesTags: ["ChannelInfo"],
+    }),
+
+    updateChannel: builder.mutation<
+      ChannelInfo,
+      { name?: string; description?: string; picture?: string; backgroundImgUrl?: string }
+    >({
+      query: (body) => ({ url: "/channels/me", method: "PUT", body }),
+      invalidatesTags: ["ChannelInfo"],
+    }),
+
+    // Tải ảnh bìa / ảnh đại diện lên Cloudinary, trả link; gắn vào kênh bằng updateChannel
+    uploadChannelImage: builder.mutation<{ url: string }, { file: File; kind: "avatar" | "banner" }>({
+      query: ({ file, kind }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("kind", kind);
+        return { url: "/channels/me/image", method: "POST", body: formData };
+      },
     }),
 
     getChannelVideos: builder.query<
@@ -45,4 +63,6 @@ export const {
   useGetChannelVideosQuery,
   useLazyCheckHandleQuery,
   useChangeHandleMutation,
+  useUpdateChannelMutation,
+  useUploadChannelImageMutation,
 } = channelApi;

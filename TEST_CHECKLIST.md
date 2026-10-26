@@ -248,3 +248,20 @@ Cần 2 tài khoản: A (chủ kênh, có vài video thường và vài Shorts) 
 | 18.12 | Thu nhỏ cửa sổ cỡ điện thoại | Ảnh bìa thấp hơn, avatar nhỏ, tên và nút căn giữa, thanh thẻ cuộn ngang được, không tràn ngang trang | |
 | 18.13 | B chọn "Cá nhân hoá", A đăng một video thường rồi một Short | B nhận thông báo video thường, **không** nhận thông báo Short. Đổi B sang "Tất cả" rồi A đăng thêm một Short: B nhận | |
 | 18.14 | B mở một video của kênh A ở trang xem, bấm "Đã đăng ký" | Mở menu chuông giống trang kênh (không còn huỷ đăng ký ngay); chọn chế độ ở đây thì mở lại trang kênh thấy đúng chế độ đó; "Huỷ đăng ký" thì số người đăng ký giảm ngay | |
+
+## 19. Sửa kênh ở Studio (H2, giai đoạn B)
+
+Dùng tài khoản chủ kênh (A), thêm tài khoản B để xem. Ảnh thử: một ảnh ngang lớn (ít nhất 2048 px) cho ảnh bìa, một ảnh chữ nhật cho ảnh đại diện.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 19.1 | A vào Studio → Tuỳ chỉnh | Khung "Thông tin cơ bản" có: Ảnh bìa, Ảnh đại diện, Tên kênh, Mô tả, Handle | |
+| 19.2 | Bấm "Tải ảnh bìa lên", chọn ảnh ngang | Báo "Đã cập nhật ảnh", ảnh hiện trong khung xem trước; mở trang kênh thấy ảnh bìa rộng, không bị méo | |
+| 19.3 | Chọn một tệp không phải ảnh (vd. PDF), rồi một ảnh trên 6 MB | Báo lỗi ngay ("Tệp phải là ảnh" / "Ảnh quá lớn"), không tải lên | |
+| 19.4 | Bấm "Xoá" ở ảnh bìa | Báo "Đã xoá ảnh bìa", trang kênh trở lại nền xám | |
+| 19.5 | Bấm "Đổi ảnh đại diện", chọn ảnh chữ nhật | Ảnh được cắt vuông quanh phần nổi bật; ảnh ở góc phải thanh trên cùng đổi ngay, **không cần tải lại trang** | |
+| 19.6 | Đổi tên kênh rồi bấm "Lưu thay đổi" | Tên mới hiện ở trang kênh, thanh trên cùng, bình luận cũ của A, thẻ video của kênh, tên dưới video ở trang xem. Ô tìm kiếm (gõ tên mới) ra đúng kênh / video | |
+| 19.7 | Gõ mô tả có một link và một `@handle`, Lưu | Trang kênh hiện mô tả một dòng + "...xem thêm"; hộp thoại Giới thiệu hiện đủ, link và `@handle` bấm được. Xoá hết mô tả rồi Lưu thì dòng đó thành "Tìm hiểu thêm về kênh này" | |
+| 19.8 | Xoá trống ô tên; gõ tên dài quá 50 ký tự | Nút Lưu bị khoá khi trống; ô nhập không cho gõ quá 50 ký tự | |
+| 19.9 | Đăng xuất rồi đăng nhập lại bằng Google | Tên và ảnh vẫn là bản đã đặt ở Studio, **không** quay về tên / ảnh Google | |
+| 19.10 | A vào một phòng xem chung mới (hoặc phòng đang có A thì thoát vào lại), nhắn tin | Danh sách người xem và chat hiện tên và ảnh mới | |

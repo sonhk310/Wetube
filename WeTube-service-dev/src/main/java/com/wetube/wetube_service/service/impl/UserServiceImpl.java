@@ -114,17 +114,26 @@ public class UserServiceImpl implements UserService {
 
         if (oauthAccountOpt.isPresent()) {
             AppUser existingUser = oauthAccountOpt.get().getUser();
-            existingUser.setName(googleUser.name());
-            existingUser.setPicture(googleUser.picture());
+            syncGoogleProfile(existingUser, googleUser);
             return existingUser;
         } else {
             return userRepository.findByEmail(googleUser.email())
                     .map(existingUser -> {
-                        existingUser.setName(googleUser.name());
-                        existingUser.setPicture(googleUser.picture());
+                        syncGoogleProfile(existingUser, googleUser);
                         return existingUser;
                     })
                     .orElseGet(() -> createNewGoogleUser(googleUser));
+        }
+    }
+
+    /**
+     * Chỉ lấy tên / ảnh Google khi người dùng chưa có kênh. Có kênh rồi thì tên / ảnh do chủ kênh tự đặt
+     * (Studio → Tuỳ chỉnh) và được ghi sang tài khoản, đăng nhập lại không được ghi đè.
+     */
+    private void syncGoogleProfile(AppUser user, GoogleUser googleUser) {
+        if (user.getChannel() == null) {
+            user.setName(googleUser.name());
+            user.setPicture(googleUser.picture());
         }
     }
 

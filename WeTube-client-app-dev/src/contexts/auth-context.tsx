@@ -47,6 +47,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: () => void;
   logout: () => Promise<void>;
+  /** Tải lại thông tin người đang đăng nhập (vd. sau khi đổi tên / ảnh kênh ở Studio). */
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -119,14 +121,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const refresh = useCallback(async () => {
+    try {
+      const response = await apiClient.get<User>("/me");
+      setUser(response.data);
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
       isLoading,
       login,
       logout,
+      refresh,
     }),
-    [user, isLoading, login, logout]
+    [user, isLoading, login, logout, refresh]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

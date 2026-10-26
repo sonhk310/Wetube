@@ -34,7 +34,9 @@ public class RateLimiter {
         /** Phòng xem chung: tạo phòng, thao tác phát / hàng chờ, chat (theo người dùng). */
         ROOM_CREATE(10, Duration.ofHours(1), "Bạn tạo phòng quá nhiều, vui lòng thử lại sau."),
         ROOM_CONTROL(20, Duration.ofSeconds(10), "Bạn thao tác quá nhanh."),
-        ROOM_CHAT(10, Duration.ofSeconds(10), "Bạn nhắn quá nhanh.");
+        ROOM_CHAT(10, Duration.ofSeconds(10), "Bạn nhắn quá nhanh."),
+        /** Tải ảnh bìa / ảnh đại diện kênh lên Cloudinary. */
+        CHANNEL_IMAGE(20, Duration.ofHours(1), "Bạn tải ảnh lên quá nhiều trong giờ này, vui lòng thử lại sau.");
 
         private final int max;
         private final Duration window;

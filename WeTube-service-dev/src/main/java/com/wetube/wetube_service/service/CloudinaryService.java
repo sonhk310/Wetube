@@ -145,6 +145,32 @@ public class CloudinaryService {
         return thumbnailUrl(cloudinary, publicIdObj.toString(), vertical);
     }
 
+    /**
+     * Ảnh bìa (rộng tối đa 2048 px, giữ tỉ lệ) hoặc ảnh đại diện (vuông 400 px, cắt quanh phần nổi bật) của kênh.
+     * Khác {@link #uploadImage}: hàm đó cắt về 300x200 dành cho ảnh thu nhỏ của video.
+     */
+    public String uploadChannelImage(MultipartFile imageFile, boolean banner) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            throw new IllegalArgumentException("Cần chọn một ảnh");
+        }
+        Transformation transformation = banner
+                ? new Transformation().width(2048).crop("limit").quality("auto")
+                : new Transformation().width(400).height(400).crop("fill").gravity("auto").quality("auto");
+        final Map<?, ?> result;
+        try {
+            result = cloudinary.uploader().upload(
+                    imageFile.getBytes(),
+                    ObjectUtils.asMap("resource_type", "image", "folder", "channels", "transformation", transformation));
+        } catch (IOException e) {
+            throw new RuntimeException("Upload to Cloudinary failed", e);
+        }
+        Object url = result.get("secure_url");
+        if (url == null) {
+            throw new IllegalStateException("Cloudinary không trả về link ảnh");
+        }
+        return url.toString();
+    }
+
     public String uploadImage(MultipartFile imageFile) {
         if (imageFile == null || imageFile.isEmpty()) {
             throw new IllegalArgumentException("File thumbnail is required");

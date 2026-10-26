@@ -4,6 +4,7 @@
 // import { LayoutSectionList } from "@/components/channel/LayoutSectionList";
 import { Button } from "@/components/ui/button";
 import { ChannelHandleForm } from "@/modules/studio/ui/components/channel-handle-form";
+import { ChannelProfileForm } from "@/modules/studio/ui/components/channel-profile-form";
 // import { Switch } from "@/components/ui/switch";
 // import { Label } from "@/components/ui/label";
 
@@ -22,6 +23,7 @@ export default function ChannelLayoutPage() {
     <div className="max-w-4xl mx-auto p-8 space-y-8">
       <section className="space-y-4">
         <h2 className="text-2xl font-bold">Thông tin cơ bản</h2>
+        <ChannelProfileForm />
         <ChannelHandleForm />
       </section>
 

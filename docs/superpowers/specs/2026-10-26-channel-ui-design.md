@@ -1,6 +1,6 @@
 # Thiết kế: giao diện trang kênh giống YouTube (H2)
 
-Ngày: 2026-10-26. Trạng thái: **anh đã duyệt 26/10** (câu 1a: chưa hiện Tham gia; 2a: tên / ảnh kênh thay tên / ảnh Google; 3: Phổ biến theo tổng lượt xem; 4: tắt tạm `purchase`, đã làm). Giai đoạn A làm xong ở máy, chờ anh duyệt push + deploy; B và C chưa làm.
+Ngày: 2026-10-26. Trạng thái: **anh đã duyệt 26/10** (câu 1a: chưa hiện Tham gia; 2a: tên / ảnh kênh thay tên / ảnh Google; 3: Phổ biến theo tổng lượt xem; 4: tắt tạm `purchase`, đã làm). Giai đoạn A đã deploy, anh thử OK (26/10). Giai đoạn B làm xong ở máy, chờ anh duyệt push + deploy; **khác bản thiết kế**: tên / ảnh kênh được ghi sang tài khoản (thay vì đổi từng chỗ đọc), kèm đăng nhập Google không còn ghi đè tên / ảnh của người đã có kênh. C chưa làm.
 
 ## 1. Vì sao
 Anh gửi ảnh trang kênh YouTube (nền tối) và muốn trang kênh WeTube giống vậy. Trên nền sáng của site (chưa có giao diện tối, việc F3).
