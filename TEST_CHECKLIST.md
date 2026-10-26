@@ -227,3 +227,22 @@ Cần 2 tài khoản đăng nhập (A và B). Sau deploy, mọi kênh cũ đã c
 | 17.11 | A và B vào cùng phòng xem chung, nhắn tin | Tên trong chat kèm `@handle`; rê chuột vào ảnh ở "Đang xem" thấy `Tên (@handle)` | |
 | 17.12 | Trong phòng, B gõ `@` ở cuối ô chat | Hiện danh sách người trong phòng có handle (không có B); gõ thêm chữ thì lọc; ↑↓ chọn, Enter hoặc Tab chèn `@handle `, Esc đóng | |
 | 17.13 | B gửi tin có `@handle` của A | Trên máy A, tin đó có nền tím nhạt; trên máy B (người gửi) không tô; `@handle` trong tin màu tím, bấm mở kênh | |
+
+## 18. Giao diện trang kênh (H2, giai đoạn A)
+
+Cần 2 tài khoản: A (chủ kênh, có vài video thường và vài Shorts) và B (người xem). Trang kênh chưa có ảnh bìa thì hiện nền xám chuyển sắc (đặt ảnh bìa là giai đoạn B).
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 18.1 | B mở kênh của A | Ảnh bìa rộng (nền xám nếu chưa có), avatar lớn, tên lớn, dòng `@handle • N người đăng ký • N video`, mô tả một dòng, nút Đăng ký | |
+| 18.2 | Bấm "...xem thêm" (hoặc "Tìm hiểu thêm về kênh này" nếu chưa có mô tả) | Hộp thoại Giới thiệu: mô tả đầy đủ, link `/@handle`, "Đã tham gia ngày ...", quốc gia (nếu có), số lượt xem | |
+| 18.3 | B bấm Đăng ký | Nút đổi thành "Đã đăng ký ▾" có chuông; mở menu thấy Tất cả / Cá nhân hoá (có dấu ✓) / Không có thông báo / Huỷ đăng ký | |
+| 18.4 | B chọn "Không có thông báo", tải lại trang | Biểu tượng chuông gạch chéo, menu vẫn tích "Không có thông báo". A đăng một video mới: B **không** nhận thông báo; đổi lại "Tất cả" rồi A đăng tiếp thì B nhận | |
+| 18.5 | B chọn "Huỷ đăng ký" | Nút trở lại "Đăng ký", số người đăng ký giảm | |
+| 18.6 | Khách (chưa đăng nhập) bấm Đăng ký | Hiện thông báo mời đăng nhập có nút "Đăng nhập" | |
+| 18.7 | A mở kênh của mình | Thay nút Đăng ký bằng "Tuỳ chỉnh kênh" (sang Studio → Tuỳ chỉnh) và "Quản lý video" (sang Studio → Nội dung) | |
+| 18.8 | Xem thanh thẻ | Trang chủ, Video, Shorts, Danh sách phát, Bài đăng; thẻ đang chọn đậm, gạch chân đen; bấm từng thẻ thì địa chỉ là `/@handle`, `/@handle/videos`, `/@handle/shorts`... | |
+| 18.9 | Trang chủ kênh | Hàng "Video mới nhất" (cuộn ngang, nút ‹ › hiện khi còn nội dung), hàng "Shorts" thẻ dọc; hàng "Phổ biến" chỉ có khi kênh có trên 12 video; hàng nào trống thì ẩn | |
+| 18.10 | Thẻ Video: bấm chip Phổ biến / Cũ nhất | Thứ tự đổi theo lượt xem / ngày; không có Shorts lẫn trong đó; kênh nhiều video thì có nút "Tải thêm" | |
+| 18.11 | Thẻ Shorts | Chỉ có Shorts, thẻ dọc 9:16; bấm một thẻ mở trình phát Shorts | |
+| 18.12 | Thu nhỏ cửa sổ cỡ điện thoại | Ảnh bìa thấp hơn, avatar nhỏ, tên và nút căn giữa, thanh thẻ cuộn ngang được, không tràn ngang trang | |

@@ -23,14 +23,24 @@ export function parseTimestamp(text: string): number {
 }
 
 /**
- * Hiện văn bản (mô tả video, bình luận) với link bấm được (mở tab mới) và mốc thời gian bấm
- * được để tua trình phát. Giữ nguyên xuống dòng.
+ * Hiện văn bản (mô tả video, bình luận) với link bấm được (mở tab mới), mốc thời gian bấm được để
+ * tua trình phát và @handle bấm được để mở trang kênh. Giữ nguyên xuống dòng.
+ * seekable = false: mốc thời gian như 3:20 để nguyên chữ (ngoài trang xem không có trình phát để tua).
  */
-export default function LinkifiedText({ text, className }: { text: string; className?: string }) {
+export default function LinkifiedText({
+  text,
+  className,
+  seekable = true,
+}: {
+  text: string;
+  className?: string;
+  seekable?: boolean;
+}) {
   const parts: ReactNode[] = [];
   let last = 0;
   for (const match of text.matchAll(TOKEN)) {
     const start = match.index ?? 0;
+    if (match[2] && !seekable) continue;
     let token = match[0];
     let end = start + token.length;
 

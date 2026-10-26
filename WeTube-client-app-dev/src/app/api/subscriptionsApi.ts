@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/apiFetch";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_PREFIX } from "@/constants/appConstant";
+import type { NotificationMode } from "@/types/channel";
 
 export interface Channel {
     channelId: string;
@@ -38,6 +39,15 @@ export const subscriptionsApi = createApi({
                 responseHandler: "text",
             }),
         }),
+        // Đổi chế độ thông báo (chuông) của một kênh đã đăng ký
+        setNotificationMode: builder.mutation<string, { channelId: string; mode: NotificationMode }>({
+            query: (body) => ({
+                url: "/mode",
+                method: "PUT",
+                body,
+                responseHandler: "text",
+            }),
+        }),
         unsubscribe: builder.mutation<string, UnsubscribeRequest>({
             query: (body) => ({
                 url: "/unsubscribe",
@@ -52,4 +62,5 @@ export const subscriptionsApi = createApi({
 export const {
     useGetSubscribedChannelsQuery,
     useSubscribeMutation,
-    useUnsubscribeMutation, } = subscriptionsApi;
+    useUnsubscribeMutation,
+    useSetNotificationModeMutation, } = subscriptionsApi;

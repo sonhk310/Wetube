@@ -1,7 +1,7 @@
 import { apiFetch } from "@/lib/apiFetch";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_PREFIX } from "@/constants/appConstant";
-import { ChannelInfo, ChannelVideo } from "@/types/channel";
+import { ChannelInfo, ChannelVideo, ChannelVideoSort } from "@/types/channel";
 
 
 export const channelApi = createApi({
@@ -31,11 +31,11 @@ export const channelApi = createApi({
     }),
 
     getChannelVideos: builder.query<
-      { content: ChannelVideo[]; last: boolean },
-      { userId: string; page?: number; size?: number }
+      { content: ChannelVideo[]; last: boolean; totalElements: number },
+      { userId: string; page?: number; size?: number; type?: "all" | "video" | "short"; sort?: ChannelVideoSort }
     >({
-      query: ({ userId, page = 0, size = 12 }) =>
-        `/videos/by-user/${userId}?page=${page}&size=${size}`,
+      query: ({ userId, page = 0, size = 12, type = "all", sort = "latest" }) =>
+        `/videos/by-user/${userId}?page=${page}&size=${size}&type=${type}&sort=${sort}`,
     }),
   }),
 });

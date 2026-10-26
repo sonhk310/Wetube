@@ -8,7 +8,10 @@ import java.util.UUID;
 
 import com.wetube.wetube_service.dto.request.SubscriptionRequest;
 import com.wetube.wetube_service.dto.request.UnsubscribeRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
+import com.wetube.wetube_service.enumeration.SubscriptionType;
 import org.springframework.web.bind.annotation.*;
 
 import com.wetube.wetube_service.dto.response.SubscribedChannelResponseDto;
@@ -38,5 +41,18 @@ private final  SubscriptionService subscriptionService;
         request.setSubscriberId(CurrentUser.id(jwt));
         subscriptionService.unsubscribe(request);
         return ResponseEntity.ok("Unsubscribed successfully");
+    }
+
+    /** Đổi chế độ thông báo (chuông) của người gọi với một kênh đã đăng ký. */
+    @PutMapping("/mode")
+    public ResponseEntity<String> updateMode(@RequestBody ModeRequest request, @AuthenticationPrincipal Jwt jwt) {
+        if (request.channelId() == null || request.mode() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thiếu channelId hoặc mode");
+        }
+        subscriptionService.updateSubscriptionMode(CurrentUser.id(jwt), request.channelId(), null, request.mode());
+        return ResponseEntity.ok("Updated");
+    }
+
+    public record ModeRequest(UUID channelId, SubscriptionType mode) {
     }
 }

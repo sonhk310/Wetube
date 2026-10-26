@@ -39,8 +39,12 @@ public interface VideoService {
 
     VideoDetailResponseDto getDetailWithRecommend(UUID videoId, UUID userId, boolean admin);
 
-    /** Chủ kênh (và admin) thấy mọi video trừ đã xoá; người khác chỉ thấy video công khai. */
-    CustomPageResponse<VideoDto> getVideosByUserId(UUID userId, int page, int size, UUID viewerId, boolean admin);
+    /**
+     * Chủ kênh (và admin) thấy mọi video trừ đã xoá; người khác chỉ thấy video công khai.
+     * type: all | video | short; sort: latest | popular | oldest (giá trị khác thì 400).
+     */
+    CustomPageResponse<VideoDto> getVideosByUserId(UUID userId, int page, int size, UUID viewerId, boolean admin,
+                                                   String type, String sort);
 
     CustomPageResponse<VideoDto> getShorts(int page, int size);
 

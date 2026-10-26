@@ -63,9 +63,25 @@ public interface VideoRepository extends JpaRepository<Video, UUID> {
 
     Page<Video> findByUserId(UUID userId, Pageable pageable);
 
-    Page<Video> findByUserIdAndVideosStatusIn(UUID userId, Collection<ActiveStatus> statuses, Pageable pageable);
+    /** Video của một kênh theo trạng thái (shortFlags: true = Shorts, false = video thường). */
+    @Query("""
+                SELECT v FROM Video v
+                WHERE v.user.id = :userId
+                  AND v.videosStatus IN :statuses
+                  AND v.isShort IN :shortFlags
+            """)
+    Page<Video> findChannelVideos(@Param("userId") UUID userId, @Param("statuses") Collection<ActiveStatus> statuses,
+                                  @Param("shortFlags") Collection<Boolean> shortFlags, Pageable pageable);
 
-    Page<Video> findByUserIdAndVideosStatusNot(UUID userId, ActiveStatus status, Pageable pageable);
+    /** Như trên nhưng cho chủ kênh / admin: mọi trạng thái trừ {@code excluded}. */
+    @Query("""
+                SELECT v FROM Video v
+                WHERE v.user.id = :userId
+                  AND v.videosStatus <> :excluded
+                  AND v.isShort IN :shortFlags
+            """)
+    Page<Video> findChannelVideosExcluding(@Param("userId") UUID userId, @Param("excluded") ActiveStatus excluded,
+                                           @Param("shortFlags") Collection<Boolean> shortFlags, Pageable pageable);
 
     List<Video> findByVideosStatusIn(Collection<ActiveStatus> statuses);
 

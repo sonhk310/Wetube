@@ -7,13 +7,21 @@ export interface ChannelInfo {
   picture: string | null;
   backgroundImgUrl: string | null;
   description: string | null;
+  /** Mã quốc gia 2 chữ ("UN" = chưa xác định). */
+  countryCode?: string | null;
   totalSubscribers: number;
   totalVideos: number;
   totalViews: number;
   createdAt: string;
   /** Người xem hiện tại đã đăng ký kênh chưa (false nếu chưa đăng nhập). */
   subscribed?: boolean;
+  /** Chế độ thông báo của người xem với kênh; null / không có nếu chưa đăng ký. */
+  notificationMode?: NotificationMode | null;
 }
+
+export type ChannelVideoSort = "latest" | "popular" | "oldest";
+
+export type NotificationMode = "ALL" | "PERSONALIZE" | "NONE_NOTIFICATION";
 
 export interface ChannelVideo {
   id: string;
@@ -24,4 +32,5 @@ export interface ChannelVideo {
   duration: number;
   totalView: number;
   createdAt: string;
+  isShort?: boolean;
 }

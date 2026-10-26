@@ -166,11 +166,13 @@ public class VideoController {
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "all") String type,
+            @RequestParam(defaultValue = "latest") String sort,
             @AuthenticationPrincipal Jwt jwt) {
 
         UUID viewerId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;
         CustomPageResponse<VideoDto> videoPage = videoService.getVideosByUserId(
-                userId, page, Math.min(size, 50), viewerId, CurrentUser.isAdmin(jwt));
+                userId, page, Math.min(size, 50), viewerId, CurrentUser.isAdmin(jwt), type, sort);
         return ResponseEntity.ok(videoPage);
     }
 

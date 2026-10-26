@@ -7,6 +7,7 @@ import { useProgressRouter } from "@/hooks/use-progress-router";
 const tabs = [
   { label: "Trang chủ", slug: "" },
   { label: "Video", slug: "videos" },
+  { label: "Shorts", slug: "shorts" },
   { label: "Danh sách phát", slug: "playlists" },
   { label: "Bài đăng", slug: "posts" },
 ];
@@ -27,16 +28,16 @@ export default function ChannelTabs() {
   };
 
   return (
-    <div className="border-b border-gray-300 px-6 pt-0 pb-0">
-      <ul className="flex gap-6 text-sm font-medium text-gray-600">
+    <div className="overflow-x-auto border-b border-gray-300 [scrollbar-width:none]">
+      <ul className="flex gap-6 whitespace-nowrap text-sm font-medium text-gray-600">
         {tabs.map((tab) => (
           <li
             key={tab.slug}
             onClick={() => handleTabClick(tab.slug)}
-            className={`cursor-pointer pb-2 ${
+            className={`cursor-pointer border-b-2 pb-2 ${
               currentTab === tab.slug
-                ? "text-black border-b-2 border-black"
-                : ""
+                ? "border-black font-semibold text-black"
+                : "border-transparent hover:text-black"
             }`}
           >
             {tab.label}

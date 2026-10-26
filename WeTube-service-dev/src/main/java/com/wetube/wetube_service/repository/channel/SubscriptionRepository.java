@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface SubscriptionRepository extends JpaRepository<Subscription, SubscriptionId> {
@@ -33,6 +34,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Subs
     @Query("SELECT s.createdAt FROM Subscription s WHERE s.id.tier.channel.id = :channelId AND s.createdAt >= :from AND s.createdAt < :to")
     List<LocalDateTime> createdAtBetween(@Param("channelId") UUID channelId, @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to);
+
+    Optional<Subscription> findFirstById_Subscriber_IdAndId_Tier_Channel_Id(UUID userId, UUID channelId);
 
     boolean existsById_Subscriber_IdAndId_Tier_Channel_Id(UUID userId, UUID channelId);
 }

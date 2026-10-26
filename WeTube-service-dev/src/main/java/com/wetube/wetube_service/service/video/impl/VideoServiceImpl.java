@@ -28,10 +28,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.wetube.wetube_service.repository.video.TagRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
@@ -328,13 +330,26 @@ private static String draftTitle(String fileName) {
 
     @Override
     @Transactional(readOnly = true)
-    public CustomPageResponse<VideoDto> getVideosByUserId(UUID userId, int page, int size, UUID viewerId, boolean admin) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    public CustomPageResponse<VideoDto> getVideosByUserId(UUID userId, int page, int size, UUID viewerId, boolean admin,
+                                                          String type, String sort) {
+        List<Boolean> shortFlags = switch (type == null ? "all" : type) {
+            case "all" -> List.of(true, false);
+            case "video" -> List.of(false);
+            case "short" -> List.of(true);
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "type phải là all, video hoặc short");
+        };
+        Sort order = switch (sort == null ? "latest" : sort) {
+            case "latest" -> Sort.by("createdAt").descending();
+            case "popular" -> Sort.by("totalView").descending().and(Sort.by("createdAt").descending());
+            case "oldest" -> Sort.by("createdAt").ascending();
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "sort phải là latest, popular hoặc oldest");
+        };
+        Pageable pageable = PageRequest.of(page, size, order);
 
         boolean seesAll = admin || userId.equals(viewerId);
         Page<Video> videoPage = seesAll
-                ? videoRepository.findByUserIdAndVideosStatusNot(userId, ActiveStatus.DELETED, pageable)
-                : videoRepository.findByUserIdAndVideosStatusIn(userId, VideoAccess.LISTED, pageable);
+                ? videoRepository.findChannelVideosExcluding(userId, ActiveStatus.DELETED, shortFlags, pageable)
+                : videoRepository.findChannelVideos(userId, VideoAccess.LISTED, shortFlags, pageable);
         Page<VideoDto> videoDtoPage = videoPage.map(videoMapper::toDto);
         return new CustomPageResponse<>(videoDtoPage);
     }

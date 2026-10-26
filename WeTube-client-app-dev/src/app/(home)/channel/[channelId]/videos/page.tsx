@@ -1,5 +1,5 @@
-import ChannelVideos from "@/modules/channel/ui/channelVideos";
+import ChannelVideosTab from "@/modules/channel/ui/channelVideosTab";
 
 export default function VideosTab() {
-  return <ChannelVideos size={30} />;
+  return <ChannelVideosTab />;
 }

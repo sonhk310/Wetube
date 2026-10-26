@@ -6,8 +6,10 @@ import com.wetube.wetube_service.entity.AppUser;
 import com.wetube.wetube_service.entity.channel.Channel;
 import com.wetube.wetube_service.entity.channel.ChannelCategory;
 import com.wetube.wetube_service.entity.channel.MembershipTier;
+import com.wetube.wetube_service.entity.channel.Subscription;
 import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.enumeration.CategoryType;
+import com.wetube.wetube_service.enumeration.SubscriptionType;
 import com.wetube.wetube_service.exception.ChannelAlreadyExistsException;
 import com.wetube.wetube_service.exception.ResourceNotFoundException;
 import com.wetube.wetube_service.mapper.channel.ChannelMapper;
@@ -59,8 +61,14 @@ public class ChannelServiceImpl implements ChannelService {
                 .orElseThrow(() -> new ResourceNotFoundException("Channel", "id", channelId.toString()));
 
         ChannelResponseDto dto = channelMapper.toChannelResponseDto(channel);
-        dto.setSubscribed(viewerId != null
-                && subscriptionRepository.existsById_Subscriber_IdAndId_Tier_Channel_Id(viewerId, channelId));
+        Subscription subscription = viewerId == null ? null
+                : subscriptionRepository.findFirstById_Subscriber_IdAndId_Tier_Channel_Id(viewerId, channelId).orElse(null);
+        dto.setSubscribed(subscription != null);
+        if (subscription != null) {
+            // Đăng ký từ trước khi có chế độ thông báo thì coi như "Cá nhân hoá" (mặc định lúc đăng ký)
+            dto.setNotificationMode(subscription.getNotificationMode() != null
+                    ? subscription.getNotificationMode() : SubscriptionType.PERSONALIZE);
+        }
         return dto;
     }
 
