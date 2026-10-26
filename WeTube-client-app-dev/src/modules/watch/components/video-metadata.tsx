@@ -238,20 +238,21 @@ export default function VideoMetadata() {
       {/* Title */}
       <p className="text-2xl font-bold tracking-tight">{title}</p>
 
-      <div className="py-1 flex justify-between items-center mt-2">
-        <section className="flex justify-start items-center gap-3">
+      {/* Cột hẹp: hàng nút xuống dòng dưới tên kênh (như YouTube), không bóp tên kênh / nút Đăng ký */}
+      <div className="py-1 flex flex-wrap justify-between items-center gap-x-4 gap-y-3 mt-2">
+        <section className="flex min-w-0 justify-start items-center gap-3">
           <Image
-            className="rounded-full h-10 w-10 cursor-pointer"
+            className="rounded-full h-10 w-10 shrink-0 cursor-pointer"
             src={picture}
             alt={name}
             height={40}
             width={40}
           />
-          <div className="hidden md:block">
-            <section className="flex flex-col tracking-tight mr-4">
-              <p className="font-bold font-lg cursor-pointer">{name}</p>
+          <div className="min-w-0">
+            <section className="flex flex-col tracking-tight mr-1">
+              <p className="max-w-[14rem] truncate font-bold font-lg cursor-pointer" title={name}>{name}</p>
 
-              <p className="text-gray-500 text-xs font-semibold">
+              <p className="whitespace-nowrap text-gray-500 text-xs font-semibold">
                 {formatCompact(Math.max(0, (totalSubscribers ?? 0) + subscriberDelta))} người đăng ký
               </p>
             </section>
@@ -260,7 +261,7 @@ export default function VideoMetadata() {
             // Video của chính mình: YouTube hiện nút quản lý thay cho Đăng ký
             <Link
               href={`/studio/videos/${videoDetail.detail.id}`}
-              className="rounded-full bg-gray-100 hover:bg-gray-200 py-2 px-3 text-sm font-bold"
+              className="shrink-0 whitespace-nowrap rounded-full bg-gray-100 hover:bg-gray-200 py-2 px-3 text-sm font-bold"
             >
               Chỉnh sửa video
             </Link>
@@ -268,7 +269,7 @@ export default function VideoMetadata() {
             <button
               onClick={handleSubscribe}
               disabled={subscribing}
-              className={`rounded-full flex gap-2 py-2 px-3 cursor-pointer disabled:opacity-70 ${
+              className={`shrink-0 whitespace-nowrap rounded-full flex gap-2 py-2 px-3 cursor-pointer disabled:opacity-70 ${
                 isSubscribed
                   ? "bg-gray-100 hover:bg-gray-200"
                   : "bg-black text-white hover:bg-gray-800"
@@ -283,7 +284,7 @@ export default function VideoMetadata() {
           )}
         </section>
 
-        <section className="flex justify-end items-center gap-3 ">
+        <section className="no-scrollbar flex max-w-full items-center gap-2 overflow-x-auto [&>*]:shrink-0">
           <div className="cursor-pointer flex justify-between bg-gray-100 rounded-full overflow-hidden">
             <button
               onClick={handleToggleLike}
