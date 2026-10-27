@@ -298,3 +298,42 @@ Cần đăng nhập (trang chủ chỉ có gợi ý khi đã đăng nhập) và 
 | 21.2 | Xem thẻ video ở trang kênh, trang xem (cột gợi ý), kết quả tìm kiếm | Ảnh nét ở mọi chỗ | |
 | 21.3 | Xem thẻ Shorts ở trang chủ và trang kênh | Ảnh dọc nét, không bị cắt thành khung ngang | |
 | 21.4 | Studio → mở một video → đổi ảnh thu nhỏ → Lưu | Ảnh thu nhỏ mới hiện đúng và nét; vào Cloudinary xem thì ảnh cũ của video đó đã mất | |
+
+## 22. Hộp Giới thiệu kênh: chia sẻ, báo cáo người dùng
+
+Cần 3 tài khoản: A (chủ kênh, có vài video công khai), B (người xem), Admin. Mục 22–23 thao tác trên dữ liệu thật: nên dùng kênh thử, xong thì bỏ ẩn lại.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 22.1 | B mở trang kênh của A, rê chuột vào "Tìm hiểu thêm về kênh này" (hoặc "...xem thêm") | Con trỏ thành bàn tay, chữ đậm màu lên; bấm thì mở hộp Giới thiệu | |
+| 22.2 | Trong hộp Giới thiệu, rê chuột vào link kênh rồi bấm | Link màu xanh, gạch chân khi rê; bấm mở đúng trang `/@handle` của A | |
+| 22.3 | Bấm "Chia sẻ kênh", rồi "Sao chép" | Hộp chia sẻ có link kênh, **không** có dòng "Bắt đầu tại"; báo "Đã sao chép liên kết", dán ra đúng link | |
+| 22.4 | B bấm "Báo cáo người dùng" | Hộp có 5 lý do: Mạo danh người khác; Ảnh, tên hoặc mô tả kênh không phù hợp; Spam hoặc lừa đảo; Thù ghét hoặc quấy rối; Lý do khác | |
+| 22.5 | Chọn lý do, ghi mô tả, "Gửi báo cáo"; rồi báo cáo lại lần nữa | Lần đầu báo "Đã gửi báo cáo"; lần hai báo "Bạn đã báo cáo kênh này, báo cáo đang chờ xử lý" | |
+| 22.6 | B mở "Nhật ký báo cáo" | Có dòng "Kênh: <tên kênh A>" với lý do vừa chọn, "Đang chờ xử lý" | |
+| 22.7 | A mở hộp Giới thiệu của chính kênh mình | Có "Chia sẻ kênh", **không** có "Báo cáo người dùng" | |
+| 22.8 | Đăng xuất, mở hộp Giới thiệu của kênh A, bấm "Báo cáo người dùng" | Hiện lời mời đăng nhập, không mở hộp báo cáo | |
+| 22.9 | Mở một video, bấm Chia sẻ | Hộp chia sẻ video vẫn có "Bắt đầu tại" như cũ | |
+
+## 23. Admin xét báo cáo, ẩn / bỏ ẩn
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 23.1 | Admin mở `/admin/reports` (tab "Đang chờ") | Báo cáo của B hiện ảnh, tên, @handle kênh A; dòng "N người đã báo cáo (lý do + số lượng)"; dòng "Người báo cáo: <tên B>" kèm số báo cáo trước "x đúng, y sai" (hoặc "chưa có báo cáo nào được xét trước đây") | |
+| 23.2 | Bấm "Xem nhanh kênh" | Hiện ảnh bìa, ảnh đại diện, @handle, số người đăng ký, số video công khai, mô tả, tối đa 6 video mới nhất; bấm "Ẩn xem nhanh" thì thu lại | |
+| 23.3 | Bấm "Ẩn kênh", xác nhận | Báo cáo chuyển sang "Đã xử lý", ghi "Kênh đã bị ẩn"; các báo cáo khác đang chờ về kênh A cũng đóng | |
+| 23.4 | B (và khi chưa đăng nhập) mở trang kênh A, trang chủ, tìm tên kênh / tên video của A, mở link một video của A | Trang kênh báo không tìm thấy; video của A không còn ở trang chủ, tìm kiếm; link video không xem được | |
+| 23.5 | A mở trang kênh của mình; Admin mở trang kênh A | Cả hai xem được, đầu trang có dòng đỏ "Kênh này đang bị quản trị viên ẩn…" | |
+| 23.6 | Admin sang tab "Đã xử lý", bấm "Bỏ ẩn kênh" | Kênh A và các video hiện lại; video trước đó "Không công khai" vẫn là không công khai (không bị đổi thành công khai) | |
+| 23.7 | B báo cáo một video của A; Admin bấm "Ẩn video"; rồi "Bỏ ẩn video" ở tab "Đã xử lý" | Ẩn thì video biến mất với B; bỏ ẩn thì video trở lại đúng trạng thái cũ | |
+| 23.8 | Ẩn riêng một video của A (23.7, không bỏ ẩn), rồi ẩn kênh A và bỏ ẩn kênh A | Sau khi bỏ ẩn kênh, video bị ẩn riêng **vẫn ẩn**, các video khác hiện lại | |
+| 23.9 | Admin bấm "Không vi phạm" cho một báo cáo khác của B, rồi xem lại một báo cáo mới của B | Dòng người báo cáo của B tăng số "sai" lên 1 | |
+
+## 24. Trang chủ tài khoản mới (giống YouTube)
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 24.1 | Đăng nhập bằng một tài khoản Google chưa từng dùng WeTube (hoặc vào Lịch sử, xoá hết lịch sử xem) rồi mở trang chủ | Không có video; giữa trang có biểu tượng kính lúp, "Hãy thử tìm kiếm để bắt đầu" và dòng giải thích | |
+| 24.2 | Tìm một video, mở và xem khoảng 5 giây, rồi quay về trang chủ | Trang chủ có video gợi ý (có thể phải tải lại trang) | |
+| 24.3 | Lướt một Short dưới 3 giây rồi quay về trang chủ (với tài khoản chưa xem gì) | Vẫn trống: video chưa đủ 3 giây không được tính vào lịch sử | |
+| 24.4 | Tài khoản đã xem nhiều video (tài khoản của anh) | Trang chủ vẫn có video như trước | |
