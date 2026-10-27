@@ -125,6 +125,7 @@ public VideoDto createVideo(MultipartFile videoFile,
 
     AppUser user = userRepository.findById(authenticatedUserId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + authenticatedUserId));
+    requireChannelNotHidden(user);
 
     CloudinaryService.UploadedVideo uploaded;
     try {
@@ -198,6 +199,7 @@ public VideoDto createDraft(MultipartFile videoFile, Float duration, Integer wid
     }
     AppUser user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+    requireChannelNotHidden(user);
 
     CloudinaryService.UploadedVideo uploaded;
     try {
@@ -587,7 +589,11 @@ private static String draftTitle(String fileName) {
         }
         // Video bị admin ẩn (INACTIVE): chủ video vẫn sửa được nội dung nhưng không tự bỏ ẩn được
         if (video.getVideosStatus() != ActiveStatus.INACTIVE && !keepDraft) {
-            video.setVideosStatus(parseVisibility(updateDto.getStatus()));
+            ActiveStatus target = parseVisibility(updateDto.getStatus());
+            if (VideoAccess.isListed(target) || target == ActiveStatus.UNLISTED) {
+                requireChannelNotHidden(video.getUser());
+            }
+            video.setVideosStatus(target);
         }
 
         String replacedThumbnail = null;
@@ -668,6 +674,9 @@ private static String draftTitle(String fileName) {
                 throw new AccessDeniedException("User does not have permission to update this video");
             }
         }
+        if (!videos.isEmpty() && (VideoAccess.isListed(target) || target == ActiveStatus.UNLISTED)) {
+            requireChannelNotHidden(videos.get(0).getUser());
+        }
         int updated = 0;
         for (Video video : videos) {
             ActiveStatus current = video.getVideosStatus();
@@ -686,6 +695,18 @@ private static String draftTitle(String fileName) {
             updated++;
         }
         return updated;
+    }
+
+    /**
+     * Kênh bị admin ẩn (báo cáo người dùng): chủ kênh không tải video mới lên, không đăng bản nháp, không đặt video
+     * nào thành công khai / không công khai được, cho tới khi admin bỏ ẩn. Vẫn sửa nội dung hoặc đặt riêng tư được.
+     */
+    private static void requireChannelNotHidden(AppUser user) {
+        var channel = user != null ? user.getChannel() : null;
+        if (channel != null && channel.getStatus() == ActiveStatus.INACTIVE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Kênh của bạn đang bị quản trị viên ẩn do báo cáo vi phạm, nên chưa thể đăng hoặc công khai video.");
+        }
     }
 
     /** Video công khai: báo cho người đăng ký kênh. Lỗi khi gửi thông báo không làm hỏng việc đang làm. */
