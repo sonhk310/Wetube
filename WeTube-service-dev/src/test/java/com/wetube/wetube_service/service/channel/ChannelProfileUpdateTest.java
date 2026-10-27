@@ -97,6 +97,8 @@ class ChannelProfileUpdateTest {
         assertThatThrownBy(() -> service.getChannelById(channel.getId(), UUID.randomUUID()))
                 .isInstanceOf(com.wetube.wetube_service.exception.ResourceNotFoundException.class);
         assertThat(service.getChannelById(channel.getId(), userId)).isNotNull();
+        // Admin xem được để xét báo cáo
+        assertThat(service.getChannelById(channel.getId(), UUID.randomUUID(), true)).isNotNull();
     }
 
     private void assertBadRequest(ChannelUpdateRequest request) {

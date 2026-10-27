@@ -52,6 +52,12 @@ export default function ChannelHeader() {
 
   return (
     <div className="space-y-4">
+      {/* Chỉ chủ kênh và admin còn mở được kênh đang bị ẩn */}
+      {channel.status === "INACTIVE" && (
+        <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
+          Kênh này đang bị quản trị viên ẩn do báo cáo vi phạm. Người khác không xem được kênh và các video của kênh.
+        </p>
+      )}
       <div className="relative aspect-[16/5] w-full overflow-hidden rounded-xl bg-gradient-to-r from-gray-200 via-gray-100 to-gray-300 md:aspect-[6/1]">
         {channel.backgroundImgUrl && (
           <Image

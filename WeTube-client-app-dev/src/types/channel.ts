@@ -12,6 +12,8 @@ export interface ChannelInfo {
   totalSubscribers: number;
   totalVideos: number;
   totalViews: number;
+  /** INACTIVE: kênh bị admin ẩn (chỉ chủ kênh và admin còn xem được). */
+  status?: string | null;
   createdAt: string;
   /** Người xem hiện tại đã đăng ký kênh chưa (false nếu chưa đăng nhập). */
   subscribed?: boolean;

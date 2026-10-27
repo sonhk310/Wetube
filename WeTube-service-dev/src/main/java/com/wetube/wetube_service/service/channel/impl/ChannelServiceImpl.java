@@ -74,12 +74,12 @@ public class ChannelServiceImpl implements ChannelService {
     private final VideoIndexer videoIndexer;
 
     @Override
-    public ChannelResponseDto getChannelById(UUID channelId, UUID viewerId) {
+    public ChannelResponseDto getChannelById(UUID channelId, UUID viewerId, boolean viewerIsAdmin) {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Channel", "id", channelId.toString()));
-        // Kênh bị admin ẩn (báo cáo người dùng): chỉ chủ kênh còn xem được
+        // Kênh bị admin ẩn (báo cáo người dùng): chỉ chủ kênh và admin còn xem được
         boolean isOwner = viewerId != null && channel.getUser() != null && viewerId.equals(channel.getUser().getId());
-        if (channel.getStatus() == ActiveStatus.INACTIVE && !isOwner) {
+        if (channel.getStatus() == ActiveStatus.INACTIVE && !isOwner && !viewerIsAdmin) {
             throw new ResourceNotFoundException("Channel", "id", channelId.toString());
         }
 
@@ -150,10 +150,10 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     @Transactional(readOnly = true)
-    public ChannelResponseDto getChannelByHandle(String handle, UUID viewerId) {
+    public ChannelResponseDto getChannelByHandle(String handle, UUID viewerId, boolean viewerIsAdmin) {
         Channel channel = channelRepository.findByHandle(ChannelHandles.normalize(handle))
                 .orElseThrow(() -> new ResourceNotFoundException("Channel", "handle", handle));
-        return getChannelById(channel.getId(), viewerId);
+        return getChannelById(channel.getId(), viewerId, viewerIsAdmin);
     }
 
     @Override

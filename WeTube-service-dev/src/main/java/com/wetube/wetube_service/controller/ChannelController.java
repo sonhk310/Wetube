@@ -42,8 +42,8 @@ public class ChannelController {
         UUID viewerId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;
         UUID channelId = parseUuid(channel);
         ChannelResponseDto response = channelId != null
-                ? channelService.getChannelById(channelId, viewerId)
-                : channelService.getChannelByHandle(channel, viewerId);
+                ? channelService.getChannelById(channelId, viewerId, CurrentUser.isAdmin(jwt))
+                : channelService.getChannelByHandle(channel, viewerId, CurrentUser.isAdmin(jwt));
         return ResponseEntity.ok(response);
     }
 
@@ -59,7 +59,7 @@ public class ChannelController {
     @GetMapping("/handle/{handle}")
     public ResponseEntity<ChannelResponseDto> getChannelByHandle(@PathVariable String handle, @AuthenticationPrincipal Jwt jwt) {
         UUID viewerId = (jwt != null) ? UUID.fromString(jwt.getSubject()) : null;
-        return ResponseEntity.ok(channelService.getChannelByHandle(handle, viewerId));
+        return ResponseEntity.ok(channelService.getChannelByHandle(handle, viewerId, CurrentUser.isAdmin(jwt)));
     }
 
     @GetMapping("/handle-check")
