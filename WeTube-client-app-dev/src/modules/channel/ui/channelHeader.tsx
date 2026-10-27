@@ -6,9 +6,11 @@ import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { useGetChannelInfoQuery } from "@/app/api/channelApi";
+import { useGetChannelLivesQuery } from "@/app/api/liveApi";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { formatCompact } from "@/lib/utils";
+import { LiveBadge } from "@/modules/live/ui/live-badge";
 import ChannelAboutDialog from "./channelAboutDialog";
 import SubscribeControl from "./subscribeControl";
 
@@ -20,6 +22,9 @@ export default function ChannelHeader() {
   const { user } = useAuth();
   const { data: channel, isLoading, error, refetch } = useGetChannelInfoQuery(channelId);
   const [aboutOpen, setAboutOpen] = useState(false);
+  // Kênh đang phát trực tiếp: ảnh đại diện có viền đỏ + nhãn TRỰC TIẾP, bấm vào là tới buổi phát
+  const { data: lives } = useGetChannelLivesQuery({ channelId: channel?.id ?? "", size: 1 }, { skip: !channel?.id });
+  const liveNow = lives?.current;
 
   // Mở bằng /channel/{id} mà kênh đã có handle thì đổi thanh địa chỉ sang /@handle (không tải lại trang)
   const handle = channel?.handle;
@@ -72,13 +77,30 @@ export default function ChannelHeader() {
       </div>
 
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
-        <Image
-          src={channel.picture || FALLBACK_AVATAR}
-          alt={channel.name}
-          width={160}
-          height={160}
-          className="size-20 shrink-0 rounded-full bg-white object-cover sm:size-40"
-        />
+        {liveNow ? (
+          <Link
+            href={`/live/${liveNow.id}`}
+            aria-label="Kênh đang phát trực tiếp"
+            className="relative shrink-0 rounded-full ring-4 ring-red-600 ring-offset-2"
+          >
+            <Image
+              src={channel.picture || FALLBACK_AVATAR}
+              alt={channel.name}
+              width={160}
+              height={160}
+              className="size-20 rounded-full bg-white object-cover sm:size-40"
+            />
+            <LiveBadge className="absolute -bottom-2 left-1/2 -translate-x-1/2" />
+          </Link>
+        ) : (
+          <Image
+            src={channel.picture || FALLBACK_AVATAR}
+            alt={channel.name}
+            width={160}
+            height={160}
+            className="size-20 shrink-0 rounded-full bg-white object-cover sm:size-40"
+          />
+        )}
         <div className="min-w-0 flex-1 text-center sm:text-left">
           <h1 className="break-words text-2xl font-bold sm:text-4xl">{channel.name}</h1>
           <p className="mt-1 text-sm text-gray-600">

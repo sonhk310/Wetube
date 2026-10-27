@@ -11,7 +11,13 @@ import { apiFetch } from "@/lib/apiFetch";
 import { cn, timeAgo } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 
-type NotificationType = "NEW_VIDEO" | "COMMENT_REPLY" | "VIDEO_COMMENT" | "COMMENT_HEART" | "COMMENT_MENTION";
+type NotificationType =
+  | "NEW_VIDEO"
+  | "COMMENT_REPLY"
+  | "VIDEO_COMMENT"
+  | "COMMENT_HEART"
+  | "COMMENT_MENTION"
+  | "LIVE_STARTED";
 
 interface NotificationItem {
   id: string;
@@ -25,6 +31,8 @@ interface NotificationItem {
   thumbnailUrl: string | null;
   commentId: string | null;
   text: string | null;
+  /** Buổi phát trực tiếp (thông báo LIVE_STARTED). */
+  liveId: string | null;
 }
 
 interface NotificationPage {
@@ -50,6 +58,8 @@ function message(n: NotificationItem) {
       return `${who} đã nhắc đến bạn trong một bình luận: "${n.text ?? ""}"`;
     case "COMMENT_HEART":
       return `${who} đã thả ❤️ bình luận của bạn: "${n.text ?? ""}"`;
+    case "LIVE_STARTED":
+      return `${who} đang phát trực tiếp: ${n.text ?? ""}`;
   }
 }
 
@@ -120,7 +130,8 @@ export default function NotificationBell() {
       apiFetch(`${API_PREFIX}/notifications/${n.id}/read`, { method: "POST" }).catch(() => {});
     }
     setOpen(false);
-    if (n.videoId) router.push(`/watch/${n.videoId}`);
+    if (n.liveId) router.push(`/live/${n.liveId}`);
+    else if (n.videoId) router.push(`/watch/${n.videoId}`);
   };
 
   return (

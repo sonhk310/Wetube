@@ -2,12 +2,16 @@
 
 import { useParams, usePathname } from "next/navigation";
 import { useGetChannelInfoQuery } from "@/app/api/channelApi";
+import { useGetChannelLivesQuery } from "@/app/api/liveApi";
 import { useProgressRouter } from "@/hooks/use-progress-router";
 
-const tabs = [
+const tabsBefore = [
   { label: "Trang chủ", slug: "" },
   { label: "Video", slug: "videos" },
   { label: "Shorts", slug: "shorts" },
+];
+const liveTab = { label: "Trực tiếp", slug: "live" };
+const tabsAfter = [
   { label: "Danh sách phát", slug: "playlists" },
   { label: "Bài đăng", slug: "posts" },
 ];
@@ -17,6 +21,11 @@ export default function ChannelTabs() {
   const router = useProgressRouter();
   const { channelId } = useParams<{ channelId: string }>();
   const { data: channel } = useGetChannelInfoQuery(channelId);
+  // Cùng tham số với phần đầu trang kênh nên RTK Query gộp thành một yêu cầu
+  const { data: lives } = useGetChannelLivesQuery({ channelId: channel?.id ?? "", size: 1 }, { skip: !channel?.id });
+  // Kênh chưa từng phát thì không có tab Trực tiếp
+  const hasLives = !!lives?.current || (lives?.totalPast ?? 0) > 0;
+  const tabs = hasLives ? [...tabsBefore, liveTab, ...tabsAfter] : [...tabsBefore, ...tabsAfter];
   const lastSegment = pathname.split("/").pop();
   // Trang chủ của kênh là mọi đường dẫn không kết thúc bằng tên một thẻ khác
   const currentTab = tabs.some((tab) => tab.slug && tab.slug === lastSegment) ? lastSegment : "";
