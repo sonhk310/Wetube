@@ -52,10 +52,10 @@ class CloudinaryPlaybackTest {
     @Test
     void thumbnailIsLandscapeForVideosAndPortraitForShorts() {
         assertThat(CloudinaryService.thumbnailUrl(cloudinary, "img", false))
-                .isEqualTo("https://res.cloudinary.com/demo/image/upload/c_fill,h_200,w_300/img.webp");
+                .isEqualTo("https://res.cloudinary.com/demo/image/upload/c_fill,h_720,q_auto,w_1280/img.webp");
         // Shorts: khung dọc 9:16, không cắt ảnh dọc thành ảnh ngang
         assertThat(CloudinaryService.thumbnailUrl(cloudinary, "img", true))
-                .isEqualTo("https://res.cloudinary.com/demo/image/upload/c_fill,h_640,w_360/img.webp");
+                .isEqualTo("https://res.cloudinary.com/demo/image/upload/c_fill,h_960,q_auto,w_540/img.webp");
     }
 
     @Test
