@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -50,6 +51,7 @@ class HiddenChannelUploadTest {
     @Mock NotificationService notificationService;
     @Mock VideoMapper videoMapper;
     @Mock VideoTagRepository videoTagRepository;
+    @Spy TopicCatalog topicCatalog = new TopicCatalog();
 
     @InjectMocks VideoServiceImpl videoService;
 
@@ -68,6 +70,8 @@ class HiddenChannelUploadTest {
         draft.setId(UUID.randomUUID());
         draft.setUser(user);
         draft.setVideosStatus(ActiveStatus.DRAFT);
+        // Đã có chủ đề (C8), để test chỉ kiểm tra việc kênh bị ẩn
+        draft.setTopicId("music");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(videoRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
         when(videoRepository.findByIdWithTags(draft.getId())).thenReturn(Optional.of(draft));

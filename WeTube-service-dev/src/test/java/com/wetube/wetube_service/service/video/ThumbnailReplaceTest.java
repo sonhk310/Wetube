@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -47,6 +48,8 @@ class ThumbnailReplaceTest {
     @Mock VideoMapper videoMapper;
     @Mock CloudinaryService cloudinaryService;
 
+    @Spy TopicCatalog topicCatalog = new TopicCatalog();
+
     @InjectMocks VideoServiceImpl videoService;
 
     private final UUID userId = UUID.randomUUID();
@@ -60,6 +63,8 @@ class ThumbnailReplaceTest {
         video = new Video();
         video.setId(UUID.randomUUID());
         video.setUser(user);
+        // Đã có chủ đề (C8), để test chỉ kiểm tra việc nó định kiểm tra
+        video.setTopicId("music");
         video.setVideosStatus(ActiveStatus.PUBLIC);
         video.setThumbnailUrl(OLD);
         when(videoRepository.findById(video.getId())).thenReturn(Optional.of(video));

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,11 +22,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import com.wetube.wetube_service.entity.playlist.PlaylistVideo;
+import com.wetube.wetube_service.entity.video.UserTopic;
 import com.wetube.wetube_service.entity.video.Video;
 import com.wetube.wetube_service.enumeration.PlaylistType;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.repository.PlaylistVideoRepository;
 import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
+import com.wetube.wetube_service.repository.video.UserTopicRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.video.HomeFeedService.Chip;
@@ -37,9 +40,10 @@ class HomeFeedServiceTest {
     private final VideoRepository videoRepository = mock(VideoRepository.class);
     private final SubscriptionRepository subscriptionRepository = mock(SubscriptionRepository.class);
     private final PlaylistVideoRepository playlistVideoRepository = mock(PlaylistVideoRepository.class);
+    private final UserTopicRepository userTopicRepository = mock(UserTopicRepository.class);
     private final VideoMapper videoMapper = mock(VideoMapper.class);
     private final HomeFeedService service = new HomeFeedService(recService, videoRepository, subscriptionRepository,
-            playlistVideoRepository, videoMapper);
+            playlistVideoRepository, userTopicRepository, new TopicCatalog(), videoMapper);
 
     private final UUID userId = UUID.randomUUID();
 
@@ -51,6 +55,21 @@ class HomeFeedServiceTest {
         when(recService.hasUnwatched(any(), any())).thenReturn(false);
         when(playlistVideoRepository.findByPlaylist_User_IdAndPlaylist_PlaylistTypeAndVideo_VideosStatusIn(any(), any(), any(), any()))
                 .thenReturn(Page.empty());
+        when(videoRepository.countListedByTopic(any(), any())).thenReturn(List.of());
+        when(userTopicRepository.findAllByUserIdOrderByPointDesc(userId)).thenReturn(List.of());
+    }
+
+    /** Số video công khai theo chủ đề: "id", số, "id", số... */
+    private void topicCounts(Object... idAndCount) {
+        List<Object[]> rows = new ArrayList<>();
+        for (int i = 0; i < idAndCount.length; i += 2) {
+            rows.add(new Object[] {idAndCount[i], ((Integer) idAndCount[i + 1]).longValue()});
+        }
+        when(videoRepository.countListedByTopic(VideoAccess.LISTED, userId)).thenReturn(rows);
+    }
+
+    private List<String> topicChips() {
+        return ids(service.chips(userId, "s")).stream().filter(id -> id.startsWith("topic:")).toList();
     }
 
     private static List<String> ids(List<Chip> chips) {
@@ -84,6 +103,47 @@ class HomeFeedServiceTest {
         // Không còn chip chủ đề lấy từ thẻ
         assertThat(ids(chips)).containsExactly("SUBSCRIPTIONS", "NEW", "UNWATCHED", "WATCHED");
         assertThat(chips.get(0).label()).isEqualTo("Kênh đăng ký");
+    }
+
+    @Test
+    void topicChipsComeAfterTheFixedOnesWithStandardNames() {
+        topicCounts("sports.bong-da", 2, "music", 1);
+
+        List<Chip> chips = service.chips(userId, "s");
+
+        // Bóng đá: chip "Thể thao" bị bỏ vì ra đúng cùng các video với "Bóng đá"
+        assertThat(ids(chips)).containsExactly("topic:sports.bong-da", "topic:music");
+        assertThat(chips).extracting(Chip::label).containsExactly("Bóng đá", "Âm nhạc");
+    }
+
+    @Test
+    void aGroupWithSeveralSubTopicsGetsItsOwnChipCountingThemAll() {
+        topicCounts("music.lo-fi", 1, "music.rock", 1, "sports", 1);
+
+        assertThat(topicChips()).containsExactly("topic:music", "topic:music.lo-fi", "topic:music.rock", "topic:sports");
+    }
+
+    @Test
+    void theViewersFavouriteTopicsComeFirstAndAtMostEight() {
+        topicCounts("music", 1, "sports", 1, "gaming", 1, "food", 1, "travel", 1, "news", 1, "tech", 1, "art", 1,
+                "books", 1, "podcast", 5);
+        when(userTopicRepository.findAllByUserIdOrderByPointDesc(userId)).thenReturn(List.of(
+                UserTopic.builder().userId(userId).topicId("food").point(50).build(),
+                UserTopic.builder().userId(userId).topicId("khong-con-video").point(40).build()));
+
+        List<String> topics = topicChips();
+
+        assertThat(topics).hasSize(HomeFeedService.MAX_TOPIC_CHIPS);
+        assertThat(topics.subList(0, 2)).containsExactly("topic:food", "topic:podcast");
+    }
+
+    @Test
+    void topicFeedMatchesTheTopicAndItsSubTopics() {
+        when(videoRepository.findListedByTopic(any(), any(), any(), any(), any())).thenReturn(Page.empty());
+
+        service.topicFeed(userId, "music", PageRequest.of(0, 18));
+
+        verify(videoRepository).findListedByTopic(VideoAccess.LISTED, "music", "music.%", userId, PageRequest.of(0, 18));
     }
 
     @Test

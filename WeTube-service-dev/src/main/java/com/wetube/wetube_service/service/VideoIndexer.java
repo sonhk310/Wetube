@@ -4,6 +4,7 @@ import com.wetube.wetube_service.entity.video.Video;
 import com.wetube.wetube_service.search.SearchIndexes;
 import com.wetube.wetube_service.search.VideoDocument;
 import com.wetube.wetube_service.security.VideoAccess;
+import com.wetube.wetube_service.service.video.TopicCatalog;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class VideoIndexer {
 
     private final ElasticsearchOperations elasticsearchOperations;
     private final SearchIndexes indexes;
+    private final TopicCatalog topicCatalog;
 
     public VideoDocument toDocument(Video v) {
         VideoDocument doc = new VideoDocument();
@@ -41,7 +43,7 @@ public class VideoIndexer {
         doc.setChannelName(v.getUser().getChannel() != null ? v.getUser().getChannel().getName() : null);
         doc.setSearchKeywords(v.getSearchKeywords());
         doc.setTags(v.getVideoTags().stream().map(vt -> vt.getTag().getName()).toList());
-        doc.setCategories(List.of());
+        doc.setCategories(topicCatalog.withGroup(v.getTopicId()));
         doc.setCreatedAt(v.getCreatedAt().atZone(ZoneOffset.UTC).toInstant());
         doc.setThumbnailUrl(v.getThumbnailUrl());
         doc.setVideoUrl(v.getVideoUrl());

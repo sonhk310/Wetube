@@ -63,6 +63,9 @@ public class Video {
     /** Từ khóa tìm kiếm do chủ video duyệt (phân cách dấu phẩy); chỉ dùng cho tìm kiếm, không phải thẻ. */
     @Column(name = "search_keywords", columnDefinition = "TEXT")
     private String searchKeywords;
+    /** Chủ đề (C8): id trong topics.json, nhóm hoặc chủ đề con; null với bản nháp và video cũ chưa chọn. */
+    @Column(name = "topic_id", length = 100)
+    private String topicId;
 
     private String thumbnailUrl;
     private String videoUrl;

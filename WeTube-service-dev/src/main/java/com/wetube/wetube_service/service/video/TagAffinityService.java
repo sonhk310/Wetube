@@ -6,8 +6,11 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.wetube.wetube_service.entity.video.UserTag;
+import com.wetube.wetube_service.entity.video.UserTopic;
 import com.wetube.wetube_service.entity.video.VideoTag;
 import com.wetube.wetube_service.repository.video.UserTagRepository;
+import com.wetube.wetube_service.repository.video.UserTopicRepository;
+import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.repository.video.VideoTagRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -33,7 +36,11 @@ public class TagAffinityService {
 
     private final VideoTagRepository videoTagRepo;
     private final UserTagRepository userTagRepo;
+    private final VideoRepository videoRepo;
+    private final UserTopicRepository userTopicRepo;
+    private final TopicCatalog topicCatalog;
 
+    /** Cộng điểm cho mọi thẻ của video và cho chủ đề của video (kèm nhóm của nó, C8). */
     public void addQuietly(UUID userId, UUID videoId, double delta) {
         try {
             for (VideoTag vt : videoTagRepo.findByVideo_Id(videoId)) {
@@ -42,6 +49,28 @@ public class TagAffinityService {
         } catch (Exception e) {
             log.warn("Không cộng được điểm thẻ cho người dùng {} / video {}: {}", userId, videoId, e.getMessage());
         }
+        try {
+            for (String topicId : topicCatalog.withGroup(videoRepo.findTopicIdById(videoId))) {
+                addTopicPoint(userId, topicId, delta);
+            }
+        } catch (Exception e) {
+            log.warn("Không cộng được điểm chủ đề cho người dùng {} / video {}: {}", userId, videoId, e.getMessage());
+        }
+    }
+
+    private void addTopicPoint(UUID userId, String topicId, double delta) {
+        var pk = new UserTopic.UserTopicId(userId, topicId);
+        var existing = userTopicRepo.findById(pk).orElse(null);
+        if (existing == null) {
+            try {
+                userTopicRepo.save(UserTopic.builder().userId(userId).topicId(topicId).point(delta).build());
+                return;
+            } catch (DataIntegrityViolationException e) {
+                existing = userTopicRepo.findById(pk).orElseThrow();
+            }
+        }
+        existing.setPoint(Math.min(existing.getPoint() + delta, MAX_POINT));
+        userTopicRepo.save(existing);
     }
 
     private void addPoint(UUID userId, UUID tagId, double delta) {

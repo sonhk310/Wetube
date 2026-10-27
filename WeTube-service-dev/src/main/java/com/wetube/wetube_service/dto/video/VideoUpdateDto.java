@@ -16,4 +16,6 @@ public class VideoUpdateDto {
     private String tags;
     /** null = giữ nguyên; chuỗi rỗng = xoá hết. */
     private String searchKeywords;
+    /** Chủ đề (C8); null / rỗng = giữ nguyên. */
+    private String topicId;
 }

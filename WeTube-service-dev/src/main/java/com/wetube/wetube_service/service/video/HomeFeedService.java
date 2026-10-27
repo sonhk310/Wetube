@@ -2,7 +2,11 @@ package com.wetube.wetube_service.service.video;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -13,17 +17,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wetube.wetube_service.dto.video.RecommendVideoDto;
+import com.wetube.wetube_service.entity.video.UserTopic;
 import com.wetube.wetube_service.enumeration.PlaylistType;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.repository.PlaylistVideoRepository;
 import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
+import com.wetube.wetube_service.repository.video.UserTopicRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.security.VideoAccess;
 
 import lombok.RequiredArgsConstructor;
 
 /**
- * Các chip ở trang chủ (Kênh đăng ký, Mới tải lên, Chưa xem, Đã xem) và video của từng chip.
+ * Các chip ở trang chủ (Kênh đăng ký, Mới tải lên, Chưa xem, Đã xem, rồi chủ đề C8) và video của từng chip.
  * Chip không có video thì không được trả về (ẩn). "Tất cả" do client tự xử lý bằng API gợi ý.
  */
 @Service
@@ -32,16 +38,21 @@ public class HomeFeedService {
 
     public enum Kind { SUBSCRIPTIONS, NEW, UNWATCHED, WATCHED }
 
-    /** id: tên một {@link Kind}. */
+    public static final String TOPIC_PREFIX = "topic:";
+
+    /** id: tên một {@link Kind} hoặc "topic:{id chủ đề}". */
     public record Chip(String id, String label) {
     }
 
     static final int NEW_DAYS = 7;
+    static final int MAX_TOPIC_CHIPS = 8;
 
     private final RecService recService;
     private final VideoRepository videoRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final PlaylistVideoRepository playlistVideoRepository;
+    private final UserTopicRepository userTopicRepository;
+    private final TopicCatalog topicCatalog;
     private final VideoMapper videoMapper;
 
     /** Chưa có lịch sử xem thì trang chủ trống và không có hàng chip (giống YouTube). */
@@ -64,7 +75,56 @@ public class HomeFeedService {
         if (watchedVideos(userId, one).hasContent()) {
             chips.add(new Chip(Kind.WATCHED.name(), "Đã xem"));
         }
+        for (String topicId : topicChips(userId)) {
+            chips.add(new Chip(TOPIC_PREFIX + topicId, topicCatalog.label(topicId)));
+        }
         return chips;
+    }
+
+    /** Video của một chủ đề (nhóm thì gồm cả chủ đề con), mới nhất trước, không có video của chính mình. */
+    @Transactional(readOnly = true)
+    public Page<RecommendVideoDto> topicFeed(UUID userId, String topicId, Pageable pageable) {
+        return videoRepository.findListedByTopic(VideoAccess.LISTED, topicId, topicId + ".%", userId, pageable)
+                .map(videoMapper::toRecommendDto);
+    }
+
+    /**
+     * Chủ đề người xem có điểm cao trước, rồi chủ đề nhiều video nhất; tối đa MAX_TOPIC_CHIPS, chỉ chủ đề còn video
+     * (không tính video của chính mình). Nhóm mà mọi video đều thuộc một chủ đề con thì bỏ: chip nhóm và chip con
+     * sẽ ra đúng cùng các video.
+     */
+    private List<String> topicChips(UUID userId) {
+        Map<String, Long> direct = new HashMap<>();
+        for (Object[] row : videoRepository.countListedByTopic(VideoAccess.LISTED, userId)) {
+            direct.put(String.valueOf(row[0]), ((Number) row[1]).longValue());
+        }
+        Map<String, Long> counts = new HashMap<>();
+        direct.forEach((id, n) -> topicCatalog.withGroup(id).forEach(key -> counts.merge(key, n, Long::sum)));
+        for (TopicCatalog.Group g : topicCatalog.groups()) {
+            long children = direct.keySet().stream().filter(id -> id.startsWith(g.id() + ".")).count();
+            if (!direct.containsKey(g.id()) && children == 1) {
+                counts.remove(g.id());
+            }
+        }
+
+        Set<String> chosen = new LinkedHashSet<>();
+        for (UserTopic affinity : userTopicRepository.findAllByUserIdOrderByPointDesc(userId)) {
+            if (chosen.size() >= MAX_TOPIC_CHIPS) {
+                break;
+            }
+            if (counts.containsKey(affinity.getTopicId())) {
+                chosen.add(affinity.getTopicId());
+            }
+        }
+        counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                .map(Map.Entry::getKey)
+                .forEach(id -> {
+                    if (chosen.size() < MAX_TOPIC_CHIPS) {
+                        chosen.add(id);
+                    }
+                });
+        return new ArrayList<>(chosen);
     }
 
     @Transactional(readOnly = true)

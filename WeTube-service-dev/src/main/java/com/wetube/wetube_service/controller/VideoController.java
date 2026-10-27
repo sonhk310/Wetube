@@ -255,6 +255,7 @@ public class VideoController {
             @RequestParam("status") String status,
             @RequestParam(value = "tags", required = false) String tags,
             @RequestParam(value = "searchKeywords", required = false) String searchKeywords,
+            @RequestParam(value = "topicId", required = false) String topicId,
             @RequestParam(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
             @AuthenticationPrincipal Jwt jwt) {
 
@@ -267,6 +268,7 @@ public class VideoController {
         updateDto.setStatus(status);
         updateDto.setTags(tags);
         updateDto.setSearchKeywords(searchKeywords);
+        updateDto.setTopicId(topicId);
 
         VideoDto updatedVideo = videoService.updateVideo(id, updateDto, thumbnailFile, authenticatedUserId);
 

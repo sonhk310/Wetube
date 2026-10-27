@@ -25,6 +25,7 @@ public class VideoFormDetailDto {
     private LocalDateTime updatedAt;
     private Set<TagDto> tags;
     private String searchKeywords;
+    private String topicId;
     /** Boolean (không phải boolean) để JSON có khoá "isShort" thay vì "short". */
     private Boolean isShort;
 }

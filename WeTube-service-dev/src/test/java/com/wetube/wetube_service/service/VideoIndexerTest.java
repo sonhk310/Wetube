@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -22,6 +23,7 @@ import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import com.wetube.wetube_service.entity.AppUser;
 import com.wetube.wetube_service.entity.channel.Channel;
 import com.wetube.wetube_service.entity.video.Video;
+import com.wetube.wetube_service.service.video.TopicCatalog;
 import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.search.SearchIndexes;
 import com.wetube.wetube_service.search.VideoDocument;
@@ -32,6 +34,7 @@ class VideoIndexerTest {
 
     @Mock ElasticsearchOperations operations;
     @Mock SearchIndexes indexes;
+    @Spy TopicCatalog topicCatalog = new TopicCatalog();
     @InjectMocks VideoIndexer indexer;
 
     private final IndexCoordinates v2 = IndexCoordinates.of("videos_v2");
@@ -63,6 +66,15 @@ class VideoIndexerTest {
         verify(operations).save(doc.capture(), eq(v2));
         assertThat(doc.getValue().getChannelName()).isEqualTo("Sơn Tùng M-TP");
         assertThat(doc.getValue().getId()).isEqualTo(v.getId().toString());
+        assertThat(doc.getValue().getCategories()).isEmpty();
+    }
+
+    @Test
+    void topicAndItsGroupGoToCategories() {
+        Video v = video(ActiveStatus.ACTIVE);
+        v.setTopicId("sports.bong-da");
+
+        assertThat(indexer.toDocument(v).getCategories()).containsExactly("sports.bong-da", "sports");
     }
 
     @Test

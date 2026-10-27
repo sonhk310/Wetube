@@ -45,6 +45,27 @@ public class CommentSchemaInitializer implements CommandLineRunner {
         addColumn("videos", "hidden_with_channel", "BIT(1) NULL");
         // Từ khóa tìm kiếm do chủ video duyệt (Gemini gợi ý)
         addColumn("videos", "search_keywords", "TEXT NULL");
+        // Chủ đề video (C8) và điểm yêu thích chủ đề
+        if (addColumn("videos", "topic_id", "VARCHAR(100) NULL")) {
+            try {
+                tx.executeWithoutResult(s -> em.createNativeQuery(
+                        "CREATE INDEX idx_videos_topic ON videos (topic_id)").executeUpdate());
+            } catch (Exception e) {
+                log.error("Không tạo được index videos.topic_id: {}", e.getMessage());
+            }
+        }
+        try {
+            tx.executeWithoutResult(s -> em.createNativeQuery("""
+                    CREATE TABLE IF NOT EXISTS user_topic (
+                        user_id VARCHAR(36) NOT NULL,
+                        topic_id VARCHAR(100) NOT NULL,
+                        point DOUBLE NOT NULL,
+                        created_at DATETIME(6),
+                        PRIMARY KEY (user_id, topic_id)
+                    )""").executeUpdate());
+        } catch (Exception e) {
+            log.error("Không tạo được bảng user_topic: {}", e.getMessage());
+        }
         // Báo cáo kênh: có channel_id, không có video_id
         if (addColumn("reports", "channel_id", "VARCHAR(36) NULL")) {
             try {

@@ -2,6 +2,7 @@ package com.wetube.wetube_service.controller;
 
 import com.wetube.wetube_service.dto.ai.DescriptionRequest;
 import com.wetube.wetube_service.dto.ai.KeywordsRequest;
+import com.wetube.wetube_service.dto.ai.TopicRequest;
 import com.wetube.wetube_service.dto.ai.TranscriptRequest;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.security.RateLimiter;
@@ -37,6 +38,14 @@ public class AIController {
         rateLimiter.check(RateLimiter.Limit.AI_TEXT, CurrentUser.id(jwt));
         return ResponseEntity.ok(Map.of("keywords",
                 aiService.suggestSearchKeywords(request.getTitle(), request.getDescription(), request.getTags())));
+    }
+
+    /** Gợi ý một chủ đề (C8); "" nếu không gợi ý được. */
+    @PostMapping("/topic")
+    public ResponseEntity<?> suggestTopic(@RequestBody TopicRequest request, @AuthenticationPrincipal Jwt jwt) {
+        rateLimiter.check(RateLimiter.Limit.AI_TEXT, CurrentUser.id(jwt));
+        return ResponseEntity.ok(Map.of("topicId", aiService.suggestTopic(
+                request.getTitle(), request.getDescription(), request.getTags(), request.getSearchKeywords())));
     }
 
     @PostMapping("/transcript")

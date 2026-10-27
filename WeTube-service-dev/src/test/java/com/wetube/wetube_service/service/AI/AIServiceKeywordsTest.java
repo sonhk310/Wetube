@@ -13,10 +13,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.wetube.wetube_service.service.video.TopicCatalog;
+
 class AIServiceKeywordsTest {
 
     private final GeminiClient gemini = mock(GeminiClient.class);
-    private final AIService service = new AIService(gemini);
+    private final AIService service = new AIService(gemini, new TopicCatalog());
 
     @BeforeEach
     void noPauseBetweenRetries() {

@@ -36,6 +36,26 @@ public interface VideoRepository extends JpaRepository<Video, UUID> {
                                  @Param("since") java.time.LocalDateTime since,
                                  @Param("userId") UUID userId,
                                  Pageable pageable);
+    /** Số video đang được liệt kê theo từng chủ đề (C8), trừ video của `userId`: [topicId, số video]. */
+    @Query("""
+            SELECT v.topicId, COUNT(v) FROM Video v
+            WHERE v.videosStatus IN :statuses AND v.topicId IS NOT NULL AND v.user.id <> :userId
+            GROUP BY v.topicId""")
+    List<Object[]> countListedByTopic(@Param("statuses") Collection<ActiveStatus> statuses,
+                                      @Param("userId") UUID userId);
+    /** Video đang được liệt kê có chủ đề `topicId` hoặc chủ đề con của nó (`childPrefix` = "nhóm.%"), mới nhất trước. */
+    @Query("""
+            SELECT v FROM Video v
+            WHERE v.videosStatus IN :statuses AND (v.topicId = :topicId OR v.topicId LIKE :childPrefix)
+              AND v.user.id <> :userId
+            ORDER BY v.createdAt DESC""")
+    Page<Video> findListedByTopic(@Param("statuses") Collection<ActiveStatus> statuses,
+                                  @Param("topicId") String topicId,
+                                  @Param("childPrefix") String childPrefix,
+                                  @Param("userId") UUID userId,
+                                  Pageable pageable);
+    @Query("SELECT v.topicId FROM Video v WHERE v.id = :id")
+    String findTopicIdById(@Param("id") UUID id);
 
     Video findByIdAndUser_Id(UUID videoId, UUID userId);
 

@@ -1,5 +1,6 @@
 package com.wetube.wetube_service.service.AI;
 
+import com.wetube.wetube_service.service.video.TopicCatalog;
 import com.wetube.wetube_service.utility.SearchKeywords;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,9 +16,11 @@ import java.util.stream.Collectors;
 public class AIService {
 
     private final GeminiClient geminiClient;
+    private final TopicCatalog topicCatalog;
 
-    public AIService(GeminiClient geminiClient) {
+    public AIService(GeminiClient geminiClient, TopicCatalog topicCatalog) {
         this.geminiClient = geminiClient;
+        this.topicCatalog = topicCatalog;
     }
 
     public String generateVideoDescription(String title, String tags) {
@@ -71,6 +74,47 @@ public class AIService {
                 .filter(k -> !k.equals(lowerTitle))
                 .filter(k -> !Arrays.asList(lowerTags.split("[\\s#,]+")).contains(k))
                 .collect(Collectors.joining(","));
+    }
+
+    /**
+     * Gợi ý một chủ đề trong topics.json (C8), chủ video đổi được trước khi lưu. Danh sách quá dài để gửi một lần nên
+     * hỏi hai bước: chọn nhóm, rồi chọn chủ đề con trong nhóm (hoặc cả nhóm). Nhóm lạ: không gợi ý (""); chủ đề con
+     * lạ: trả cả nhóm. Gemini lỗi thì như gợi ý từ khóa: thử lại một lần rồi 503.
+     */
+    public String suggestTopic(String title, String description, String tags, String searchKeywords) {
+        String video = String.format("A video has this title: \"%s\"\nDescription: \"%s\"\nTags: %s\nSearch keywords: %s\n\n",
+                title == null ? "" : title, description == null ? "" : description,
+                tags == null ? "" : tags, searchKeywords == null ? "" : searchKeywords);
+        StringBuilder groups = new StringBuilder();
+        for (TopicCatalog.Group g : topicCatalog.groups()) {
+            groups.append(g.id()).append(": ").append(g.name()).append('\n');
+        }
+        String groupId = pickId(video + "Which one of these topic groups fits the video best?\n" + groups
+                + "\nAnswer with the id before the colon and nothing else.");
+        TopicCatalog.Group group = topicCatalog.group(groupId);
+        if (group == null) {
+            log.info("[Gemini] Nhóm chủ đề không có trong danh sách: {}", groupId);
+            return "";
+        }
+        StringBuilder topics = new StringBuilder(group.id()).append(": ").append(group.name()).append(" (general)\n");
+        for (TopicCatalog.Topic t : group.topics()) {
+            topics.append(t.id()).append(": ").append(t.name()).append('\n');
+        }
+        String topicId = pickId(video + "Which one of these topics fits the video best? Choose the general one if "
+                + "no narrower topic fits.\n" + topics + "\nAnswer with the id before the colon and nothing else.");
+        return topicCatalog.exists(topicId) && topicId.startsWith(group.id() + ".") ? topicId : group.id();
+    }
+
+    private String pickId(String prompt) {
+        try {
+            String answer = generateWithRetry(prompt);
+            // Bỏ dấu nháy / dấu chấm / dòng thừa Gemini hay thêm
+            return answer == null ? "" : answer.trim().split("\\s+")[0].replaceAll("[`'\".,:]+$|^[`'\"]+", "");
+        } catch (Exception e) {
+            log.warn("[Gemini] Không gợi ý được chủ đề: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "AI đang quá tải, vui lòng thử lại sau ít phút.");
+        }
     }
 
     private String generateWithRetry(String prompt) throws Exception {

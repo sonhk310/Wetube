@@ -58,6 +58,7 @@ import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.RedisService;
 import com.wetube.wetube_service.service.interaction.LikeService;
 import com.wetube.wetube_service.service.video.ShortsRule;
+import com.wetube.wetube_service.service.video.TopicCatalog;
 import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.video.VideoSubtitleService;
 import com.wetube.wetube_service.service.video.WatchProgressService;
@@ -92,6 +93,7 @@ public class VideoServiceImpl implements VideoService {
     private final WatchProgressService watchProgressService;
     private final NotificationService notificationService;
     private final VideoStatsStore videoStatsStore;
+    private final TopicCatalog topicCatalog;
 
     private static final String ID_NOT_FOUND = "Video not found with id: ";
     private static final String VIDEO = "video";
@@ -563,6 +565,7 @@ private static String draftTitle(String fileName) {
                 .updatedAt(video.getUpdatedAt())
                 .tags(tags)
                 .searchKeywords(video.getSearchKeywords())
+                .topicId(video.getTopicId())
                 .isShort(video.isShort())
                 .build();
     }
@@ -587,6 +590,16 @@ private static String draftTitle(String fileName) {
         // Đóng hộp thoại tải lên mà chưa đăng: lưu nội dung, vẫn là bản nháp
         boolean keepDraft = video.getVideosStatus() == ActiveStatus.DRAFT
                 && "DRAFT".equalsIgnoreCase(String.valueOf(updateDto.getStatus()).trim());
+        // Chủ đề (C8): bắt buộc trừ khi vẫn để là bản nháp; không gửi thì giữ chủ đề đang có
+        String topicId = updateDto.getTopicId() == null || updateDto.getTopicId().isBlank()
+                ? video.getTopicId() : updateDto.getTopicId().trim();
+        if (topicId != null && !topicCatalog.exists(topicId)) {
+            throw new IllegalArgumentException("Chủ đề không hợp lệ, hãy chọn lại.");
+        }
+        if (topicId == null && !keepDraft) {
+            throw new IllegalArgumentException("Hãy chọn chủ đề cho video.");
+        }
+        video.setTopicId(topicId);
         // Đăng bản nháp: ngày đăng là lúc đăng, không phải lúc tải lên
         if (video.getVideosStatus() == ActiveStatus.DRAFT && !keepDraft) {
             video.setCreatedAt(LocalDateTime.now());
