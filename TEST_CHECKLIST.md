@@ -397,3 +397,35 @@ Bản thiết kế: `docs/superpowers/specs/2026-10-27-topics-design.md`. Chip c
 | 27.10 | Bấm một chip chủ đề | Video công khai của chủ đề đó (chip nhóm thì gồm cả chủ đề con), mới nhất trước, không có video của chính mình | |
 | 27.11 | Xem / thích vài video của một chủ đề rồi về trang chủ (bấm logo) | Chip chủ đề đó lên đầu các chip chủ đề | |
 | 27.12 | Trên điện thoại (hoặc thu hẹp cửa sổ), mở ô Chủ đề | Hai ô xếp dọc, danh sách cuộn được, không tràn màn hình | |
+
+## 28. Phát trực tiếp (L1)
+
+Bản thiết kế: `docs/superpowers/specs/2026-10-27-livestream-design.md`; kế hoạch: `docs/superpowers/plans/2026-10-27-livestream.md`. Cần **2 tài khoản** (A phát, B xem và đăng ký kênh của A) và một cửa sổ ẩn danh để thử vai khách. Máy phát cần camera + micro. Gói LiveKit miễn phí có hạn mức (5.000 phút WebRTC / tháng): đừng để buổi thử chạy lâu.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 28.1 | B đăng ký kênh của A (chuông **Tất cả**). A bấm **Tạo → Phát trực tiếp** | Vào `/studio/live`, thấy form: Tiêu đề, Mô tả, Nguồn phát (Webcam / OBS), bật chat; có hình xem trước camera | |
+| 28.2 | A nhập tiêu đề rồi bấm **Bắt đầu** (Webcam), cho phép camera + micro | Sang bảng đang phát: thấy hình mình, nút Micro / Camera chọn được thiết bị, nhãn **TRỰC TIẾP** hiện trong vài giây | |
+| 28.3 | Tải lại trang `/studio/live` | Quay lại đúng buổi đang phát (không tạo buổi mới) | |
+| 28.4 | B mở chuông thông báo (đợi tối đa 1 phút) | Có "A đang phát trực tiếp: {tiêu đề}"; bấm vào mở `/live/{id}` | |
+| 28.5 | B xem trang `/live/{id}` | Thấy hình của A, **độ trễ khoảng 1 giây** (thử vẫy tay, đo bằng mắt hoặc đồng hồ chung); có nhãn TRỰC TIẾP, số người xem, nút Đăng ký / Chia sẻ | |
+| 28.6 | Mở `/live/{id}` ở cửa sổ ẩn danh (khách) | Xem được hình và đọc chat; ô chat hiện "Đăng nhập để trò chuyện"; bấm một lựa chọn Poll thì mời đăng nhập | |
+| 28.7 | B và A nhắn vài tin trong chat | Tin hiện ở cả hai bên và ở khách ngay lập tức; tin của A có nhãn xanh (chủ kênh); người vào sau thấy các tin gần đây | |
+| 28.8 | B nhắn tin 201 ký tự (dán), rồi nhắn liên tục > 5 tin trong 10 giây | Ô nhập chặn ở 200 ký tự; nhắn quá nhanh thì hiện dòng đỏ "Bạn nhắn quá nhanh…" | |
+| 28.9 | A rê chuột vào tin của B, bấm thùng rác | Tin biến mất ở mọi bên | |
+| 28.10 | A tạo Poll (1 câu hỏi, 2–4 lựa chọn). B và khách xem | Poll hiện ghim đầu khung chat, kết quả cập nhật trực tiếp; B chọn được **một lần**, khách bấm thì mời đăng nhập; A không mở được Poll thứ hai khi chưa đóng | |
+| 28.11 | A bấm **Đóng Poll** | Poll hiện "Đã đóng", biến mất sau khoảng 1 phút | |
+| 28.12 | Trong form, thử tiêu đề > 100 ký tự và Poll > 4 lựa chọn | Bị chặn / báo lỗi tiếng Việt | |
+| 28.13 | Trang chủ của B (đã có lịch sử xem) | Chip **Trực tiếp** hiện; bấm vào là lưới các buổi đang phát. Chip này chỉ hiện với tài khoản đã xem ít nhất một video (giống các chip khác) | |
+| 28.14 | Menu trái → **Trực tiếp** (`/live`) | Lưới các buổi đang phát, nhiều người xem trước; thẻ có nhãn TRỰC TIẾP, "N đang xem" | |
+| 28.15 | Mở trang kênh của A | Ảnh đại diện có viền đỏ + nhãn TRỰC TIẾP, bấm vào tới buổi phát; có tab **Trực tiếp** | |
+| 28.16 | A bấm **Kết thúc buổi phát** và xác nhận | Trang của B chuyển sang "Buổi phát trực tiếp đã kết thúc" kèm thời lượng, người xem cao nhất, kết quả Poll; chat bị xoá | |
+| 28.17 | Sau khi kết thúc: tab **Trực tiếp** của kênh A, và `/live` | Tab liệt kê buổi vừa phát (thời lượng, "Đã phát…"); `/live` không còn buổi đó | |
+| 28.18 | A tạo buổi mới nhưng **không** bật camera rồi đóng tab, đợi khoảng 1 giờ | Buổi tự huỷ, không vào lịch sử (khó thử; có thể bỏ qua) | |
+| 28.19 | A đang phát, tắt hẳn tab của A | Sau khoảng 2 phút buổi tự kết thúc | |
+| 28.20 | OBS (cần OBS 30 trở lên): A chọn **Phần mềm phát (OBS) + WHIP**, bấm Bắt đầu | Hiện **Server** và **Bearer Token** (ẩn, có nút hiện / chép) cùng hướng dẫn; trạng thái "Đang chờ tín hiệu…" | |
+| 28.21 | Dán vào OBS (Dịch vụ WHIP), bấm Start Streaming | Vài giây sau buổi tự chuyển TRỰC TIẾP, người xem thấy hình OBS. **Sau buổi thử, mở Usage trong LiveKit Cloud xem có bị tính phút transcode không** (mong đợi: không) | |
+| 28.22 | Tài khoản admin mở `/live/{id}` của một buổi khác | Có nút **Kết thúc buổi phát (quản trị)**, bấm xác nhận thì buổi kết thúc | |
+| 28.23 | Mở đường dẫn cũ `/livestream` | Chuyển sang `/live` | |
+| 28.24 | Trên điện thoại (hoặc thu hẹp cửa sổ), mở `/live/{id}` và `/studio/live` | Chat nằm dưới phần thông tin, cuộn trong khung; không tràn ngang; hình 16:9 | |
+| 28.25 | B để tab xem nền hơn 2 phút rồi quay lại | Hình tạm ngắt (tiết kiệm hạn mức), quay lại thì nối lại tự động; chat vẫn nhận tin | |
