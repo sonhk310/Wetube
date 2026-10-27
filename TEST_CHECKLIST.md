@@ -328,6 +328,7 @@ Cần 3 tài khoản: A (chủ kênh, có vài video công khai), B (người xe
 | 23.7 | B báo cáo một video của A; Admin bấm "Ẩn video"; rồi "Bỏ ẩn video" ở tab "Đã xử lý" | Ẩn thì video biến mất với B; bỏ ẩn thì video trở lại đúng trạng thái cũ | |
 | 23.8 | Ẩn riêng một video của A (23.7, không bỏ ẩn), rồi ẩn kênh A và bỏ ẩn kênh A | Sau khi bỏ ẩn kênh, video bị ẩn riêng **vẫn ẩn**, các video khác hiện lại | |
 | 23.9 | Admin bấm "Không vi phạm" cho một báo cáo khác của B, rồi xem lại một báo cáo mới của B | Dòng người báo cáo của B tăng số "sai" lên 1 | |
+| 23.10 | Khi kênh A **đang bị ẩn**: A thử tải video mới lên; đổi một video riêng tư thành Công khai / Không công khai (ở trang sửa video và ở chọn nhiều trong Studio) | Đều bị chặn, hiện "Kênh của bạn đang bị quản trị viên ẩn do báo cáo vi phạm, nên chưa thể đăng hoặc công khai video." Sửa tiêu đề / mô tả hoặc đặt Riêng tư vẫn được. Bỏ ẩn kênh xong thì đăng lại bình thường | |
 
 ## 24. Trang chủ tài khoản mới (giống YouTube)
 
