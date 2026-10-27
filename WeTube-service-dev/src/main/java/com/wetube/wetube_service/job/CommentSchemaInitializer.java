@@ -46,14 +46,9 @@ public class CommentSchemaInitializer implements CommandLineRunner {
         // Từ khóa tìm kiếm do chủ video duyệt (Gemini gợi ý)
         addColumn("videos", "search_keywords", "TEXT NULL");
         // Chủ đề video (C8) và điểm yêu thích chủ đề
-        if (addColumn("videos", "topic_id", "VARCHAR(100) NULL")) {
-            try {
-                tx.executeWithoutResult(s -> em.createNativeQuery(
-                        "CREATE INDEX idx_videos_topic ON videos (topic_id)").executeUpdate());
-            } catch (Exception e) {
-                log.error("Không tạo được index videos.topic_id: {}", e.getMessage());
-            }
-        }
+        // Prod chạy ddl-auto=update: Hibernate có thể đã thêm cột (không tạo index), nên index kiểm tra riêng
+        addColumn("videos", "topic_id", "VARCHAR(100) NULL");
+        addIndex("videos", "idx_videos_topic", "topic_id");
         try {
             tx.executeWithoutResult(s -> em.createNativeQuery("""
                     CREATE TABLE IF NOT EXISTS user_topic (
@@ -80,6 +75,27 @@ public class CommentSchemaInitializer implements CommandLineRunner {
                     "ALTER TABLE reports MODIFY video_id VARCHAR(36) NULL").executeUpdate());
         } catch (Exception e) {
             log.error("Không đổi được reports.video_id sang NULL: {}", e.getMessage());
+        }
+    }
+
+    /** Tạo index nếu chưa có index tên này. */
+    private void addIndex(String table, String index, String column) {
+        try {
+            Number existing = tx.execute(s -> (Number) em.createNativeQuery("""
+                    SELECT COUNT(*) FROM information_schema.STATISTICS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND INDEX_NAME = :index
+                    """)
+                    .setParameter("table", table)
+                    .setParameter("index", index)
+                    .getSingleResult());
+            if (existing == null || existing.intValue() > 0) {
+                return;
+            }
+            tx.executeWithoutResult(s -> em.createNativeQuery(
+                    "CREATE INDEX " + index + " ON " + table + " (" + column + ")").executeUpdate());
+            log.info("Đã tạo index {}.{}", table, index);
+        } catch (Exception e) {
+            log.error("Không tạo được index {}.{}: {}", table, index, e.getMessage());
         }
     }
 
