@@ -1,0 +1,190 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Copy } from "lucide-react";
+import { LiveKitRoom, VideoTrack, useTracks } from "@livekit/components-react";
+import { Track } from "livekit-client";
+import { useEndLiveMutation, useGetLiveTokenMutation, useMarkLiveStartedMutation } from "@/app/api/liveApi";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { apiErrorMessage } from "@/lib/apiError";
+import { useCopyToClipboard } from "@/lib/clipboard";
+import { toastEmitter } from "@/lib/toastEmitter";
+import { useLiveChannel } from "../lib/useLiveChannel";
+import { formatElapsed, liveUrl } from "../lib/format";
+import type { LiveView } from "../types";
+import { LiveBadge, ViewerCount } from "./live-badge";
+import LiveDeviceSettings from "./live-device-settings";
+import LiveEncoderPanel from "./live-encoder-panel";
+import LiveEndDialog from "./live-end-dialog";
+
+/** Hình camera của chính mình (xem trước) và bảng chọn thiết bị; báo cho backend ngay khi đã đăng luồng. */
+function PublisherStage({ onPublished }: { onPublished: () => void }) {
+  const tracks = useTracks([Track.Source.Camera]);
+  const local = tracks.find((t) => t.participant.isLocal && t.publication);
+  const reported = useRef(false);
+
+  useEffect(() => {
+    if (local && !reported.current) {
+      reported.current = true;
+      onPublished();
+    }
+  }, [local, onPublished]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-black">
+        {local ? (
+          <VideoTrack trackRef={local} className="h-full w-full -scale-x-100 object-contain" />
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-white">
+            <Spinner className="size-6" />
+            <p className="text-sm">Đang bật camera…</p>
+          </div>
+        )}
+      </div>
+      <LiveDeviceSettings />
+    </div>
+  );
+}
+
+/** Phát bằng webcam: lấy token phát rồi vào phòng LiveKit, tự bật camera và micro. */
+function WebcamBroadcast({ id }: { id: string }) {
+  const [getToken] = useGetLiveTokenMutation();
+  const [markStarted] = useMarkLiveStartedMutation();
+  const [session, setSession] = useState<{ token: string; wsUrl: string } | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getToken(id)
+      .unwrap()
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.token || res.role !== "PUBLISHER") {
+          setProblem("Không lấy được quyền phát.");
+          return;
+        }
+        setSession({ token: res.token, wsUrl: res.wsUrl });
+      })
+      .catch((err) => {
+        if (!cancelled) setProblem(apiErrorMessage(err, "Không kết nối được máy chủ phát trực tiếp."));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, getToken]);
+
+  // Lỗi báo ở đây không quan trọng: job 15 giây của backend vẫn tự chuyển sang LIVE khi thấy hình
+  const onPublished = useCallback(() => void markStarted(id), [markStarted, id]);
+
+  if (problem) {
+    return <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{problem}</p>;
+  }
+  if (!session) {
+    return (
+      <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-black">
+        <Spinner className="size-6 text-white" />
+      </div>
+    );
+  }
+  return (
+    <LiveKitRoom
+      serverUrl={session.wsUrl}
+      token={session.token}
+      connect
+      audio
+      video
+      onMediaDeviceFailure={() =>
+        setProblem("Không bật được camera hoặc micro. Hãy cấp quyền cho trình duyệt rồi tải lại trang.")
+      }
+    >
+      <PublisherStage onPublished={onPublished} />
+    </LiveKitRoom>
+  );
+}
+
+function useElapsed(startedAt: string | null): string | null {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!startedAt) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [startedAt]);
+  return startedAt ? formatElapsed(now - Date.parse(startedAt)) : null;
+}
+
+/** Bước đang phát của chủ kênh: hình xem trước (webcam) hoặc thông tin OBS, số người xem, kết thúc buổi phát. */
+export default function LiveOnAirPanel({ live }: { live: LiveView }) {
+  const channel = useLiveChannel(live.id, true);
+  const [, copy] = useCopyToClipboard();
+  const [endLive, { isLoading: ending }] = useEndLiveMutation();
+  const [endOpen, setEndOpen] = useState(false);
+  const status = channel.status ?? live.status;
+  const viewers = channel.viewers ?? live.currentViewers;
+  const elapsed = useElapsed(status === "LIVE" ? live.startedAt : null);
+
+  // Đang phát mà đóng tab thì người xem mất hình: nhắc trước khi rời trang
+  useEffect(() => {
+    if (status !== "LIVE") return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [status]);
+
+  const onEnd = async () => {
+    try {
+      await endLive(live.id).unwrap();
+      toastEmitter.success("Đã kết thúc buổi phát");
+      setEndOpen(false);
+    } catch (err) {
+      toastEmitter.error(apiErrorMessage(err, "Không kết thúc được buổi phát, vui lòng thử lại."));
+    }
+  };
+
+  return (
+    <section className="grid grid-cols-1 gap-x-6 px-6 py-6 md:grid-cols-6 xxl:grid-cols-8">
+      <div className="col-span-1 space-y-4 md:col-span-4 xxl:col-span-6">
+        {live.source === "BROWSER" ? <WebcamBroadcast id={live.id} /> : <LiveEncoderPanel live={live} />}
+
+        <div className="flex flex-wrap items-center gap-3">
+          {status === "LIVE" ? (
+            <>
+              <LiveBadge />
+              <ViewerCount count={viewers} />
+              {elapsed ? <span className="text-sm text-gray-500">Đã phát {elapsed}</span> : null}
+            </>
+          ) : (
+            <span className="text-sm text-gray-600">
+              {live.source === "ENCODER" ? "Đang chờ tín hiệu từ phần mềm phát…" : "Đang chuẩn bị…"}
+            </span>
+          )}
+        </div>
+
+        <h1 className="text-2xl font-bold tracking-tight">{live.title}</h1>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            className="rounded-full"
+            onClick={async () => {
+              if (await copy(liveUrl(live.id))) toastEmitter.success("Đã chép liên kết");
+            }}
+          >
+            <Copy className="size-4" />
+            Chép liên kết
+          </Button>
+          <Button variant="destructive" className="rounded-full" onClick={() => setEndOpen(true)}>
+            Kết thúc buổi phát
+          </Button>
+        </div>
+      </div>
+
+      <aside className="col-span-1 mt-6 md:col-span-2 md:mt-0">{/* Chat và Poll: Task 14 */}</aside>
+
+      <LiveEndDialog open={endOpen} onOpenChange={setEndOpen} onConfirm={() => void onEnd()} loading={ending} />
+    </section>
+  );
+}
