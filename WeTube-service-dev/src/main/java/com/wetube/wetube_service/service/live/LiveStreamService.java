@@ -1,12 +1,16 @@
 package com.wetube.wetube_service.service.live;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +24,7 @@ import com.wetube.wetube_service.dto.live.CreateLiveRequest;
 import com.wetube.wetube_service.dto.live.IngressView;
 import com.wetube.wetube_service.dto.live.LiveCard;
 import com.wetube.wetube_service.dto.live.LiveEvent;
+import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
 import com.wetube.wetube_service.dto.live.UpdateLiveRequest;
 import com.wetube.wetube_service.entity.AppUser;
@@ -35,6 +40,8 @@ import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.RateLimiter.Limit;
 import com.wetube.wetube_service.service.live.LiveKitGateway.IngressDetails;
+import com.wetube.wetube_service.service.live.LiveKitGateway.Participant;
+import com.wetube.wetube_service.service.notification.NotificationService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,6 +56,10 @@ public class LiveStreamService {
 
     static final int TITLE_MAX = 100;
     static final int DESCRIPTION_MAX = 5000;
+    static final int VIEWER_CAP = 40;
+    private static final Duration GRACE = Duration.ofMinutes(2);
+    private static final Duration CREATED_TTL = Duration.ofHours(1);
+    private static final Duration MAX_LIFE = Duration.ofHours(12);
     private static final List<LiveStatus> UNFINISHED = List.of(LiveStatus.CREATED, LiveStatus.LIVE);
 
     private final LiveStreamRepository repo;
@@ -57,6 +68,7 @@ public class LiveStreamService {
     private final LiveKitGateway gateway;
     private final RateLimiter rateLimiter;
     private final LiveEventPublisher publisher;
+    private final NotificationService notifications;
     private final List<LiveCleanup> cleanups;
 
     /** Một kênh chỉ tạo một buổi tại một thời điểm (backend chạy một tiến trình). */
@@ -64,13 +76,14 @@ public class LiveStreamService {
 
     public LiveStreamService(LiveStreamRepository repo, UserRepository userRepo, ChannelRepository channelRepo,
                              LiveKitGateway gateway, RateLimiter rateLimiter, LiveEventPublisher publisher,
-                             List<LiveCleanup> cleanups) {
+                             NotificationService notifications, List<LiveCleanup> cleanups) {
         this.repo = repo;
         this.userRepo = userRepo;
         this.channelRepo = channelRepo;
         this.gateway = gateway;
         this.rateLimiter = rateLimiter;
         this.publisher = publisher;
+        this.notifications = notifications;
         this.cleanups = cleanups;
     }
 
@@ -197,6 +210,141 @@ public class LiveStreamService {
                 log.warn("[Live] Dọn buổi {} lỗi: {}", stream.getId(), e.getMessage());
             }
         }
+    }
+
+    // ---------------------------------------------- token và vòng đời theo thời gian
+
+    /**
+     * Token vào phòng LiveKit. Chủ kênh phát bằng webcam nhận token phát; mọi người khác (kể cả chủ kênh khi phát
+     * bằng OBS) nhận token xem với identity ngẫu nhiên. Đủ {@value #VIEWER_CAP} người xem thì {@code full}.
+     */
+    public LiveTokenResponse token(UUID id, UUID viewerIdOrNull) {
+        LiveStream stream = find(id);
+        if (stream.getStatus() == LiveStatus.CANCELED) {
+            throw notFound();
+        }
+        if (stream.getStatus() == LiveStatus.ENDED) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Buổi phát đã kết thúc");
+        }
+        boolean isOwner = viewerIdOrNull != null && viewerIdOrNull.equals(stream.getOwnerId());
+        try {
+            String room = stream.getLivekitRoom();
+            if (isOwner && stream.getSource() == LiveSource.BROWSER) {
+                Channel channel = channelOf(stream.getChannelId());
+                return new LiveTokenResponse(
+                        gateway.publisherToken(room, identityOf(stream.getOwnerId()),
+                                channel == null ? null : channel.getName()),
+                        gateway.wsUrl(), "PUBLISHER", false);
+            }
+            if (countViewers(gateway.participants(room)) >= VIEWER_CAP) {
+                return new LiveTokenResponse(null, gateway.wsUrl(), "VIEWER", true);
+            }
+            return new LiveTokenResponse(gateway.viewerToken(room, "v:" + UUID.randomUUID()), gateway.wsUrl(),
+                    "VIEWER", false);
+        } catch (LiveKitUnavailableException e) {
+            throw unavailable(e);
+        }
+    }
+
+    /** Chủ kênh báo đã đăng luồng webcam: chuyển LIVE ngay nếu LiveKit thấy hình, không thì để job 15 giây lo. */
+    public void markStarted(UUID userId, UUID id) {
+        LiveStream stream = owned(userId, id);
+        if (stream.getStatus() != LiveStatus.CREATED) {
+            return;
+        }
+        try {
+            if (gateway.participants(stream.getLivekitRoom()).stream().anyMatch(Participant::publishingVideo)) {
+                promote(stream, LocalDateTime.now());
+            }
+        } catch (LiveKitUnavailableException e) {
+            throw unavailable(e);
+        }
+    }
+
+    /**
+     * Một nhịp của job 15 giây: hỏi LiveKit từng buổi chưa kết thúc để chuyển CREATED → LIVE, cập nhật số người xem
+     * và tự kết thúc theo thời gian. Một buổi lỗi không làm các buổi khác dừng.
+     */
+    public void refreshAll(LocalDateTime now) {
+        for (LiveStream stream : repo.findByStatusIn(UNFINISHED)) {
+            try {
+                refresh(stream, now);
+            } catch (RuntimeException e) {
+                log.warn("[Live] Cập nhật buổi {} lỗi: {}", stream.getId(), e.getMessage());
+            }
+        }
+    }
+
+    private void refresh(LiveStream stream, LocalDateTime now) {
+        if (stream.getStatus() == LiveStatus.CREATED && stream.getCreatedAt().plus(CREATED_TTL).isBefore(now)) {
+            finish(stream, LiveStatus.CANCELED, now);
+            return;
+        }
+        if (stream.getStatus() == LiveStatus.LIVE && stream.getStartedAt() != null
+                && stream.getStartedAt().plus(MAX_LIFE).isBefore(now)) {
+            finish(stream, LiveStatus.ENDED, now);
+            return;
+        }
+        // LiveKit lỗi thì ném ra ngoài: không được coi là "mất người phát"
+        List<Participant> participants = gateway.participants(stream.getLivekitRoom());
+        boolean publisherPresent = participants.stream().anyMatch(Participant::publishingVideo);
+        int viewers = (int) countViewers(participants);
+
+        if (stream.getStatus() == LiveStatus.CREATED) {
+            if (publisherPresent) {
+                promote(stream, now);
+            }
+        } else if (publisherPresent) {
+            stream.setLastPublisherAt(now);
+        } else {
+            LocalDateTime last = stream.getLastPublisherAt() != null ? stream.getLastPublisherAt() : stream.getStartedAt();
+            if (last != null && last.plus(GRACE).isBefore(now)) {
+                finish(stream, LiveStatus.ENDED, now);
+                return;
+            }
+        }
+
+        boolean viewersChanged = viewers != stream.getCurrentViewers();
+        stream.setCurrentViewers(viewers);
+        stream.setPeakViewers(Math.max(stream.getPeakViewers(), viewers));
+        repo.save(stream);
+        if (viewersChanged) {
+            publisher.toStream(stream.getId(), LiveEvent.builder().type("VIEWERS").viewers(viewers).build());
+            log.info("[Live] Buổi {} có {} người xem (cao nhất {})", stream.getId(), viewers, stream.getPeakViewers());
+        }
+    }
+
+    /** CREATED → LIVE: ghi giờ bắt đầu, báo người xem và người đăng ký (một lần cho mỗi buổi). */
+    private void promote(LiveStream stream, LocalDateTime now) {
+        stream.setStatus(LiveStatus.LIVE);
+        stream.setStartedAt(now);
+        stream.setLastPublisherAt(now);
+        repo.save(stream);
+        publisher.toStream(stream.getId(), LiveEvent.builder().type("STATUS").status(LiveStatus.LIVE.name()).build());
+        try {
+            notifications.notifyLiveStarted(stream.getId(), stream.getOwnerId(), stream.getChannelId(),
+                    stream.getTitle());
+        } catch (RuntimeException e) {
+            log.warn("[Live] Không gửi được thông báo cho buổi {}: {}", stream.getId(), e.getMessage());
+        }
+    }
+
+    /** Xoá Ingress không dùng trên LiveKit, giữ Ingress của mọi buổi chưa kết thúc. */
+    public int cleanInactiveIngress() {
+        Set<String> keep = repo.findByStatusIn(UNFINISHED).stream()
+                .map(LiveStream::getIngressId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        try {
+            return gateway.deleteInactiveIngress(keep);
+        } catch (LiveKitUnavailableException e) {
+            log.warn("[Live] Không dọn được Ingress: {}", e.getMessage());
+            return 0;
+        }
+    }
+
+    private static long countViewers(List<Participant> participants) {
+        return participants.stream().filter(p -> p.identity().startsWith("v:")).count();
     }
 
     // ------------------------------------------------------------------ đọc

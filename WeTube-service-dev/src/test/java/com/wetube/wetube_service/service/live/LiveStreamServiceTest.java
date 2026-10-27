@@ -40,6 +40,7 @@ import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.service.live.LiveKitGateway.IngressDetails;
+import com.wetube.wetube_service.service.notification.NotificationService;
 
 class LiveStreamServiceTest {
 
@@ -87,7 +88,8 @@ class LiveStreamServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new LiveStreamService(repo, userRepo, channelRepo, gateway, rateLimiter, publisher, List.of(cleanup));
+        service = new LiveStreamService(repo, userRepo, channelRepo, gateway, rateLimiter, publisher,
+                mock(NotificationService.class), List.of(cleanup));
         when(repo.save(any(LiveStream.class))).thenAnswer(inv -> {
             LiveStream s = inv.getArgument(0);
             if (s.getId() == null) {
