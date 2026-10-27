@@ -11,6 +11,8 @@ export type WizardForm = {
   title: string;
   description: string;
   tags: string;
+  /** Từ khóa tìm kiếm, phân cách dấu phẩy (S2); không phải thẻ. */
+  searchKeywords: string;
   thumbnailFile: File | null;
   playlistIds: string[];
   targetLang: string;

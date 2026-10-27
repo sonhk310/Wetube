@@ -78,6 +78,7 @@ export interface DraftVideo {
   title: string;
   description: string;
   tags: string;
+  searchKeywords: string;
   thumbnailUrl: string | null;
   videoUrl: string;
   isShort: boolean;
@@ -97,6 +98,7 @@ export function toFormData(form: WizardForm, status: string): FormData {
   formData.append("title", form.title.trim());
   formData.append("description", form.description);
   formData.append("tags", form.tags.trim());
+  formData.append("searchKeywords", form.searchKeywords);
   formData.append("status", status);
   if (form.thumbnailFile) formData.append("thumbnailFile", form.thumbnailFile);
   return formData;
@@ -118,6 +120,7 @@ export function UploadWizard({ file, draft, onClose }: UploadWizardProps) {
     title: draft ? draft.title : (file?.name ?? "").replace(/\.[^/.]+$/, "").slice(0, 100),
     description: draft?.description ?? "",
     tags: draft?.tags ?? "",
+    searchKeywords: draft?.searchKeywords ?? "",
     thumbnailFile: null,
     playlistIds: [],
     targetLang: "",

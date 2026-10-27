@@ -191,7 +191,7 @@ export default function VideoMetadata() {
   return (
     <section className="w-full mt-2">
       {/* Title */}
-      <p className="text-2xl font-bold tracking-tight">{title}</p>
+      <LinkifiedText text={title} seekable={false} className="text-2xl font-bold tracking-tight" />
 
       {/* Cột hẹp: hàng nút xuống dòng dưới tên kênh (như YouTube), không bóp tên kênh / nút Đăng ký */}
       <div className="py-1 flex flex-wrap justify-between items-center gap-x-4 gap-y-3 mt-2">

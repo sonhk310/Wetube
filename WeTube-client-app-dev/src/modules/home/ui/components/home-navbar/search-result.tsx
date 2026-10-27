@@ -102,6 +102,21 @@ interface VideoResult {
   isShort: boolean;
 }
 
+const toVideoResult = (dto: VideoDto): VideoResult => ({
+  id: dto.id,
+  title: dto.title,
+  thumbnail: dto.thumbnailUrl,
+  description: dto.description,
+  duration: formatDuration(dto.duration),
+  views: `${dto.totalView ? Number(dto.totalView).toLocaleString() : 0} lượt xem`,
+  uploadTime: new Date(dto.createdAt).toLocaleDateString("vi-VN"),
+  channel: {
+    name: dto.author?.name || "Unknown",
+    picture: dto.author?.picture || "/default-avatar.png",
+  },
+  isShort: !!dto.isShort,
+});
+
 /** Khung chờ của danh sách kết quả: ảnh bên trái, tiêu đề + thông tin bên phải. */
 function ResultsSkeleton() {
   return (
@@ -126,6 +141,7 @@ function SearchResultsContent() {
 
   const [results, setResults] = useState<VideoResult[]>([]);
   const [channels, setChannels] = useState<ChannelResult[]>([]);
+  const [similar, setSimilar] = useState<VideoResult[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -164,6 +180,7 @@ function SearchResultsContent() {
   useEffect(() => {
     if (query) {
       setLoading(true);
+      setSimilar([]);
       const fetchResults = async () => {
         try {
           if (isChannel) {
@@ -198,27 +215,20 @@ function SearchResultsContent() {
             }
           );
 
-          const mappedResults: VideoResult[] =
-            response.data.content.map((dto) => ({
-              id: dto.id,
-              title: dto.title,
-              thumbnail: dto.thumbnailUrl,
-              description: dto.description,
-              duration: formatDuration(dto.duration),
-              views: `${
-                dto.totalView ? Number(dto.totalView).toLocaleString() : 0
-              } lượt xem`,
-              uploadTime: new Date(dto.createdAt).toLocaleDateString("vi-VN"),
-              channel: {
-                name: dto.author?.name || "Unknown",
-                picture: dto.author?.picture || "/default-avatar.png",
-              },
-              isShort: !!dto.isShort,
-            }));
+          const mappedResults: VideoResult[] = response.data.content.map(toVideoResult);
 
           setResults(mappedResults);
           setChannels(await channelsPromise);
           setTotal(response.data.totalElements ?? mappedResults.length);
+          // "Video tương tự": chỉ khi chưa lọc, và không chặn kết quả chính nếu lỗi
+          if (!hasFilter && mappedResults.length > 0) {
+            apiClient
+              .get<VideoDto[]>("/videos/search/similar", {
+                params: { title: query, size: 20, type: type || undefined },
+              })
+              .then((r) => setSimilar(r.data.map(toVideoResult)))
+              .catch(() => setSimilar([]));
+          }
         } catch (error) {
           console.error("Failed to fetch search results:", error);
           setResults([]);
@@ -474,6 +484,31 @@ function SearchResultsContent() {
         ))}
         {shelfAt === videoResults.length && shortsShelf}
       </div>
+      {similar.length > 0 && (
+        <section className="mt-8 border-t pt-4">
+          <h2 className="mb-3 text-xl font-bold">Video tương tự</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {similar.map((v) => (
+              <div
+                key={v.id}
+                onClick={() => router.push(v.isShort ? `/shorts/${v.id}` : `/watch/${v.id}`)}
+                className="cursor-pointer"
+              >
+                <div className="relative aspect-video overflow-hidden rounded-lg bg-gray-300">
+                  <Image src={v.thumbnail} alt={v.title} fill sizes="(max-width: 640px) 100vw, 320px" className="object-cover" />
+                  <div className="absolute bottom-2 right-2 rounded bg-black bg-opacity-80 px-1 py-0.5 text-xs text-white">
+                    {v.duration}
+                  </div>
+                </div>
+                <h3 className="mt-2 line-clamp-2 font-medium">{v.title}</h3>
+                <p className="text-sm text-gray-600">
+                  {v.channel.name} • {v.views}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

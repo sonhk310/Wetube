@@ -1,6 +1,7 @@
 "use client"
 
 import { useScroll, motion, useMotionValueEvent, Variants } from "motion/react";
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useVideoStore } from "@/store/zustand/videoStore";
@@ -25,9 +26,6 @@ const item = {
 
 export default function VideoTags() {
   const tags = useVideoStore((s) => s.videoDetail?.recommend?.tags) ?? [];
-  const [selectedTag, setSelectedTag] = useState<string>("");
-  const handleTagSelection = (id: string) =>
-    setSelectedTag((prev) => (prev === id ? "" : id));
   const ref = useRef<HTMLElement | null>(null);
   const { scrollXProgress } = useScroll({ container: ref });
   const [scrollOptions, setScrollOptions] = useState({
@@ -58,17 +56,14 @@ export default function VideoTags() {
         className="flex flex-nowrap justify-start items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth"
       >
         {tags.map((tag, index) => (
-          <motion.div
-            variants={item}
-            key={tag.id ?? index}
-            onClick={() => handleTagSelection(tag.id)}
-            className={`rounded-lg py-1.5 px-3 text-sm w-fit whitespace-nowrap font-semibold text-center cursor-pointer ${
-              tag.id === selectedTag
-                ? "bg-black text-white"
-                : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-            }`}
-          >
-            {tag.name}
+          <motion.div variants={item} key={tag.id ?? index}>
+            <Link
+              href={`/hashtag/${encodeURIComponent(tag.name)}`}
+              prefetch={false}
+              className="block rounded-lg py-1.5 px-3 text-sm w-fit whitespace-nowrap font-semibold text-center bg-gray-100 text-gray-900 hover:bg-gray-200"
+            >
+              {tag.name}
+            </Link>
           </motion.div>
         ))}
       </motion.section>

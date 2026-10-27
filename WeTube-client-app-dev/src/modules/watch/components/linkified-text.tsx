@@ -5,9 +5,11 @@ import { ReactNode } from "react";
 import { requestSeek } from "@/lib/watchSeek";
 
 // Link http(s) hoặc mốc thời gian dạng m:ss / h:mm:ss
-// và @handle của kênh (không bắt "abc@gmail.com")
+// và @handle của kênh (không bắt "abc@gmail.com") và #thẻ (cùng quy tắc với backend utility/Hashtags:
+// không đứng sau chữ / số / & / #, tối đa 64 ký tự, không chỉ toàn số)
 const TOKEN =
-  /(https?:\/\/[^\s<>"]+)|(?<![\w:])((?:\d{1,2}:)?[0-5]?\d:[0-5]\d)(?![\w:])|(?<![\p{L}\p{N}_.@-])@([a-z0-9][a-z0-9_.-]{1,28}[a-z0-9])(?![\p{L}\p{N}_@])/giu;
+  /(https?:\/\/[^\s<>"]+)|(?<![\w:])((?:\d{1,2}:)?[0-5]?\d:[0-5]\d)(?![\w:])|(?<![\p{L}\p{N}_.@-])@([a-z0-9][a-z0-9_.-]{1,28}[a-z0-9])(?![\p{L}\p{N}_@])|(?<![\p{L}\p{N}\p{M}_&#])#([\p{L}\p{N}\p{M}_]{1,64})(?![\p{L}\p{N}\p{M}_])/giu;
+const ONLY_DIGITS = /^\p{N}+$/u;
 // Dấu câu ở cuối thường không thuộc link ("xem tại https://a.b/c.")
 const URL_TRAILING = /[.,;:!?)\]}'"]+$/;
 
@@ -24,7 +26,7 @@ export function parseTimestamp(text: string): number {
 
 /**
  * Hiện văn bản (mô tả video, bình luận) với link bấm được (mở tab mới), mốc thời gian bấm được để
- * tua trình phát và @handle bấm được để mở trang kênh. Giữ nguyên xuống dòng.
+ * tua trình phát, @handle bấm được để mở trang kênh và #thẻ bấm được để mở trang /hashtag. Giữ nguyên xuống dòng.
  * seekable = false: mốc thời gian như 3:20 để nguyên chữ (ngoài trang xem không có trình phát để tua).
  */
 export default function LinkifiedText({
@@ -41,6 +43,7 @@ export default function LinkifiedText({
   for (const match of text.matchAll(TOKEN)) {
     const start = match.index ?? 0;
     if (match[2] && !seekable) continue;
+    if (match[4] && ONLY_DIGITS.test(match[4])) continue;
     let token = match[0];
     let end = start + token.length;
 
@@ -69,6 +72,17 @@ export default function LinkifiedText({
         <Link
           key={start}
           href={`/@${match[3].toLowerCase()}`}
+          prefetch={false}
+          className="font-medium text-violet-600 hover:underline"
+        >
+          {token}
+        </Link>
+      );
+    } else if (match[4]) {
+      parts.push(
+        <Link
+          key={start}
+          href={`/hashtag/${encodeURIComponent(match[4].normalize("NFC").toLowerCase())}`}
           prefetch={false}
           className="font-medium text-violet-600 hover:underline"
         >

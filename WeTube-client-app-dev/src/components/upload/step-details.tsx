@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ThumbnailSelector } from "@/components/ThumbnailSelector";
 import { PlaylistPicker } from "./playlist-picker";
+import { SearchKeywordsField } from "./search-keywords-field";
 import type { FormErrors, StepProps } from "./types";
 
 interface StepDetailsProps extends StepProps {
@@ -75,8 +76,12 @@ export function StepDetails({
           className={errors.tags ? "border-red-500" : ""}
         />
         <FieldError message={errors.tags} />
-        <p className="mt-1 text-xs text-gray-500">Thẻ giúp người khác dễ tìm thấy video của bạn.</p>
+        <p className="mt-1 text-xs text-gray-500">
+          Thẻ giúp người khác dễ tìm thấy video của bạn. Có thể gõ #thẻ ngay trong tiêu đề hoặc mô tả.
+        </p>
       </div>
+
+      <SearchKeywordsField form={form} setForm={setForm} />
 
       <div>
         <ThumbnailSelector
