@@ -273,7 +273,7 @@ export default function ShortsVideoCard({
         <video
           ref={videoRef}
           src={videoUrl}
-          className="absolute inset-0 size-full cursor-pointer object-contain"
+          className="absolute inset-0 size-full cursor-pointer object-cover"
           loop
           playsInline
           preload="metadata"
