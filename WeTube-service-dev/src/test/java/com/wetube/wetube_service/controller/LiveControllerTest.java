@@ -22,11 +22,13 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.wetube.wetube_service.dto.live.CreateLiveRequest;
+import com.wetube.wetube_service.dto.live.LiveChatMessage;
 import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
 import com.wetube.wetube_service.enumeration.LiveSource;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.RateLimiter.Limit;
+import com.wetube.wetube_service.service.live.LiveChatService;
 import com.wetube.wetube_service.service.live.LiveStreamService;
 
 /** Controller chỉ chuyển danh tính từ JWT (không tin nội dung request) và áp giới hạn tần suất. */
@@ -34,7 +36,8 @@ class LiveControllerTest {
 
     private final LiveStreamService service = mock(LiveStreamService.class);
     private final RateLimiter rateLimiter = mock(RateLimiter.class);
-    private final LiveController controller = new LiveController(service, rateLimiter);
+    private final LiveChatService chat = mock(LiveChatService.class);
+    private final LiveController controller = new LiveController(service, rateLimiter, chat);
 
     private static Jwt jwtOf(UUID userId, String... roles) {
         Jwt jwt = mock(Jwt.class);
@@ -116,6 +119,15 @@ class LiveControllerTest {
                 .isInstanceOfSatisfying(ResponseStatusException.class,
                         e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS));
         verify(service, never()).token(any(), any());
+    }
+
+    @Test
+    void recentChatIsReadableWithoutLogin() {
+        UUID id = UUID.randomUUID();
+        List<LiveChatMessage> messages = List.of(new LiveChatMessage("m1", "u", "Fan", null, null, "xin chào", false, 1L));
+        when(chat.recent(id)).thenReturn(messages);
+
+        assertThat(controller.chat(id)).isEqualTo(messages);
     }
 
     @Test

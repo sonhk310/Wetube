@@ -19,12 +19,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wetube.wetube_service.dto.live.ChannelLivesResponse;
 import com.wetube.wetube_service.dto.live.CreateLiveRequest;
 import com.wetube.wetube_service.dto.live.LiveCard;
+import com.wetube.wetube_service.dto.live.LiveChatMessage;
 import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
 import com.wetube.wetube_service.dto.live.UpdateLiveRequest;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.RateLimiter.Limit;
+import com.wetube.wetube_service.service.live.LiveChatService;
 import com.wetube.wetube_service.service.live.LiveStreamService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +45,7 @@ public class LiveController {
 
     private final LiveStreamService service;
     private final RateLimiter rateLimiter;
+    private final LiveChatService chat;
 
     @PostMapping
     public LiveView create(@RequestBody CreateLiveRequest body, @AuthenticationPrincipal Jwt jwt) {
@@ -81,6 +84,12 @@ public class LiveController {
     public LiveTokenResponse token(@PathVariable UUID id, HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) {
         rateLimiter.check(Limit.LIVE_TOKEN, clientIp(request));
         return service.token(id, jwt == null ? null : CurrentUser.id(jwt));
+    }
+
+    /** Các tin chat gần nhất cho người mới vào (công khai, khách cũng đọc được). */
+    @GetMapping("/{id}/chat")
+    public List<LiveChatMessage> chat(@PathVariable UUID id) {
+        return chat.recent(id);
     }
 
     @GetMapping
