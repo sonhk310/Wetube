@@ -28,6 +28,8 @@ import com.wetube.wetube_service.dto.response.ChannelSearchDto;
 import com.wetube.wetube_service.entity.channel.Channel;
 import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
+import com.wetube.wetube_service.repository.video.VideoRepository;
+import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.search.ChannelDocument;
 import com.wetube.wetube_service.search.SearchIndexes;
 
@@ -38,6 +40,7 @@ class ChannelSearchServiceTest {
     @Mock ChannelRepository channelRepository;
     @Mock ElasticsearchOperations operations;
     @Mock SearchIndexes indexes;
+    @Mock VideoRepository videoRepository;
     @InjectMocks ChannelSearchService service;
 
     private static Channel channel(String name, ActiveStatus status) {
@@ -74,6 +77,17 @@ class ChannelSearchServiceTest {
 
         assertThat(result).extracting(ChannelSearchDto::name).containsExactly("Sơn TV", "Son mới");
         assertThat(result.get(0).totalSubscribers()).isEqualTo(3);
+    }
+
+    @Test
+    void videoCountIsCountedNotReadFromTheStaleColumn() {
+        Channel c = channel("Sơn TV", ActiveStatus.ACTIVE);
+        when(indexes.channelsReady()).thenReturn(false);
+        when(channelRepository.findTop20ByNameContainingIgnoreCaseOrderByTotalSubscribersDesc("son"))
+                .thenReturn(List.of(c));
+        when(videoRepository.countChannelVideos(c.getId(), VideoAccess.LISTED)).thenReturn(4L);
+
+        assertThat(service.search("son", 20, false).get(0).totalVideos()).isEqualTo(4);
     }
 
     @Test

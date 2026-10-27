@@ -36,6 +36,7 @@ import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
+import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.VideoIndexer;
 import com.wetube.wetube_service.service.channel.impl.ChannelServiceImpl;
@@ -74,6 +75,17 @@ class ChannelProfileUpdateTest {
         when(channelRepository.findById(channel.getId())).thenReturn(Optional.of(channel));
         when(channelMapper.toChannelResponseDto(any())).thenReturn(new ChannelResponseDto());
         when(videoRepository.findByUserId(any(), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(new Video())));
+    }
+
+    @Test
+    void channelPageCountsPublicVideosAndViews() {
+        when(videoRepository.countChannelVideos(channel.getId(), VideoAccess.LISTED)).thenReturn(4L);
+        when(videoRepository.sumChannelViews(channel.getId(), VideoAccess.LISTED)).thenReturn(28L);
+
+        ChannelResponseDto dto = service.getChannelById(channel.getId(), null);
+
+        assertThat(dto.getTotalVideos()).isEqualTo(4);
+        assertThat(dto.getTotalViews()).isEqualTo(28);
     }
 
     private void assertBadRequest(ChannelUpdateRequest request) {

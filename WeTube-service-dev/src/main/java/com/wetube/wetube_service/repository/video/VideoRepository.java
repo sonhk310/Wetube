@@ -109,4 +109,12 @@ public interface VideoRepository extends JpaRepository<Video, UUID> {
             """)
     Page<Video> findShorts(@Param("status") ActiveStatus status, Pageable pageable);
 
+    /** Số video của kênh (cả Shorts) theo trạng thái; cột channels.total_videos không được cập nhật nên đếm khi đọc. */
+    @Query("SELECT COUNT(v) FROM Video v WHERE v.user.channel.id = :channelId AND v.videosStatus IN :statuses")
+    long countChannelVideos(@Param("channelId") UUID channelId, @Param("statuses") Collection<ActiveStatus> statuses);
+
+    /** Tổng lượt xem các video của kênh theo trạng thái (thay cho cột channels.total_views không được cập nhật). */
+    @Query("SELECT COALESCE(SUM(v.totalView), 0) FROM Video v WHERE v.user.channel.id = :channelId AND v.videosStatus IN :statuses")
+    long sumChannelViews(@Param("channelId") UUID channelId, @Param("statuses") Collection<ActiveStatus> statuses);
+
 }

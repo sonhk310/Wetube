@@ -19,6 +19,7 @@ import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
 import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
+import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.VideoIndexer;
 import com.wetube.wetube_service.service.channel.ChannelIndexer;
@@ -78,6 +79,9 @@ public class ChannelServiceImpl implements ChannelService {
                 .orElseThrow(() -> new ResourceNotFoundException("Channel", "id", channelId.toString()));
 
         ChannelResponseDto dto = channelMapper.toChannelResponseDto(channel);
+        // Đếm video công khai (cả Shorts) và lượt xem của chúng, như YouTube
+        dto.setTotalVideos((int) videoRepository.countChannelVideos(channelId, VideoAccess.LISTED));
+        dto.setTotalViews((int) videoRepository.sumChannelViews(channelId, VideoAccess.LISTED));
         Subscription subscription = viewerId == null ? null
                 : subscriptionRepository.findFirstById_Subscriber_IdAndId_Tier_Channel_Id(viewerId, channelId).orElse(null);
         dto.setSubscribed(subscription != null);

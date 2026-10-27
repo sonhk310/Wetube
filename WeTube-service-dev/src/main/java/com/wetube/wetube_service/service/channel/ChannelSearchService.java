@@ -22,6 +22,8 @@ import com.wetube.wetube_service.dto.response.ChannelSearchDto;
 import com.wetube.wetube_service.entity.channel.Channel;
 import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
+import com.wetube.wetube_service.repository.video.VideoRepository;
+import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.search.ChannelDocument;
 import com.wetube.wetube_service.search.SearchIndexes;
 
@@ -42,6 +44,7 @@ public class ChannelSearchService {
     private final ChannelRepository channelRepository;
     private final ElasticsearchOperations operations;
     private final SearchIndexes indexes;
+    private final VideoRepository videoRepository;
 
     @Transactional(readOnly = true)
     public List<ChannelSearchDto> search(String query, int limit, boolean strict) {
@@ -65,7 +68,8 @@ public class ChannelSearchService {
                 .filter(c -> c.getStatus() != ActiveStatus.INACTIVE && c.getStatus() != ActiveStatus.DELETED)
                 .limit(size)
                 .map(c -> new ChannelSearchDto(c.getId(), c.getName(), c.getPicture(), c.getDescription(),
-                        c.getTotalSubscribers(), c.getTotalVideos(), c.getHandle()))
+                        c.getTotalSubscribers(), (int) videoRepository.countChannelVideos(c.getId(), VideoAccess.LISTED),
+                        c.getHandle()))
                 .toList();
     }
 
