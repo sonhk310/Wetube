@@ -190,6 +190,7 @@ Anh đã thử trên trình duyệt: OK (26/10): B3 chương (khung Chương bê
 - **Lỗi:** tài khoản chủ kênh (`shinizeam@gmail.com`, suy ra từ việc DB chỉ có một tài khoản; API công khai không trả email) đang đăng ký kênh của chính mình. Trước đây em chỉ ẩn nút Đăng ký ở client (mục 18.7), backend không chặn và dòng cũ vẫn nằm trong `subscriptions`. Trước khi sửa, `/api/subscriptions/{userId}` có 1 kênh (chính kênh đó) và kênh hiện 2 người đăng ký.
 - **Cách sửa:** runner `job/SelfSubscriptionCleanup.java` (`@Order(2)`, chạy lúc khởi động, chạy lại không làm gì thêm) xoá mọi dòng mà user đăng ký kênh của chính mình, rồi tính lại `channels.total_subscribers` của các kênh đó từ số dòng thật. Test `SelfSubscriptionCleanupTest` chạy runner thật trên H2.
 - **Đã kiểm tra:** `compileJava compileTestJava` và cả bộ test backend (221, 1 bỏ qua). Sau deploy (curl): `/api/subscriptions/{userId}` trả `[]`; kênh trả `totalSubscribers: 1` (trước đó 2); `/api/videos` 200; client `/` 200; log không có `ERROR` / `Exception`.
+- Anh đã thử trên trình duyệt: OK (27/10).
 - **Chưa chắc:** log của runner ("Đã xoá … lượt tự đăng ký") **không thấy** trong log runtime dù đã lọc theo tên lớp, nên em chưa chứng minh được chính runner đã xoá (log runtime chỉ giữ phần đuôi và đã từng mất dòng). Dữ liệu đã đúng như mong muốn. Chưa biết 1 người đăng ký còn lại là ai. Backend vẫn chưa chặn gọi API tự đăng ký (chưa làm vì ngoài yêu cầu).
 
 ### 2.2 Em theo dõi
