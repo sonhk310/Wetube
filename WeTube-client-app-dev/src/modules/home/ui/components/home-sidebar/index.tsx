@@ -39,7 +39,6 @@ const HomeSidebar = () => {
                 <PersonalSection/>
                 <Separator/>
                 <SubscriptionsSection/>
-                <Separator/>
                 <OtherServices/>
                 <Separator />
                 <InfoSection />

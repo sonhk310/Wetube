@@ -26,9 +26,12 @@ export interface UnsubscribeRequest {
 export const subscriptionsApi = createApi({
     reducerPath: "subscriptionsApi",
     baseQuery: fetchBaseQuery({ baseUrl: `${API_PREFIX}/subscriptions`, credentials: "include", fetchFn: apiFetch }),
+    // Danh sách kênh ở thanh bên tải lại sau khi đăng ký / huỷ đăng ký
+    tagTypes: ["SubscribedChannels"],
     endpoints: (builder) => ({
         getSubscribedChannels: builder.query<Channel[], string>({
             query: (userId) => `/${userId}`,
+            providesTags: ["SubscribedChannels"],
         }),
         // Backend trả chữ thường ("Subscribed successfully"), đọc như JSON sẽ báo lỗi dù đã đăng ký xong
         subscribe: builder.mutation<string, SubscriptionRequest>({
@@ -38,6 +41,7 @@ export const subscriptionsApi = createApi({
                 body,
                 responseHandler: "text",
             }),
+            invalidatesTags: ["SubscribedChannels"],
         }),
         // Đổi chế độ thông báo (chuông) của một kênh đã đăng ký
         setNotificationMode: builder.mutation<string, { channelId: string; mode: NotificationMode }>({
@@ -55,6 +59,7 @@ export const subscriptionsApi = createApi({
                 body,
                 responseHandler: "text",
             }),
+            invalidatesTags: ["SubscribedChannels"],
         }),
     }),
 });
