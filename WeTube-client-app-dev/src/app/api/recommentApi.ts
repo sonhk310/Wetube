@@ -19,6 +19,8 @@ interface GetRecommendVideosParams {
   userId?: string;
   page: number;
   limit: number;
+  /** Mỗi lần mở trang chủ một mã mới: cùng mã thì thứ tự ổn định, đổi mã thì đổi nhẹ. */
+  seed?: string;
 }
 
 interface GetScoutVideosParams {
@@ -38,15 +40,16 @@ export const recommendApi = createApi({
       PageResponse<RecommendedVideoItem>,
       GetRecommendVideosParams
     >({
-      query: ({ userId, page, limit }) => ({
+      query: ({ userId, page, limit, seed }) => ({
         url: `/${userId}`,
         params: {
           page: page - 1,
           size: limit,
+          seed,
         },
       }),
       forceRefetch({ currentArg, previousArg }) {
-        return currentArg?.userId !== previousArg?.userId;
+        return currentArg?.userId !== previousArg?.userId || currentArg?.seed !== previousArg?.seed;
       },
     }),
     getScoutVideos: builder.query<RecommendedVideoItem[], GetScoutVideosParams>(

@@ -12,7 +12,6 @@ import {
   VolumeX,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useSaveInteractionMutation } from "@/app/api/interactionApi";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -51,7 +50,6 @@ const VideoCard = ({
   // Không có trang /login: khách bấm Lưu thì mời đăng nhập Google ngay trong thông báo
   const askToLogin = () =>
     toast("Hãy đăng nhập để lưu video", { action: { label: "Đăng nhập", onClick: login } });
-  const [saveInteraction] = useSaveInteractionMutation();
   const watched = useWatchProgress(id) ?? historyDuration ?? 0;
 
   const watchHref = `/watch/${id}`;
@@ -82,15 +80,6 @@ const VideoCard = ({
     setPreviewing(false);
     setPreviewPlaying(false);
     setPreviewTime(0);
-  };
-
-  // Điểm tag cho gợi ý; lịch sử xem do trình phát ghi khi thực sự xem
-  const recordView = () => {
-    if (user?.sub) {
-      saveInteraction({ userId: user.sub, videoId: id, type: "VIEW" })
-        .unwrap()
-        .catch((err) => console.error("Ghi nhận VIEW thất bại:", err));
-    }
   };
 
   const toggleMute = (e: React.MouseEvent) => {
@@ -142,7 +131,6 @@ const VideoCard = ({
       <div className="relative">
         <Link
           href={watchHref}
-          onClick={recordView}
           className="block"
           aria-label={title}
         >
@@ -238,7 +226,6 @@ const VideoCard = ({
         <div className="min-w-0 flex-1">
           <Link
             href={watchHref}
-            onClick={recordView}
             title={title}
             className="line-clamp-2 text-base leading-snug font-semibold text-black"
           >

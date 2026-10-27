@@ -16,7 +16,7 @@ import { SearchIcon } from "lucide-react";
 
 const LOAD_COUNT = 18;
 
-export default function VideoGrid() {
+export default function VideoGrid({ seed }: { readonly seed?: string }) {
   const { user, isLoading: isAuthLoading } = useAuth();
   const [page, setPage] = useState(1);
   const [allVideos, setAllVideos] = useState<RecommendedVideoItem[]>([]);
@@ -62,7 +62,7 @@ export default function VideoGrid() {
     isFetching: isRecommendFetching,
     error,
   } = useGetRecommendVideosQuery(
-    { userId: userId, page, limit: LOAD_COUNT },
+    { userId: userId, page, limit: LOAD_COUNT, seed },
     {
       skip: !user?.sub || !hasMore,
       // refetchOnMountOrArgChange: true,

@@ -10,8 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/lib/apiClient";
 import { cn, formatCompact, formatDuration } from "@/lib/utils";
 
-import { useAuth } from "@/contexts/auth-context";
-import { useSaveInteractionMutation } from "@/app/api/interactionApi";
 
 interface PageResponse<T> {
   content: T[];
@@ -174,9 +172,6 @@ function SearchResultsContent() {
     router.replace(`/search?${params.toString()}`);
   };
 
-  const { user } = useAuth();
-  const [saveInteraction] = useSaveInteractionMutation();
-
   useEffect(() => {
     if (query) {
       setLoading(true);
@@ -246,20 +241,9 @@ function SearchResultsContent() {
     }
   }, [query, isChannel, type, duration, uploaded, sort, hasFilter]);
 
-  const handleClick = async (videoId: string, isShort = false) => {
-    try {
-      if (user?.sub) {
-        await saveInteraction({
-          userId: user.sub,
-          videoId,
-          type: "VIEW",
-        }).unwrap();
-      }
-    } catch (err) {
-      console.error("❌ Failed to save interaction:", err);
-    } finally {
-      router.push(isShort ? `/shorts/${videoId}` : `/watch/${videoId}`);
-    }
+  // Điểm yêu thích thẻ do backend tự cộng khi lượt xem được tính, không gửi từ đây
+  const handleClick = (videoId: string, isShort = false) => {
+    router.push(isShort ? `/shorts/${videoId}` : `/watch/${videoId}`);
   };
 
   // Như YouTube: Shorts gom thành một hàng thẻ dọc, đặt sau 2 video đầu

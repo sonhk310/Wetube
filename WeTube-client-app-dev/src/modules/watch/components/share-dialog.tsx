@@ -10,6 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCopyToClipboard } from "@/lib/clipboard";
+import { useAuth } from "@/contexts/auth-context";
+import { useSaveInteractionMutation } from "@/app/api/interactionApi";
 import { cn } from "@/lib/utils";
 
 interface ShareDialogProps {
@@ -69,6 +71,8 @@ export default function ShareDialog({
   onOpenChange,
 }: ShareDialogProps) {
   const [, copy] = useCopyToClipboard();
+  const { user } = useAuth();
+  const [saveInteraction] = useSaveInteractionMutation();
   const [withTime, setWithTime] = useState(false);
   // Chụp lại thời điểm lúc mở hộp thoại để đường dẫn không nhảy khi video đang chạy
   const [startAt, setStartAt] = useState(0);
@@ -108,6 +112,12 @@ export default function ShareDialog({
 
   const handleCopy = async () => {
     const ok = await copy(url);
+    if (ok && videoId && !link && user?.sub) {
+      // Điểm yêu thích thẻ cho gợi ý; lỗi không làm hỏng việc sao chép
+      saveInteraction({ userId: user.sub, videoId, type: "SHARE" })
+        .unwrap()
+        .catch((err) => console.error("Ghi nhận SHARE thất bại:", err));
+    }
     if (ok) toastEmitter.success("Đã sao chép liên kết");
     else toastEmitter.error("Không sao chép được, hãy chép thủ công");
   };

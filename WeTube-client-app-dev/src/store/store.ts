@@ -3,6 +3,7 @@ import { likesApi } from "@/app/api/likeApi";
 import { playlistApi } from "@/app/api/playlistApi";
 import { postsApi } from "@/app/api/postApi";
 import { recommendApi } from "@/app/api/recommentApi";
+import { homeApi } from "@/app/api/homeApi";
 import { searchApi } from "@/app/api/searchApi";
 import { videoApi } from "@/app/api/videoApi";
 import { subscriptionsApi } from "@/app/api/subscriptionsApi";
@@ -18,6 +19,7 @@ export const store = configureStore({
     [likesApi.reducerPath]: likesApi.reducer,
     [commentApi.reducerPath]: commentApi.reducer,
     [recommendApi.reducerPath]: recommendApi.reducer,
+    [homeApi.reducerPath]: homeApi.reducer,
     [videoApi.reducerPath]: videoApi.reducer,
     [searchApi.reducerPath]: searchApi.reducer,
     [playlistApi.reducerPath]: playlistApi.reducer,
@@ -32,6 +34,7 @@ export const store = configureStore({
       likesApi.middleware,
       commentApi.middleware,
       recommendApi.middleware,
+      homeApi.middleware,
       videoApi.middleware,
       searchApi.middleware,
       playlistApi.middleware,
