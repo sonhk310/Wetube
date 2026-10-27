@@ -106,11 +106,21 @@ class LiveControllerTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("X-Forwarded-For", "203.0.113.7, 10.0.0.1");
         LiveTokenResponse token = new LiveTokenResponse("t", "wss://x", "VIEWER", false);
-        when(service.token(id, null)).thenReturn(token);
+        when(service.token(id, null, false)).thenReturn(token);
 
-        assertThat(controller.token(id, request, null)).isSameAs(token);
+        assertThat(controller.token(id, false, request, null)).isSameAs(token);
 
         verify(rateLimiter).check(Limit.LIVE_TOKEN, "203.0.113.7");
+    }
+
+    @Test
+    void thePublishFlagAndTheLoggedInUserGoToTheService() {
+        UUID id = UUID.randomUUID();
+        UUID me = UUID.randomUUID();
+        LiveTokenResponse token = new LiveTokenResponse("t", "wss://x", "PUBLISHER", false);
+        when(service.token(id, me, true)).thenReturn(token);
+
+        assertThat(controller.token(id, true, new MockHttpServletRequest(), jwtOf(me))).isSameAs(token);
     }
 
     @Test
@@ -119,10 +129,10 @@ class LiveControllerTest {
         doThrow(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Quá nhiều yêu cầu"))
                 .when(rateLimiter).check(eq(Limit.LIVE_TOKEN), any());
 
-        assertThatThrownBy(() -> controller.token(id, new MockHttpServletRequest(), null))
+        assertThatThrownBy(() -> controller.token(id, false, new MockHttpServletRequest(), null))
                 .isInstanceOfSatisfying(ResponseStatusException.class,
                         e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS));
-        verify(service, never()).token(any(), any());
+        verify(service, never()).token(any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     @Test

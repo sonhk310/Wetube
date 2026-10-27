@@ -16,7 +16,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.wetube.wetube_service.dto.live.ChannelLivesResponse;
@@ -58,6 +62,8 @@ public class LiveStreamService {
     static final int TITLE_MAX = 100;
     static final int DESCRIPTION_MAX = 5000;
     static final int VIEWER_CAP = 40;
+    /** Trần cứng của phòng LiveKit: người xem + chủ kênh (webcam hoặc OBS) + chỗ dự phòng. */
+    static final int ROOM_PARTICIPANT_CAP = VIEWER_CAP + 5;
     private static final Duration GRACE = Duration.ofMinutes(2);
     private static final Duration CREATED_TTL = Duration.ofHours(1);
     private static final Duration MAX_LIFE = Duration.ofHours(12);
@@ -72,13 +78,18 @@ public class LiveStreamService {
     private final NotificationService notifications;
     private final LivePollService polls;
     private final List<LiveCleanup> cleanups;
+    /** Mỗi buổi được làm mới trong một transaction ngắn riêng (job 15 giây). */
+    private final TransactionTemplate tx;
+    /** Kiểm tra + lưu buổi mới commit ngay trong khoá của kênh. */
+    private final TransactionTemplate txNew;
 
     /** Một kênh chỉ tạo một buổi tại một thời điểm (backend chạy một tiến trình). */
     private final Map<UUID, Object> channelLocks = new ConcurrentHashMap<>();
 
     public LiveStreamService(LiveStreamRepository repo, UserRepository userRepo, ChannelRepository channelRepo,
                              LiveKitGateway gateway, RateLimiter rateLimiter, LiveEventPublisher publisher,
-                             NotificationService notifications, LivePollService polls, List<LiveCleanup> cleanups) {
+                             NotificationService notifications, LivePollService polls, List<LiveCleanup> cleanups,
+                             PlatformTransactionManager transactionManager) {
         this.repo = repo;
         this.userRepo = userRepo;
         this.channelRepo = channelRepo;
@@ -88,6 +99,9 @@ public class LiveStreamService {
         this.notifications = notifications;
         this.polls = polls;
         this.cleanups = cleanups;
+        this.tx = new TransactionTemplate(transactionManager);
+        this.txNew = new TransactionTemplate(transactionManager);
+        this.txNew.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     // ------------------------------------------------------------------ ghi
@@ -109,43 +123,47 @@ public class LiveStreamService {
         }
         rateLimiter.check(Limit.LIVE_CREATE, userId);
 
+        // Kiểm tra "mỗi kênh một buổi" + INSERT chạy trong transaction riêng và commit trước khi nhả khoá. Nếu chạy trong
+        // transaction ngoài thì commit đến sau khi nhả khoá, yêu cầu thứ hai không thấy dòng của yêu cầu thứ nhất.
         synchronized (channelLocks.computeIfAbsent(channel.getId(), k -> new Object())) {
-            repo.findFirstByChannelIdAndStatusIn(channel.getId(), UNFINISHED).ifPresent(existing -> {
-                throw new ResponseStatusException(HttpStatus.CONFLICT,
-                        "Kênh đang có một buổi phát chưa kết thúc (" + existing.getId() + ")");
-            });
+            return txNew.execute(status -> {
+                repo.findFirstByChannelIdAndStatusIn(channel.getId(), UNFINISHED).ifPresent(existing -> {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,
+                            "Kênh đang có một buổi phát chưa kết thúc (" + existing.getId() + ")");
+                });
 
-            String room = "live-" + UUID.randomUUID();
-            LiveProtocol protocol = source == LiveSource.ENCODER
-                    ? (req.protocol() == null ? LiveProtocol.WHIP : req.protocol())
-                    : null;
-            IngressDetails ingress = null;
-            try {
-                gateway.createRoom(room, "{\"ownerId\":\"" + userId + "\"}");
-                if (source == LiveSource.ENCODER) {
-                    ingress = gateway.createIngress(room, identityOf(userId), channel.getName(), protocol);
+                String room = "live-" + UUID.randomUUID();
+                LiveProtocol protocol = source == LiveSource.ENCODER
+                        ? (req.protocol() == null ? LiveProtocol.WHIP : req.protocol())
+                        : null;
+                IngressDetails ingress = null;
+                try {
+                    gateway.createRoom(room, "{\"ownerId\":\"" + userId + "\"}", ROOM_PARTICIPANT_CAP);
+                    if (source == LiveSource.ENCODER) {
+                        ingress = gateway.createIngress(room, identityOf(userId), channel.getName(), protocol);
+                    }
+                } catch (LiveKitUnavailableException e) {
+                    deleteRoomQuietly(room);
+                    throw unavailable(e);
                 }
-            } catch (LiveKitUnavailableException e) {
-                deleteRoomQuietly(room);
-                throw unavailable(e);
-            }
 
-            LiveStream saved = repo.save(LiveStream.builder()
-                    .channelId(channel.getId())
-                    .ownerId(userId)
-                    .title(title)
-                    .description(description)
-                    .source(source)
-                    .protocol(protocol)
-                    .status(LiveStatus.CREATED)
-                    .chatEnabled(req.chatEnabled() == null || req.chatEnabled())
-                    .livekitRoom(room)
-                    .ingressId(ingress == null ? null : ingress.ingressId())
-                    .ingressUrl(ingress == null ? null : ingress.url())
-                    .ingressKey(ingress == null ? null : ingress.streamKey())
-                    .createdAt(LocalDateTime.now())
-                    .build());
-            return view(saved, channel, true);
+                LiveStream saved = repo.save(LiveStream.builder()
+                        .channelId(channel.getId())
+                        .ownerId(userId)
+                        .title(title)
+                        .description(description)
+                        .source(source)
+                        .protocol(protocol)
+                        .status(LiveStatus.CREATED)
+                        .chatEnabled(req.chatEnabled() == null || req.chatEnabled())
+                        .livekitRoom(room)
+                        .ingressId(ingress == null ? null : ingress.ingressId())
+                        .ingressUrl(ingress == null ? null : ingress.url())
+                        .ingressKey(ingress == null ? null : ingress.streamKey())
+                        .createdAt(LocalDateTime.now())
+                        .build());
+                return view(saved, channel, true);
+            });
         }
     }
 
@@ -218,10 +236,11 @@ public class LiveStreamService {
     // ---------------------------------------------- token và vòng đời theo thời gian
 
     /**
-     * Token vào phòng LiveKit. Chủ kênh phát bằng webcam nhận token phát; mọi người khác (kể cả chủ kênh khi phát
-     * bằng OBS) nhận token xem với identity ngẫu nhiên. Đủ {@value #VIEWER_CAP} người xem thì {@code full}.
+     * Token vào phòng LiveKit. {@code publish}: trang phát của chủ kênh (webcam) xin token phát; mọi trường hợp khác,
+     * kể cả chủ kênh mở trang xem, nhận token xem với identity ngẫu nhiên. Đủ {@value #VIEWER_CAP} người xem thì
+     * {@code full}.
      */
-    public LiveTokenResponse token(UUID id, UUID viewerIdOrNull) {
+    public LiveTokenResponse token(UUID id, UUID viewerIdOrNull, boolean publish) {
         LiveStream stream = find(id);
         if (stream.getStatus() == LiveStatus.CANCELED) {
             throw notFound();
@@ -232,7 +251,16 @@ public class LiveStreamService {
         boolean isOwner = viewerIdOrNull != null && viewerIdOrNull.equals(stream.getOwnerId());
         try {
             String room = stream.getLivekitRoom();
-            if (isOwner && stream.getSource() == LiveSource.BROWSER) {
+            // Token phát (identity u:<owner>) chỉ cấp khi trang phát xin rõ. Trang xem của chính chủ kênh cũng dùng
+            // token xem: nếu cùng identity thì LiveKit ngắt trang phát (DUPLICATE_IDENTITY) và buổi phát đứt.
+            if (publish) {
+                if (!isOwner) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Chỉ chủ kênh mới phát được buổi này");
+                }
+                if (stream.getSource() != LiveSource.BROWSER) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Buổi phát này dùng phần mềm phát, không phát bằng trình duyệt");
+                }
                 Channel channel = channelOf(stream.getChannelId());
                 return new LiveTokenResponse(
                         gateway.publisherToken(room, identityOf(stream.getOwnerId()),
@@ -268,12 +296,18 @@ public class LiveStreamService {
      * Một nhịp của job 15 giây: hỏi LiveKit từng buổi chưa kết thúc để chuyển CREATED → LIVE, cập nhật số người xem
      * và tự kết thúc theo thời gian. Một buổi lỗi không làm các buổi khác dừng.
      */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void refreshAll(LocalDateTime now) {
-        for (LiveStream stream : repo.findByStatusIn(UNFINISHED)) {
+        for (LiveStream listed : repo.findByStatusIn(UNFINISHED)) {
+            UUID id = listed.getId();
             try {
-                refresh(stream, now);
+                // Đọc lại trong transaction riêng của buổi này: buổi vừa được chủ kênh kết thúc / sửa sau khi danh sách
+                // được đọc thì bỏ qua, không ghi đè bản cũ. Xung đột còn lại do @Version chặn (nhịp sau làm lại).
+                tx.executeWithoutResult(status -> repo.findById(id)
+                        .filter(current -> !isFinished(current))
+                        .ifPresent(current -> refresh(current, now)));
             } catch (RuntimeException e) {
-                log.warn("[Live] Cập nhật buổi {} lỗi: {}", stream.getId(), e.getMessage());
+                log.warn("[Live] Cập nhật buổi {} lỗi: {}", id, e.getMessage());
             }
         }
     }

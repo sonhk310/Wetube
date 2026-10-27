@@ -18,7 +18,11 @@ public interface LiveKitGateway {
     record IngressDetails(String ingressId, String url, String streamKey) {
     }
 
-    void createRoom(String room, String metadataJson);
+    /**
+     * Tạo phòng với trần người tham gia do LiveKit giữ cứng khi vào phòng (token xin dồn cũng không vượt được) và giữ
+     * phòng tối đa 1 giờ khi chưa có ai (OBS có thể nối chậm).
+     */
+    void createRoom(String room, String metadataJson, int maxParticipants);
 
     void deleteRoom(String room);
 

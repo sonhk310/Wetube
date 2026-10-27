@@ -3,6 +3,7 @@ package com.wetube.wetube_service.service.live;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -53,6 +54,7 @@ class LiveStreamServiceTest {
     private final LiveEventPublisher publisher = mock(LiveEventPublisher.class);
     private final LiveCleanup cleanup = mock(LiveCleanup.class);
     private final LivePollService polls = mock(LivePollService.class);
+    private final TrackingTransactionManager tm = new TrackingTransactionManager();
 
     private final UUID owner = UUID.randomUUID();
     private final UUID channelId = UUID.randomUUID();
@@ -91,7 +93,7 @@ class LiveStreamServiceTest {
     @BeforeEach
     void setUp() {
         service = new LiveStreamService(repo, userRepo, channelRepo, gateway, rateLimiter, publisher,
-                mock(NotificationService.class), polls, List.of(cleanup));
+                mock(NotificationService.class), polls, List.of(cleanup), tm);
         when(repo.save(any(LiveStream.class))).thenAnswer(inv -> {
             LiveStream s = inv.getArgument(0);
             if (s.getId() == null) {
@@ -100,6 +102,41 @@ class LiveStreamServiceTest {
             return s;
         });
         when(repo.findFirstByChannelIdAndStatusIn(any(), any())).thenReturn(Optional.empty());
+    }
+
+    @Test
+    void createChecksAndSavesInsideItsOwnCommittedTransactionSoTheChannelLockCoversTheCommit() {
+        givenOwnerWithChannel(ActiveStatus.ACTIVE);
+        boolean[] checkedInside = new boolean[1];
+        boolean[] savedInside = new boolean[1];
+        when(repo.findFirstByChannelIdAndStatusIn(any(), any())).thenAnswer(inv -> {
+            checkedInside[0] = tm.insideRequiresNew();
+            return Optional.empty();
+        });
+        when(repo.save(any(LiveStream.class))).thenAnswer(inv -> {
+            savedInside[0] = tm.insideRequiresNew();
+            LiveStream s = inv.getArgument(0);
+            s.setId(UUID.randomUUID());
+            return s;
+        });
+
+        service.create(owner, request(LiveSource.BROWSER, "Tiêu đề"));
+
+        // Nếu check + INSERT chạy trong transaction ngoài thì commit xảy ra sau khi nhả khoá, hai yêu cầu cùng lọt qua
+        assertThat(checkedInside[0]).isTrue();
+        assertThat(savedInside[0]).isTrue();
+        assertThat(tm.active()).isZero();
+        assertThat(tm.committed).isEqualTo(1);
+    }
+
+    @Test
+    void theLivekitRoomHasAHardParticipantCapAboveTheViewerCap() {
+        givenOwnerWithChannel(ActiveStatus.ACTIVE);
+
+        service.create(owner, request(LiveSource.BROWSER, "Tiêu đề"));
+
+        // 40 người xem + chủ kênh + chỗ dự phòng: token xin dồn cũng không vào quá mức này
+        verify(gateway).createRoom(any(), any(), eq(LiveStreamService.VIEWER_CAP + 5));
     }
 
     @Test
@@ -138,7 +175,7 @@ class LiveStreamServiceTest {
         ArgumentCaptor<LiveStream> saved = ArgumentCaptor.forClass(LiveStream.class);
         verify(repo).save(saved.capture());
         assertThat(saved.getValue().getLivekitRoom()).startsWith("live-");
-        verify(gateway).createRoom(eq(saved.getValue().getLivekitRoom()), any());
+        verify(gateway).createRoom(eq(saved.getValue().getLivekitRoom()), any(), eq(45));
     }
 
     @Test
@@ -176,7 +213,7 @@ class LiveStreamServiceTest {
     @Test
     void createWhenRoomCreationFailsWithoutQuotaIsGenericUnavailable() {
         givenOwnerWithChannel(ActiveStatus.ACTIVE);
-        doThrow(new LiveKitUnavailableException("down", false)).when(gateway).createRoom(any(), any());
+        doThrow(new LiveKitUnavailableException("down", false)).when(gateway).createRoom(any(), any(), anyInt());
 
         assertThatThrownBy(() -> service.create(owner, request(LiveSource.BROWSER, "Tiêu đề")))
                 .isInstanceOfSatisfying(ResponseStatusException.class, e -> {

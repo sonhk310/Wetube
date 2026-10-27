@@ -48,6 +48,16 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    /** Hai yêu cầu cùng sửa một dòng có @Version (vd. chủ kênh kết thúc buổi đúng lúc job cập nhật): làm lại là được. */
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Object> handleOptimisticLock(org.springframework.orm.ObjectOptimisticLockingFailureException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "error", "Conflict",
+                        "message", "Dữ liệu vừa được cập nhật ở nơi khác, vui lòng thử lại"
+                ));
+    }
+
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<Object> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)

@@ -88,9 +88,10 @@ public class LiveController {
     }
 
     @PostMapping("/{id}/token")
-    public LiveTokenResponse token(@PathVariable UUID id, HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) {
+    public LiveTokenResponse token(@PathVariable UUID id, @RequestParam(defaultValue = "false") boolean publish,
+                                   HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) {
         rateLimiter.check(Limit.LIVE_TOKEN, clientIp(request));
-        return service.token(id, jwt == null ? null : CurrentUser.id(jwt));
+        return service.token(id, jwt == null ? null : CurrentUser.id(jwt), publish);
     }
 
     /** Các tin chat gần nhất cho người mới vào (công khai, khách cũng đọc được). */

@@ -34,13 +34,17 @@ public class LiveKitGatewayImpl implements LiveKitGateway {
     /** AccessToken.setTtl của SDK nhận mili-giây (đưa 21600 vào thì token chỉ sống 21 giây). */
     private static final long TOKEN_TTL_MILLIS = Duration.ofHours(6).toMillis();
 
+    /** Phòng chưa có ai (chờ OBS nối) được giữ chừng này giây; buổi CREATED bị huỷ sau 1 giờ nên không cần lâu hơn. */
+    private static final int EMPTY_TIMEOUT_SECONDS = (int) Duration.ofHours(1).toSeconds();
+
     private final RoomServiceClient roomClient;
     private final IngressServiceClient ingressClient;
     private final LivekitProperties props;
 
     @Override
-    public void createRoom(String room, String metadataJson) {
-        ok(send(roomClient.createRoom(room, null, null, null, metadataJson, null, null, null, null)));
+    public void createRoom(String room, String metadataJson, int maxParticipants) {
+        ok(send(roomClient.createRoom(room, EMPTY_TIMEOUT_SECONDS, maxParticipants, null, metadataJson, null, null,
+                null, null)));
     }
 
     @Override

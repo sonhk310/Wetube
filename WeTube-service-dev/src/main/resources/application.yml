@@ -7,6 +7,13 @@ spring:
   main:
     allow-bean-definition-overriding: true
 
+  # Mặc định chỉ 1 luồng cho mọi @Scheduled: job theo dõi buổi phát gọi LiveKit qua mạng, chậm thì chặn dọn phòng xem
+  # chung (5 giây) và đẩy kết quả Poll
+  task:
+    scheduling:
+      pool:
+        size: 4
+
   web:
     cors:
       allowed-origins: "https://wetube.name.vn"

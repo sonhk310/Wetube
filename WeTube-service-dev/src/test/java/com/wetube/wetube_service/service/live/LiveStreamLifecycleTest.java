@@ -47,6 +47,7 @@ class LiveStreamLifecycleTest {
     private final LiveEventPublisher publisher = mock(LiveEventPublisher.class);
     private final NotificationService notifications = mock(NotificationService.class);
     private final LiveCleanup cleanup = mock(LiveCleanup.class);
+    private final TrackingTransactionManager tm = new TrackingTransactionManager();
 
     private final UUID owner = UUID.randomUUID();
     private final UUID channelId = UUID.randomUUID();
@@ -57,7 +58,7 @@ class LiveStreamLifecycleTest {
     @BeforeEach
     void setUp() {
         service = new LiveStreamService(repo, mock(UserRepository.class), channelRepo, gateway,
-                mock(RateLimiter.class), publisher, notifications, mock(LivePollService.class), List.of(cleanup));
+                mock(RateLimiter.class), publisher, notifications, mock(LivePollService.class), List.of(cleanup), tm);
         when(repo.findByStatusIn(any())).thenAnswer(inv -> List.copyOf(unfinished));
         when(repo.save(any(LiveStream.class))).thenAnswer(inv -> inv.getArgument(0));
         when(gateway.wsUrl()).thenReturn("wss://livekit.test");
@@ -238,6 +239,62 @@ class LiveStreamLifecycleTest {
     }
 
     @Test
+    void eachStreamIsRefreshedInItsOwnShortTransactionNotOneForTheWholeLoop() {
+        LiveStream a = liveStream(now);
+        LiveStream b = liveStream(now);
+        int[] activeWhenListing = {-1};
+        int[] maxActive = {0};
+        when(repo.findByStatusIn(any())).thenAnswer(inv -> {
+            activeWhenListing[0] = tm.active();
+            return List.copyOf(unfinished);
+        });
+        when(gateway.participants(any())).thenAnswer(inv -> {
+            maxActive[0] = Math.max(maxActive[0], tm.active());
+            return withPublisher(publisher(), 1);
+        });
+
+        service.refreshAll(now);
+
+        // Một transaction bao cả vòng lặp (kèm các lời gọi LiveKit) làm commit muộn ghi đè lên thay đổi của chủ kênh
+        assertThat(activeWhenListing[0]).isZero();
+        assertThat(maxActive[0]).isEqualTo(1);
+        assertThat(tm.started).isEqualTo(2);
+        assertThat(tm.committed).isEqualTo(2);
+        assertThat(a.getCurrentViewers()).isEqualTo(1);
+        assertThat(b.getCurrentViewers()).isEqualTo(1);
+    }
+
+    @Test
+    void aStreamThatEndedAfterTheListWasReadIsNotWrittenBackAsLive() {
+        LiveStream stale = liveStream(now);
+        LiveStream endedMeanwhile = LiveStream.builder().id(stale.getId()).channelId(channelId).ownerId(owner)
+                .title("Buổi phát").source(LiveSource.BROWSER).status(LiveStatus.ENDED).chatEnabled(true)
+                .livekitRoom(stale.getLivekitRoom()).createdAt(stale.getCreatedAt()).endedAt(now).build();
+        when(repo.findById(stale.getId())).thenReturn(Optional.of(endedMeanwhile));
+        when(gateway.participants(any())).thenReturn(withPublisher(publisher(), 3));
+
+        service.refreshAll(now);
+
+        verify(gateway, never()).participants(any());
+        verify(repo, never()).save(any(LiveStream.class));
+        assertThat(endedMeanwhile.getStatus()).isEqualTo(LiveStatus.ENDED);
+    }
+
+    @Test
+    void aFailingStreamRollsBackOnlyItsOwnTransaction() {
+        LiveStream broken = liveStream(now);
+        LiveStream fine = liveStream(now);
+        when(gateway.participants(broken.getLivekitRoom())).thenThrow(new RuntimeException("boom"));
+        when(gateway.participants(fine.getLivekitRoom())).thenReturn(withPublisher(publisher(), 2));
+
+        service.refreshAll(now);
+
+        assertThat(tm.rolledBack).isEqualTo(1);
+        assertThat(tm.committed).isEqualTo(1);
+        assertThat(fine.getCurrentViewers()).isEqualTo(2);
+    }
+
+    @Test
     void oneStreamFailingDoesNotStopOthers() {
         LiveStream broken = liveStream(now);
         LiveStream fine = liveStream(now);
@@ -281,7 +338,7 @@ class LiveStreamLifecycleTest {
         when(gateway.participants(s.getLivekitRoom())).thenReturn(withPublisher(publisher(), 2));
         when(gateway.viewerToken(eq(s.getLivekitRoom()), argThat(id -> id.startsWith("v:")))).thenReturn("VIEW");
 
-        LiveTokenResponse res = service.token(s.getId(), UUID.randomUUID());
+        LiveTokenResponse res = service.token(s.getId(), UUID.randomUUID(), false);
 
         assertThat(res.token()).isEqualTo("VIEW");
         assertThat(res.role()).isEqualTo("VIEWER");
@@ -291,14 +348,48 @@ class LiveStreamLifecycleTest {
     }
 
     @Test
-    void ownerWebcamGetsPublisherToken() {
+    void ownerWebcamGetsPublisherTokenWhenTheStudioAsksForIt() {
         LiveStream s = createdStream();
         when(gateway.publisherToken(eq(s.getLivekitRoom()), eq("u:" + owner), any())).thenReturn("PUB");
 
-        LiveTokenResponse res = service.token(s.getId(), owner);
+        LiveTokenResponse res = service.token(s.getId(), owner, true);
 
         assertThat(res.token()).isEqualTo("PUB");
         assertThat(res.role()).isEqualTo("PUBLISHER");
+    }
+
+    @Test
+    void ownerWatchingTheirOwnStreamGetsAViewerTokenSoTheBroadcastIsNotKicked() {
+        // Cùng identity u:<owner> với trang phát sẽ làm LiveKit ngắt trang phát (DUPLICATE_IDENTITY)
+        LiveStream s = liveStream(now);
+        when(gateway.participants(s.getLivekitRoom())).thenReturn(withPublisher(publisher(), 1));
+        when(gateway.viewerToken(eq(s.getLivekitRoom()), argThat(id -> id.startsWith("v:")))).thenReturn("VIEW");
+
+        LiveTokenResponse res = service.token(s.getId(), owner, false);
+
+        assertThat(res.role()).isEqualTo("VIEWER");
+        assertThat(res.token()).isEqualTo("VIEW");
+        verify(gateway, never()).publisherToken(any(), any(), any());
+    }
+
+    @Test
+    void onlyTheOwnerMayAskForAPublisherToken() {
+        LiveStream s = createdStream();
+
+        assertThatThrownBy(() -> service.token(s.getId(), UUID.randomUUID(), true))
+                .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.FORBIDDEN));
+        assertThatThrownBy(() -> service.token(s.getId(), null, true))
+                .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.FORBIDDEN));
+        verify(gateway, never()).publisherToken(any(), any(), any());
+    }
+
+    @Test
+    void anEncoderStreamHasNoBrowserPublisherToken() {
+        LiveStream s = stream(LiveStatus.CREATED, LiveSource.ENCODER, now.minusMinutes(1), null, null);
+
+        assertThatThrownBy(() -> service.token(s.getId(), owner, true))
+                .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.BAD_REQUEST));
+        verify(gateway, never()).publisherToken(any(), any(), any());
     }
 
     @Test
@@ -307,7 +398,7 @@ class LiveStreamLifecycleTest {
         when(gateway.participants(s.getLivekitRoom())).thenReturn(List.of());
         when(gateway.viewerToken(eq(s.getLivekitRoom()), any())).thenReturn("VIEW");
 
-        LiveTokenResponse res = service.token(s.getId(), owner);
+        LiveTokenResponse res = service.token(s.getId(), owner, false);
 
         assertThat(res.role()).isEqualTo("VIEWER");
         verify(gateway, never()).publisherToken(any(), any(), any());
@@ -319,10 +410,10 @@ class LiveStreamLifecycleTest {
         when(gateway.viewerToken(any(), any())).thenReturn("VIEW");
 
         when(gateway.participants(s.getLivekitRoom())).thenReturn(withPublisher(publisher(), 39));
-        assertThat(service.token(s.getId(), null).token()).isEqualTo("VIEW");
+        assertThat(service.token(s.getId(), null, false).token()).isEqualTo("VIEW");
 
         when(gateway.participants(s.getLivekitRoom())).thenReturn(withPublisher(publisher(), 40));
-        LiveTokenResponse full = service.token(s.getId(), null);
+        LiveTokenResponse full = service.token(s.getId(), null, false);
         assertThat(full.full()).isTrue();
         assertThat(full.token()).isNull();
     }
@@ -332,9 +423,9 @@ class LiveStreamLifecycleTest {
         LiveStream ended = stream(LiveStatus.ENDED, LiveSource.BROWSER, now.minusHours(2), now.minusHours(1), now);
         LiveStream canceled = stream(LiveStatus.CANCELED, LiveSource.BROWSER, now.minusHours(2), null, null);
 
-        assertThatThrownBy(() -> service.token(ended.getId(), null))
+        assertThatThrownBy(() -> service.token(ended.getId(), null, false))
                 .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.GONE));
-        assertThatThrownBy(() -> service.token(canceled.getId(), null))
+        assertThatThrownBy(() -> service.token(canceled.getId(), null, false))
                 .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.NOT_FOUND));
     }
 
@@ -343,7 +434,7 @@ class LiveStreamLifecycleTest {
         LiveStream s = liveStream(now);
         when(gateway.participants(s.getLivekitRoom())).thenThrow(new LiveKitUnavailableException("quota", true));
 
-        assertThatThrownBy(() -> service.token(s.getId(), null))
+        assertThatThrownBy(() -> service.token(s.getId(), null, false))
                 .isInstanceOfSatisfying(ResponseStatusException.class, e -> {
                     assertThat(statusOf(e)).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
                     assertThat(e.getReason()).contains("hạn mức");

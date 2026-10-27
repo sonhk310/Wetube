@@ -13,6 +13,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -150,7 +151,12 @@ public class LivePollService implements LiveCleanup {
         return polls.findByStreamIdOrderByCreatedAtAsc(streamId).stream().map(p -> view(p, null)).toList();
     }
 
+    /**
+     * Transaction riêng: nếu việc đóng Poll lỗi thì không làm transaction kết thúc buổi phát (đang gọi nó) bị đánh dấu
+     * rollback-only và quay lại trạng thái cũ.
+     */
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onEnded(UUID streamId) {
         polls.findFirstByStreamIdAndOpenTrue(streamId).ifPresent(poll -> {
             poll.setOpen(false);

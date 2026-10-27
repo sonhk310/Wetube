@@ -2,7 +2,10 @@ package com.wetube.wetube_service.service.live;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -87,6 +90,20 @@ class LiveKitGatewayImplTest {
         RoomServiceClient rooms = mock(RoomServiceClient.class);
         when(rooms.listParticipants("live-x")).thenReturn(call);
         return new LiveKitGatewayImpl(rooms, null, props());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void roomIsCreatedWithAHardParticipantCapAndAnHourOfEmptyTimeout() throws Exception {
+        RoomServiceClient rooms = mock(RoomServiceClient.class);
+        Call<LivekitModels.Room> call = mock(Call.class);
+        when(call.execute()).thenReturn(Response.success(null));
+        when(rooms.createRoom(eq("live-x"), eq(3600), eq(45), any(), eq("{}"), any(), any(), any(), any()))
+                .thenReturn(call);
+
+        new LiveKitGatewayImpl(rooms, null, props()).createRoom("live-x", "{}", 45);
+
+        verify(rooms).createRoom(eq("live-x"), eq(3600), eq(45), any(), eq("{}"), any(), any(), any(), any());
     }
 
     @SuppressWarnings("unchecked")

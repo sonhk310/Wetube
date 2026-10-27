@@ -18,6 +18,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -106,4 +107,11 @@ public class LiveStream {
 
     @Column(name = "peak_viewers", nullable = false)
     private int peakViewers;
+
+    /**
+     * Khoá lạc quan: job 15 giây và chủ kênh (sửa / kết thúc) cùng ghi một dòng; ghi muộn dựa trên bản cũ phải thất
+     * bại thay vì ghi đè (vd. đưa buổi đã kết thúc về LIVE).
+     */
+    @Version
+    private Long version;
 }

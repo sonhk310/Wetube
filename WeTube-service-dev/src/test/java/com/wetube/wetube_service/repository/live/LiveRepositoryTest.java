@@ -35,6 +35,8 @@ class LiveRepositoryTest {
     LivePollVoteRepository votes;
     @Autowired
     JdbcTemplate jdbc;
+    @Autowired
+    jakarta.persistence.EntityManager em;
 
     private LiveStream stream(UUID channel, LiveStatus status) {
         return streams.save(LiveStream.builder()
@@ -62,6 +64,30 @@ class LiveRepositoryTest {
         assertThat(found.get().getId()).isEqualTo(created.getId());
         assertThat(streams.findFirstByChannelIdAndStatusIn(UUID.randomUUID(),
                 List.of(LiveStatus.CREATED, LiveStatus.LIVE))).isEmpty();
+    }
+
+    @Test
+    void aStaleWriteCannotBringAnEndedStreamBackToLive() {
+        LiveStream live = stream(UUID.randomUUID(), LiveStatus.LIVE);
+        em.flush();
+        em.clear();
+        // Job 15 giây đọc bản này rồi đi gọi LiveKit...
+        LiveStream staleCopy = streams.findById(live.getId()).orElseThrow();
+        em.detach(staleCopy);
+        // ...trong lúc đó chủ kênh kết thúc buổi và commit
+        LiveStream fresh = streams.findById(live.getId()).orElseThrow();
+        fresh.setStatus(LiveStatus.ENDED);
+        em.flush();
+        em.clear();
+
+        // Ghi muộn dựa trên bản cũ phải bị từ chối chứ không được ghi đè status = LIVE
+        staleCopy.setCurrentViewers(7);
+        assertThatThrownBy(() -> {
+            streams.save(staleCopy);
+            em.flush();
+        }).isInstanceOf(org.springframework.orm.ObjectOptimisticLockingFailureException.class);
+        em.clear();
+        assertThat(streams.findById(live.getId()).orElseThrow().getStatus()).isEqualTo(LiveStatus.ENDED);
     }
 
     @Test
