@@ -16,7 +16,9 @@ import type { LiveView } from "../types";
 import { LiveBadge, ViewerCount } from "./live-badge";
 import LiveDeviceSettings from "./live-device-settings";
 import LiveEncoderPanel from "./live-encoder-panel";
+import LiveChat from "./live-chat";
 import LiveEndDialog from "./live-end-dialog";
+import LivePollComposer from "./live-poll-composer";
 
 /** Hình camera của chính mình (xem trước) và bảng chọn thiết bị; báo cho backend ngay khi đã đăng luồng. */
 function PublisherStage({ onPublished }: { onPublished: () => void }) {
@@ -182,7 +184,20 @@ export default function LiveOnAirPanel({ live }: { live: LiveView }) {
         </div>
       </div>
 
-      <aside className="col-span-1 mt-6 md:col-span-2 md:mt-0">{/* Chat và Poll: Task 14 */}</aside>
+      <aside className="col-span-1 mt-6 flex flex-col gap-3 md:col-span-2 md:mt-0">
+        <LivePollComposer
+          liveId={live.id}
+          poll={channel.poll === undefined ? live.poll : channel.poll}
+          onChanged={channel.setMyVote}
+        />
+        <LiveChat
+          channel={channel}
+          status={status}
+          chatEnabled={channel.chatEnabled ?? live.chatEnabled}
+          canModerate
+          className="h-[32rem] md:h-[calc(100vh-14rem)]"
+        />
+      </aside>
 
       <LiveEndDialog open={endOpen} onOpenChange={setEndOpen} onConfirm={() => void onEnd()} loading={ending} />
     </section>

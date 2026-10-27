@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Share2 } from "lucide-react";
-import { useEndLiveMutation, useGetLiveQuery } from "@/app/api/liveApi";
+import { toast } from "sonner";
+import { useEndLiveMutation, useGetLiveQuery, useVotePollMutation } from "@/app/api/liveApi";
 import { useGetChannelInfoQuery } from "@/app/api/channelApi";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +20,9 @@ import { useLiveChannel } from "../lib/useLiveChannel";
 import { formatLiveDuration, liveUrl } from "../lib/format";
 import { LiveBadge, ViewerCount } from "./live-badge";
 import LiveEndDialog from "./live-end-dialog";
+import LiveChat from "./live-chat";
 import LivePlayer from "./live-player";
+import LivePollCard from "./live-poll-card";
 
 const FALLBACK_AVATAR = "https://placehold.co/160x160?text=W";
 /** Khi buổi chưa lên sóng, hỏi lại thông tin mỗi chừng này (STOMP cũng báo, đây là dự phòng). */
@@ -62,12 +65,13 @@ function EndedScreen({
 }
 
 export default function LiveWatchView({ id }: { id: string }) {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [pollMs, setPollMs] = useState(0);
   const { data: live, isLoading, isError } = useGetLiveQuery(id, { pollingInterval: pollMs });
   const { data: channel } = useGetChannelInfoQuery(live?.channelId ?? "", { skip: !live?.channelId });
   const channelState = useLiveChannel(live ? id : undefined, !!user?.sub);
   const [endLive, { isLoading: ending }] = useEndLiveMutation();
+  const [votePoll, { isLoading: voting }] = useVotePollMutation();
   const [shareOpen, setShareOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -96,6 +100,22 @@ export default function LiveWatchView({ id }: { id: string }) {
   const unfinished = status === "CREATED" || status === "LIVE";
   const channelHref = live.channelHandle ? `/@${live.channelHandle}` : `/channel/${live.channelId}`;
   const description = live.description?.trim();
+  const chatEnabled = channelState.chatEnabled ?? live.chatEnabled;
+  // undefined: chưa nhận tin Poll nào qua STOMP nên dùng Poll trong GET /api/live/{id}
+  const poll = channelState.poll === undefined ? live.poll : channelState.poll;
+
+  const onVote = async (option: number) => {
+    if (!poll) return;
+    if (!user?.sub) {
+      toast("Hãy đăng nhập để bình chọn", { action: { label: "Đăng nhập", onClick: login } });
+      return;
+    }
+    try {
+      channelState.setMyVote(await votePoll({ id, pollId: poll.id, option }).unwrap());
+    } catch (err) {
+      toastEmitter.error(apiErrorMessage(err, "Không bình chọn được, vui lòng thử lại."));
+    }
+  };
 
   const onEnd = async () => {
     try {
@@ -180,6 +200,15 @@ export default function LiveWatchView({ id }: { id: string }) {
           </div>
         </div>
 
+        {!unfinished && live.polls && live.polls.length > 0 ? (
+          <div className="mt-4 space-y-3">
+            <h2 className="font-semibold">Kết quả Poll</h2>
+            {live.polls.map((p) => (
+              <LivePollCard key={p.id} poll={p} />
+            ))}
+          </div>
+        ) : null}
+
         {description ? (
           <div className="mt-4 rounded-xl bg-gray-100 p-3 text-sm">
             <div className={expanded ? "" : "line-clamp-3"}>
@@ -192,7 +221,18 @@ export default function LiveWatchView({ id }: { id: string }) {
         ) : null}
       </div>
 
-      <aside className="col-span-1 mt-6 md:col-span-2 md:mt-0">{/* Chat và Poll: Task 14 */}</aside>
+      {unfinished ? (
+        <aside className="col-span-1 mt-6 flex flex-col gap-3 md:col-span-2 md:mt-0">
+          {poll ? <LivePollCard poll={poll} onVote={(option) => void onVote(option)} busy={voting} /> : null}
+          <LiveChat
+            channel={channelState}
+            status={status}
+            chatEnabled={chatEnabled}
+            canModerate={isOwner}
+            className="h-[32rem] md:h-[calc(100vh-9rem)]"
+          />
+        </aside>
+      ) : null}
 
       <ShareDialog link={liveUrl(id)} title={live.title} open={shareOpen} onOpenChange={setShareOpen} />
       <LiveEndDialog open={endOpen} onOpenChange={setEndOpen} onConfirm={() => void onEnd()} loading={ending} admin />
