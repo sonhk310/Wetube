@@ -9,6 +9,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import VideoCard, { VideoCardSkeleton } from "./videoCard";
 import { useInView } from "react-intersection-observer";
 import { RecommendedVideoItem } from "@/types/video";
+import { SHORTS_SHELF_AFTER, SHORTS_SHELF_AFTER_MOBILE, splitHomeFeed } from "@/lib/homeFeed";
+import { useIsMobile } from "@/hooks/use-mobile";
+import HomeShortsShelf from "./homeShortsShelf";
 
 const LOAD_COUNT = 18;
 
@@ -131,6 +134,12 @@ export default function VideoGrid() {
   // }, [allVideos, topRanked]);
 
   const displayedVideos = useMemo(() => allVideos, [allVideos]);
+  // Shorts gom vào một hàng riêng chen giữa lưới, không trộn với video thường
+  const isMobile = useIsMobile();
+  const feed = useMemo(
+    () => splitHomeFeed(displayedVideos, isMobile ? SHORTS_SHELF_AFTER_MOBILE : SHORTS_SHELF_AFTER),
+    [displayedVideos, isMobile]
+  );
 
   if ((isRecommendLoading || isAuthLoading) && page === 1)
     return <VideoGridSkeleton />;
@@ -151,16 +160,9 @@ export default function VideoGrid() {
 
   return (
     <div className="p-4">
-      <div className="flex flex-wrap gap-4">
-        {displayedVideos.map((video) => (
-          <div
-            key={video.id}
-            className="w-full sm:w-[calc(33.333%-1rem)]"
-          >
-            <VideoCard {...video} />
-          </div>
-        ))}
-      </div>
+      <VideoRow videos={feed.before} />
+      <HomeShortsShelf shorts={feed.shorts} />
+      <VideoRow videos={feed.after} />
 
       {isRecommendFetching && page > 1 && (
         <div className="flex flex-wrap gap-4 mt-4">
@@ -195,6 +197,17 @@ export default function VideoGrid() {
     </div>
   );
 }
+
+const VideoRow = ({ videos }: { videos: RecommendedVideoItem[] }) =>
+  videos.length === 0 ? null : (
+    <div className="flex flex-wrap gap-4">
+      {videos.map((video) => (
+        <div key={video.id} className="w-full sm:w-[calc(33.333%-1rem)]">
+          <VideoCard {...video} />
+        </div>
+      ))}
+    </div>
+  );
 
 const VideoGridSkeleton = () => (
   <div className="p-4">

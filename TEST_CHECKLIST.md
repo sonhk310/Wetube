@@ -276,3 +276,15 @@ Dùng tài khoản chủ kênh (A), thêm tài khoản B để xem. Ảnh thử:
 | 19.14 | "Tải ảnh bìa lên", chọn ảnh ngang, dời / đổi cỡ khung chữ nhật dài (6:1), tải lên | Trang kênh trên máy tính hiện đúng vùng trong khung; thu nhỏ cửa sổ về cỡ điện thoại thì chỉ hiện phần giữa | |
 | 19.15 | Chọn ảnh PNG trong suốt làm ảnh đại diện | Phần trong suốt thành nền trắng, không bị đen | |
 | 19.16 | Đổi ảnh đại diện (hoặc ảnh bìa) lần thứ hai, rồi xem thư mục `channels/` trên Cloudinary | Ảnh của lần đổi trước đã biến mất, chỉ còn ảnh đang dùng (lưu ý ảnh tải lên trước khi có bản này vẫn còn) | |
+
+## 20. Hàng Shorts ở trang chủ
+
+Cần đăng nhập (trang chủ chỉ có gợi ý khi đã đăng nhập) và có ít nhất một Short công khai.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 20.1 | Mở trang chủ | Có hàng "Shorts" (logo đỏ) chen giữa lưới, sau 6 video đầu; các Short **không** nằm lẫn trong lưới video thường | |
+| 20.2 | Xem các thẻ trong hàng Shorts | Thẻ dọc 9:16 kèm tiêu đề và số lượt xem; có nhiều Short thì có nút › để cuộn ngang | |
+| 20.3 | Bấm một thẻ Short | Mở trình phát Shorts (`/shorts/{id}`), không phải trang xem thường | |
+| 20.4 | Thu cửa sổ về cỡ điện thoại | Hàng Shorts hiện sau 3 video đầu, không tràn ngang trang | |
+| 20.5 | Tài khoản chưa có Short nào được gợi ý | Trang chủ như cũ, không có hàng Shorts trống | |

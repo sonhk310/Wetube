@@ -5,8 +5,11 @@ import Link from "next/link";
 import { formatCompact } from "@/lib/utils";
 import type { ChannelVideo } from "@/types/channel";
 
-/** Thẻ dọc 9:16 của một Short trong trang kênh; bấm mở trình phát Shorts. */
-export default function ChannelShortCard({ video, className }: { video: ChannelVideo; className?: string }) {
+// Chỉ cần 4 trường này nên dùng được cho cả video của kênh lẫn mục gợi ý ở trang chủ
+type ShortCardVideo = Pick<ChannelVideo, "id" | "title" | "thumbnailUrl" | "totalView">;
+
+/** Thẻ dọc 9:16 của một Short (trang kênh, trang chủ); bấm mở trình phát Shorts. */
+export default function ChannelShortCard({ video, className }: { video: ShortCardVideo; className?: string }) {
   return (
     <Link href={`/shorts/${video.id}`} className={className}>
       <div className="relative aspect-[9/16] overflow-hidden rounded-xl bg-gray-300">
