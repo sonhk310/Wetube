@@ -288,3 +288,12 @@ Cần đăng nhập (trang chủ chỉ có gợi ý khi đã đăng nhập) và 
 | 20.3 | Bấm một thẻ Short | Mở trình phát Shorts (`/shorts/{id}`), không phải trang xem thường | |
 | 20.4 | Thu cửa sổ về cỡ điện thoại | Hàng Shorts hiện sau 3 video đầu, không tràn ngang trang | |
 | 20.5 | Tài khoản chưa có Short nào được gợi ý | Trang chủ như cũ, không có hàng Shorts trống | |
+
+## 21. Ảnh thu nhỏ nét và xoá ảnh cũ
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 21.1 | Mở trang chủ, nhìn ảnh thu nhỏ của các video có sẵn (nếu có màn hình độ nét cao thì dùng màn đó) | Ảnh nét, không còn mờ; thấy đủ khung hình 16:9 (không bị cắt mất hai bên như trước) | |
+| 21.2 | Xem thẻ video ở trang kênh, trang xem (cột gợi ý), kết quả tìm kiếm | Ảnh nét ở mọi chỗ | |
+| 21.3 | Xem thẻ Shorts ở trang chủ và trang kênh | Ảnh dọc nét, không bị cắt thành khung ngang | |
+| 21.4 | Studio → mở một video → đổi ảnh thu nhỏ → Lưu | Ảnh thu nhỏ mới hiện đúng và nét; vào Cloudinary xem thì ảnh cũ của video đó đã mất | |

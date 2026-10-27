@@ -590,9 +590,11 @@ private static String draftTitle(String fileName) {
             video.setVideosStatus(parseVisibility(updateDto.getStatus()));
         }
 
+        String replacedThumbnail = null;
         if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
             try {
                 String newThumbnailUrl = cloudinaryService.uploadThumbnail(thumbnailFile, video.isShort());
+                replacedThumbnail = video.getThumbnailUrl();
                 video.setThumbnailUrl(newThumbnailUrl);
             } catch (Exception e) {
                 log.error("Failed to upload new thumbnail for video {}", videoId, e);
@@ -613,6 +615,7 @@ private static String draftTitle(String fileName) {
         }
 
         Video updatedVideo = videoRepository.save(video);
+        deleteImageAfterCommit(replacedThumbnail);
 
         Video dtoSource = videoRepository.findByIdWithTags(updatedVideo.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(VIDEO, "id", videoId.toString()));
@@ -625,6 +628,27 @@ private static String draftTitle(String fileName) {
         }
 
         return videoMapper.toDto(dtoSource);
+    }
+
+    /**
+     * Ảnh thu nhỏ cũ đã bị thay thì xoá luôn trên Cloudinary cho khỏi tốn dung lượng. Chỉ xoá sau khi DB lưu thành công
+     * để lỗi lưu không làm mất ảnh đang dùng; ảnh thu nhỏ chỉ do chính hệ thống tải lên nên không có link lạ nào ở đây.
+     */
+    private void deleteImageAfterCommit(String oldThumbnailUrl) {
+        if (oldThumbnailUrl == null || oldThumbnailUrl.isBlank()) {
+            return;
+        }
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            cloudinaryService.deleteImage(oldThumbnailUrl);
+                        }
+                    });
+        } else {
+            cloudinaryService.deleteImage(oldThumbnailUrl);
+        }
     }
 
     @Override
