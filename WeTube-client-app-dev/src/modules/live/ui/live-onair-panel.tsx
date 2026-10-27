@@ -59,7 +59,7 @@ function WebcamBroadcast({ id }: { id: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    getToken(id)
+    getToken({ id, publish: true })
       .unwrap()
       .then((res) => {
         if (cancelled) return;

@@ -74,9 +74,13 @@ export const liveApi = createApi({
       invalidatesTags: ["MyLive"],
     }),
 
-    /** Mutation vì mỗi lần gọi cấp một token mới; không bao giờ để token trên URL. */
-    getLiveToken: builder.mutation<LiveTokenResponse, string>({
-      query: (id) => ({ url: `/${id}/token`, method: "POST" }),
+    /**
+     * Mutation vì mỗi lần gọi cấp một token mới; không bao giờ để token trên URL. `publish`: chỉ trang phát của chủ kênh
+     * (webcam) xin token phát; trang xem, kể cả của chính chủ kênh, xin token xem. Cùng identity với trang phát thì
+     * LiveKit ngắt trang phát.
+     */
+    getLiveToken: builder.mutation<LiveTokenResponse, { id: string; publish?: boolean }>({
+      query: ({ id, publish }) => ({ url: `/${id}/token${publish ? "?publish=true" : ""}`, method: "POST" }),
     }),
 
     openPoll: builder.mutation<PollView, { id: string; question: string; options: string[] }>({

@@ -126,7 +126,7 @@ export default function LivePlayer({ id, status }: { id: string; status: LiveSta
   const connect = useCallback(async () => {
     setProblem(null);
     try {
-      const res = await getToken(id).unwrap();
+      const res = await getToken({ id }).unwrap();
       if (res.full || !res.token) {
         setFull(true);
         setSession(null);

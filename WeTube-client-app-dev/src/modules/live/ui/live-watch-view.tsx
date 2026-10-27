@@ -67,7 +67,7 @@ function EndedScreen({
 export default function LiveWatchView({ id }: { id: string }) {
   const { user, login } = useAuth();
   const [pollMs, setPollMs] = useState(0);
-  const { data: live, isLoading, isError } = useGetLiveQuery(id, { pollingInterval: pollMs });
+  const { data: live, isLoading, isError, refetch } = useGetLiveQuery(id, { pollingInterval: pollMs });
   const { data: channel } = useGetChannelInfoQuery(live?.channelId ?? "", { skip: !live?.channelId });
   const channelState = useLiveChannel(live ? id : undefined, !!user?.sub);
   const [endLive, { isLoading: ending }] = useEndLiveMutation();
@@ -80,6 +80,13 @@ export default function LiveWatchView({ id }: { id: string }) {
   useEffect(() => {
     setPollMs(status === "CREATED" ? CREATED_POLL_MS : 0);
   }, [status]);
+
+  // STOMP báo buổi đã kết thúc nhưng `live` còn là bản lúc đang phát (chưa có giờ kết thúc, người xem cao nhất,
+  // kết quả Poll): tải lại để màn hình "đã kết thúc" đủ thông tin
+  const endedByStomp = channelState.status === "ENDED" && live?.status !== "ENDED";
+  useEffect(() => {
+    if (endedByStomp) void refetch();
+  }, [endedByStomp, refetch]);
 
   if (isLoading) return <WatchSkeleton />;
   if (isError || !live || !status) {
