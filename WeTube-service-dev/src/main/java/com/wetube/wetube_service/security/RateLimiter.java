@@ -35,6 +35,11 @@ public class RateLimiter {
         ROOM_CREATE(10, Duration.ofHours(1), "Bạn tạo phòng quá nhiều, vui lòng thử lại sau."),
         ROOM_CONTROL(20, Duration.ofSeconds(10), "Bạn thao tác quá nhanh."),
         ROOM_CHAT(10, Duration.ofSeconds(10), "Bạn nhắn quá nhanh."),
+        /** Phát trực tiếp: tạo buổi (theo người dùng), lấy token xem (theo IP), bình chọn Poll, chat. */
+        LIVE_CREATE(10, Duration.ofHours(1), "Bạn tạo buổi phát quá nhiều trong giờ này, vui lòng thử lại sau."),
+        LIVE_TOKEN(30, Duration.ofMinutes(1), "Quá nhiều yêu cầu, vui lòng thử lại sau."),
+        LIVE_VOTE(10, Duration.ofMinutes(1), "Bạn bình chọn quá nhanh."),
+        LIVE_CHAT(5, Duration.ofSeconds(10), "Bạn nhắn quá nhanh."),
         /** Tải ảnh bìa / ảnh đại diện kênh lên Cloudinary. */
         CHANNEL_IMAGE(20, Duration.ofHours(1), "Bạn tải ảnh lên quá nhiều trong giờ này, vui lòng thử lại sau.");
 
