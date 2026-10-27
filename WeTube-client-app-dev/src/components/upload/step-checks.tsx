@@ -28,9 +28,9 @@ export function StepChecks({ errors, upload, hasThumbnail, isShort, shortsReason
 
   const rows: Row[] = [
     {
-      ok: !errors.title && !errors.description && !errors.tags,
+      ok: !errors.title && !errors.description && !errors.tags && !errors.topicId,
       title: "Thông tin video",
-      detail: errors.title || errors.description || errors.tags || "Tiêu đề, mô tả và thẻ hợp lệ.",
+      detail: errors.title || errors.description || errors.tags || errors.topicId || "Tiêu đề, mô tả, thẻ và chủ đề hợp lệ.",
       step: "details",
     },
     uploadRow,

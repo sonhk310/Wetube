@@ -202,6 +202,8 @@ export interface VideoFormDetail {
   tags: Tag[];
   /** Từ khóa tìm kiếm do chủ video duyệt, phân cách dấu phẩy. */
   searchKeywords?: string | null;
+  /** Chủ đề (C8); null với bản nháp / video cũ chưa chọn. */
+  topicId?: string | null;
   duration: number;
   isShort?: boolean;
 }

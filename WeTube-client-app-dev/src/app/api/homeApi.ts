@@ -2,7 +2,7 @@ import { apiFetch } from "@/lib/apiFetch";
 import { API_PREFIX } from "@/constants/appConstant";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-/** id: SUBSCRIPTIONS | NEW | UNWATCHED | WATCHED, hoặc "tag:{tên thẻ}". */
+/** id: SUBSCRIPTIONS | NEW | UNWATCHED | WATCHED, hoặc "topic:{id chủ đề}" (C8). */
 export interface HomeChip {
   id: string;
   label: string;

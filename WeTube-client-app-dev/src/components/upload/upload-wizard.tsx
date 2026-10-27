@@ -36,8 +36,8 @@ const MAX_THUMBNAIL_BYTES = 5 * 1024 * 1024;
 // Giữ quy tắc thẻ của form cũ: "#the1 #the2"; nhận chữ có dấu (#âmnhạc)
 const TAGS_PATTERN = /^(#[\p{L}\p{N}_]+(\s+#[\p{L}\p{N}_]+)*)$/u;
 
-/** Dùng chung với trang Chi tiết video của Studio. */
-export function validate(form: WizardForm): FormErrors {
+/** Dùng chung với trang Chi tiết video của Studio. `forDraft`: lưu bản nháp thì chưa cần chủ đề (C8). */
+export function validate(form: WizardForm, forDraft = false): FormErrors {
   const errors: FormErrors = {};
   const title = form.title.trim();
   if (!title) errors.title = "Vui lòng nhập tiêu đề.";
@@ -49,6 +49,7 @@ export function validate(form: WizardForm): FormErrors {
   if (form.thumbnailFile && form.thumbnailFile.size > MAX_THUMBNAIL_BYTES) {
     errors.thumbnailFile = "Ảnh thu nhỏ tối đa 5MB.";
   }
+  if (!forDraft && !form.topicId) errors.topicId = "Hãy chọn chủ đề cho video.";
   return errors;
 }
 
@@ -79,6 +80,7 @@ export interface DraftVideo {
   description: string;
   tags: string;
   searchKeywords: string;
+  topicId: string;
   thumbnailUrl: string | null;
   videoUrl: string;
   isShort: boolean;
@@ -99,6 +101,7 @@ export function toFormData(form: WizardForm, status: string): FormData {
   formData.append("description", form.description);
   formData.append("tags", form.tags.trim());
   formData.append("searchKeywords", form.searchKeywords);
+  if (form.topicId) formData.append("topicId", form.topicId);
   formData.append("status", status);
   if (form.thumbnailFile) formData.append("thumbnailFile", form.thumbnailFile);
   return formData;
@@ -121,6 +124,7 @@ export function UploadWizard({ file, draft, onClose }: UploadWizardProps) {
     description: draft?.description ?? "",
     tags: draft?.tags ?? "",
     searchKeywords: draft?.searchKeywords ?? "",
+    topicId: draft?.topicId ?? "",
     thumbnailFile: null,
     playlistIds: [],
     targetLang: "",
@@ -337,7 +341,7 @@ export function UploadWizard({ file, draft, onClose }: UploadWizardProps) {
       abortRef.current?.abort();
     } else if (upload.phase === "done") {
       // Như YouTube: đóng là lưu những gì đã điền vào bản nháp (vẫn là bản nháp, chưa đăng)
-      if (detailsHasError) {
+      if (Object.keys(validate(form, true)).length > 0) {
         if (!window.confirm("Các thay đổi đang có lỗi ở bước Chi tiết sẽ không được lưu. Vẫn đóng?")) return;
       } else {
         setSavingDraft(true);

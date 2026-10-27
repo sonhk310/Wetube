@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ThumbnailSelector } from "@/components/ThumbnailSelector";
 import { PlaylistPicker } from "./playlist-picker";
 import { SearchKeywordsField } from "./search-keywords-field";
+import { TopicField } from "./topic-field";
 import type { FormErrors, StepProps } from "./types";
 
 interface StepDetailsProps extends StepProps {
@@ -80,6 +81,8 @@ export function StepDetails({
           Thẻ giúp người khác dễ tìm thấy video của bạn. Có thể gõ #thẻ ngay trong tiêu đề hoặc mô tả.
         </p>
       </div>
+
+      <TopicField form={form} setForm={setForm} error={errors.topicId} />
 
       <SearchKeywordsField form={form} setForm={setForm} />
 

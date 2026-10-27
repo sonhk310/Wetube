@@ -5,14 +5,11 @@ import { FilterCarousel } from "@/components/filter-carousel";
 import { useGetHomeChipsQuery } from "@/app/api/homeApi";
 import { useAuth } from "@/contexts/auth-context";
 import VideoGrid from '../components/video/videoGrid';
-import TagVideoGrid from '../components/video/tagVideoGrid';
 import ChipVideoGrid from '../components/video/chipVideoGrid';
 
 type HomeViewProps = {
     categoryId : string;
 }
-
-const TAG_PREFIX = "tag:";
 
 /** Mã ngẫu nhiên ngắn, đổi mỗi lần mở trang chủ (backend dùng để xáo nhẹ thứ tự gợi ý). */
 const newSeed = () => Math.random().toString(36).slice(2, 10);
@@ -31,10 +28,6 @@ export default function HomeView({categoryId }: HomeViewProps) {
 
   const renderGrid = () => {
     if (!selectedCategory) return <VideoGrid seed={seed} />;
-    if (selectedCategory.startsWith(TAG_PREFIX)) {
-      const tag = selectedCategory.slice(TAG_PREFIX.length);
-      return <TagVideoGrid key={selectedCategory} tag={tag} />;
-    }
     return <ChipVideoGrid key={selectedCategory} chip={selectedCategory} seed={seed} />;
   };
 

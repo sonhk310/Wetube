@@ -378,3 +378,22 @@ Cần tài khoản đã xem ít nhất một video, đã đăng ký một kênh 
 | 26.10 | Mở một video có thẻ (ví dụ `#animevn`), bấm **Thích** (hoặc xem 10 giây, bình luận, bấm Sao chép liên kết ở hộp Chia sẻ), rồi về trang chủ (bấm logo) vài lần | Ở "Tất cả", video có cùng thẻ có xu hướng lên cao hơn (điểm yêu thích thẻ tăng; thứ tự vẫn đổi nhẹ mỗi lần mở nên xem xu hướng, không phải vị trí chính xác) | |
 | 26.11 | Tài khoản chưa xem video nào (hoặc xoá hết Lịch sử xem) | Trang chủ trống "Hãy thử tìm kiếm để bắt đầu" và **không có hàng chip** | |
 | 26.12 | Đăng xuất, mở trang chủ | Không có hàng chip, như trước | |
+
+## 27. Chủ đề video (C8)
+
+Bản thiết kế: `docs/superpowers/specs/2026-10-27-topics-design.md`. Chip chủ đề chỉ đếm video của **người khác**, nên để thấy chip cần ít nhất một video công khai có chủ đề của tài khoản khác.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 27.1 | Studio → mở **Chi tiết video** của một video cũ đã đăng | Ô **Chủ đề (bắt buộc)** dưới ô Thẻ, báo đỏ "Hãy chọn chủ đề cho video."; ô thứ hai mờ cho tới khi chọn nhóm | |
+| 27.2 | Chọn một nhóm (vd. Âm nhạc) | Ô thứ hai hiện "Chung (cả nhóm)"; mở ra chỉ có các chủ đề của nhóm đó; hết báo đỏ | |
+| 27.3 | Chọn một chủ đề con, rồi đổi sang nhóm khác | Đổi nhóm thì ô thứ hai về "Chung (cả nhóm)" | |
+| 27.4 | Bấm **Gợi ý chủ đề** | Vài giây sau hai ô được điền sẵn một chủ đề hợp với tiêu đề / mô tả; AI quá tải thì báo "AI đang quá tải…" | |
+| 27.5 | Bấm **Lưu**, tải lại trang | Chủ đề còn đúng như đã chọn | |
+| 27.6 | Tải lên một video mới, không chọn chủ đề, bấm **Tiếp** | Không sang bước sau, báo lỗi ở bước Chi tiết | |
+| 27.7 | Vẫn chưa chọn chủ đề, bấm **X** để đóng | Đóng luôn, không hỏi lại; Studio có bản nháp với nội dung đã điền | |
+| 27.8 | Mở lại bản nháp đó, chọn chủ đề, đăng | Đăng được | |
+| 27.9 | Đăng nhập tài khoản khác (đã xem ít nhất một video), mở trang chủ | Sau Kênh đăng ký / Mới tải lên / Chưa xem / Đã xem có chip chủ đề tên chuẩn có dấu (vd. "Âm nhạc", "Lo-fi"); không còn chip kiểu "nhacanime" | |
+| 27.10 | Bấm một chip chủ đề | Video công khai của chủ đề đó (chip nhóm thì gồm cả chủ đề con), mới nhất trước, không có video của chính mình | |
+| 27.11 | Xem / thích vài video của một chủ đề rồi về trang chủ (bấm logo) | Chip chủ đề đó lên đầu các chip chủ đề | |
+| 27.12 | Trên điện thoại (hoặc thu hẹp cửa sổ), mở ô Chủ đề | Hai ô xếp dọc, danh sách cuộn được, không tràn màn hình | |

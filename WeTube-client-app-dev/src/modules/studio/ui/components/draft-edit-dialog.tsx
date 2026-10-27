@@ -25,6 +25,7 @@ export function DraftEditDialog({ videoId, open, onOpenChange }: DraftEditDialog
             description: data.description ?? "",
             tags: data.tags.map((t) => `#${t.name}`).join(" "),
             searchKeywords: data.searchKeywords ?? "",
+            topicId: data.topicId ?? "",
             thumbnailUrl: data.thumbnailUrl || null,
             videoUrl: data.videoUrl,
             isShort: !!data.isShort,

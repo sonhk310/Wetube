@@ -54,6 +54,7 @@ function VideoDetailsEditor({ video }: { video: VideoFormDetail }) {
     description: video.description ?? "",
     tags: video.tags.map((t) => `#${t.name}`).join(" "),
     searchKeywords: video.searchKeywords ?? "",
+    topicId: video.topicId ?? "",
     thumbnailFile: null,
     playlistIds: [],
     targetLang: "",
@@ -113,6 +114,7 @@ function VideoDetailsEditor({ video }: { video: VideoFormDetail }) {
     form.description !== baseline.description ||
     form.tags !== baseline.tags ||
     form.searchKeywords !== baseline.searchKeywords ||
+    form.topicId !== baseline.topicId ||
     form.visibility !== baseline.visibility ||
     !!form.thumbnailFile ||
     !!form.targetLang ||
