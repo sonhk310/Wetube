@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.wetube.wetube_service.dto.live.ChannelLivesResponse;
 import com.wetube.wetube_service.dto.live.CreateLiveRequest;
@@ -22,11 +24,15 @@ import com.wetube.wetube_service.dto.live.LiveCard;
 import com.wetube.wetube_service.dto.live.LiveChatMessage;
 import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
+import com.wetube.wetube_service.dto.live.OpenPollRequest;
+import com.wetube.wetube_service.dto.live.PollView;
 import com.wetube.wetube_service.dto.live.UpdateLiveRequest;
+import com.wetube.wetube_service.dto.live.VoteRequest;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.RateLimiter.Limit;
 import com.wetube.wetube_service.service.live.LiveChatService;
+import com.wetube.wetube_service.service.live.LivePollService;
 import com.wetube.wetube_service.service.live.LiveStreamService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,6 +52,7 @@ public class LiveController {
     private final LiveStreamService service;
     private final RateLimiter rateLimiter;
     private final LiveChatService chat;
+    private final LivePollService polls;
 
     @PostMapping
     public LiveView create(@RequestBody CreateLiveRequest body, @AuthenticationPrincipal Jwt jwt) {
@@ -90,6 +97,25 @@ public class LiveController {
     @GetMapping("/{id}/chat")
     public List<LiveChatMessage> chat(@PathVariable UUID id) {
         return chat.recent(id);
+    }
+
+    @PostMapping("/{id}/polls")
+    public PollView openPoll(@PathVariable UUID id, @RequestBody OpenPollRequest body, @AuthenticationPrincipal Jwt jwt) {
+        return polls.open(CurrentUser.id(jwt), id, body);
+    }
+
+    @PostMapping("/{id}/polls/{pollId}/close")
+    public PollView closePoll(@PathVariable UUID id, @PathVariable UUID pollId, @AuthenticationPrincipal Jwt jwt) {
+        return polls.close(CurrentUser.id(jwt), id, pollId);
+    }
+
+    @PostMapping("/{id}/polls/{pollId}/vote")
+    public PollView vote(@PathVariable UUID id, @PathVariable UUID pollId, @RequestBody VoteRequest body,
+                         @AuthenticationPrincipal Jwt jwt) {
+        if (body == null || body.option() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hãy chọn một lựa chọn");
+        }
+        return polls.vote(CurrentUser.id(jwt), id, pollId, body.option());
     }
 
     @GetMapping

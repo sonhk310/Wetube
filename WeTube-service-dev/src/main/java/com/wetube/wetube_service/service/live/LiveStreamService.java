@@ -26,6 +26,7 @@ import com.wetube.wetube_service.dto.live.LiveCard;
 import com.wetube.wetube_service.dto.live.LiveEvent;
 import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
+import com.wetube.wetube_service.dto.live.PollView;
 import com.wetube.wetube_service.dto.live.UpdateLiveRequest;
 import com.wetube.wetube_service.entity.AppUser;
 import com.wetube.wetube_service.entity.channel.Channel;
@@ -69,6 +70,7 @@ public class LiveStreamService {
     private final RateLimiter rateLimiter;
     private final LiveEventPublisher publisher;
     private final NotificationService notifications;
+    private final LivePollService polls;
     private final List<LiveCleanup> cleanups;
 
     /** Một kênh chỉ tạo một buổi tại một thời điểm (backend chạy một tiến trình). */
@@ -76,7 +78,7 @@ public class LiveStreamService {
 
     public LiveStreamService(LiveStreamRepository repo, UserRepository userRepo, ChannelRepository channelRepo,
                              LiveKitGateway gateway, RateLimiter rateLimiter, LiveEventPublisher publisher,
-                             NotificationService notifications, List<LiveCleanup> cleanups) {
+                             NotificationService notifications, LivePollService polls, List<LiveCleanup> cleanups) {
         this.repo = repo;
         this.userRepo = userRepo;
         this.channelRepo = channelRepo;
@@ -84,6 +86,7 @@ public class LiveStreamService {
         this.rateLimiter = rateLimiter;
         this.publisher = publisher;
         this.notifications = notifications;
+        this.polls = polls;
         this.cleanups = cleanups;
     }
 
@@ -367,7 +370,23 @@ public class LiveStreamService {
             throw notFound();
         }
         boolean isOwner = viewerIdOrNull != null && viewerIdOrNull.equals(stream.getOwnerId());
-        return view(stream, channelOf(stream.getChannelId()), isOwner);
+        LiveView base = view(stream, channelOf(stream.getChannelId()), isOwner);
+        // Đang phát: Poll hiện tại; đã kết thúc: mọi Poll với kết quả cuối
+        if (stream.getStatus() == LiveStatus.ENDED) {
+            return withPolls(base, null, polls.history(id));
+        }
+        return withPolls(base, polls.current(id, viewerIdOrNull).orElse(null), null);
+    }
+
+    private static LiveView withPolls(LiveView base, PollView poll, List<PollView> history) {
+        return LiveView.builder()
+                .id(base.id()).channelId(base.channelId()).channelName(base.channelName())
+                .channelPicture(base.channelPicture()).channelHandle(base.channelHandle()).ownerId(base.ownerId())
+                .title(base.title()).description(base.description()).status(base.status()).source(base.source())
+                .protocol(base.protocol()).chatEnabled(base.chatEnabled()).currentViewers(base.currentViewers())
+                .peakViewers(base.peakViewers()).createdAt(base.createdAt()).startedAt(base.startedAt())
+                .endedAt(base.endedAt()).ingress(base.ingress()).poll(poll).polls(history)
+                .build();
     }
 
     @Transactional(readOnly = true)

@@ -57,7 +57,7 @@ class LiveStreamLifecycleTest {
     @BeforeEach
     void setUp() {
         service = new LiveStreamService(repo, mock(UserRepository.class), channelRepo, gateway,
-                mock(RateLimiter.class), publisher, notifications, List.of(cleanup));
+                mock(RateLimiter.class), publisher, notifications, mock(LivePollService.class), List.of(cleanup));
         when(repo.findByStatusIn(any())).thenAnswer(inv -> List.copyOf(unfinished));
         when(repo.save(any(LiveStream.class))).thenAnswer(inv -> inv.getArgument(0));
         when(gateway.wsUrl()).thenReturn("wss://livekit.test");

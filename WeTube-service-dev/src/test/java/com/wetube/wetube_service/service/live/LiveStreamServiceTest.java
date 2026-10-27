@@ -27,6 +27,7 @@ import com.wetube.wetube_service.dto.live.CreateLiveRequest;
 import com.wetube.wetube_service.dto.live.LiveCard;
 import com.wetube.wetube_service.dto.live.LiveEvent;
 import com.wetube.wetube_service.dto.live.LiveView;
+import com.wetube.wetube_service.dto.live.PollView;
 import com.wetube.wetube_service.dto.live.UpdateLiveRequest;
 import com.wetube.wetube_service.entity.AppUser;
 import com.wetube.wetube_service.entity.channel.Channel;
@@ -51,6 +52,7 @@ class LiveStreamServiceTest {
     private final RateLimiter rateLimiter = mock(RateLimiter.class);
     private final LiveEventPublisher publisher = mock(LiveEventPublisher.class);
     private final LiveCleanup cleanup = mock(LiveCleanup.class);
+    private final LivePollService polls = mock(LivePollService.class);
 
     private final UUID owner = UUID.randomUUID();
     private final UUID channelId = UUID.randomUUID();
@@ -89,7 +91,7 @@ class LiveStreamServiceTest {
     @BeforeEach
     void setUp() {
         service = new LiveStreamService(repo, userRepo, channelRepo, gateway, rateLimiter, publisher,
-                mock(NotificationService.class), List.of(cleanup));
+                mock(NotificationService.class), polls, List.of(cleanup));
         when(repo.save(any(LiveStream.class))).thenAnswer(inv -> {
             LiveStream s = inv.getArgument(0);
             if (s.getId() == null) {
@@ -301,6 +303,35 @@ class LiveStreamServiceTest {
         assertThat(service.get(s.getId(), UUID.randomUUID()).ingress()).isNull();
         assertThat(service.get(s.getId(), null).ingress()).isNull();
         assertThat(service.get(s.getId(), owner).ingress().streamKey()).isEqualTo("secret-key");
+    }
+
+    @Test
+    void liveViewCarriesTheViewersCurrentPollButNoHistory() {
+        givenOwnerWithChannel(ActiveStatus.ACTIVE);
+        LiveStream s = stored(LiveStatus.LIVE);
+        UUID viewer = UUID.randomUUID();
+        PollView poll = new PollView("p1", "Chơi gì?", List.of("a", "b"), List.of(1, 0), 1, true, 0);
+        when(polls.current(s.getId(), viewer)).thenReturn(Optional.of(poll));
+
+        LiveView view = service.get(s.getId(), viewer);
+
+        assertThat(view.poll()).isSameAs(poll);
+        assertThat(view.polls()).isNull();
+    }
+
+    @Test
+    void endedViewListsEveryPollWithFinalCountsAndNoCurrentPoll() {
+        givenOwnerWithChannel(ActiveStatus.ACTIVE);
+        LiveStream s = stored(LiveStatus.ENDED);
+        List<PollView> history = List.of(
+                new PollView("p1", "Một?", List.of("a", "b"), List.of(3, 2), 5, false, null),
+                new PollView("p2", "Hai?", List.of("x", "y"), List.of(0, 9), 9, false, null));
+        when(polls.history(s.getId())).thenReturn(history);
+
+        LiveView view = service.get(s.getId(), null);
+
+        assertThat(view.polls()).isEqualTo(history);
+        assertThat(view.poll()).isNull();
     }
 
     @Test

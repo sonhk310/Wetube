@@ -25,10 +25,13 @@ import com.wetube.wetube_service.dto.live.CreateLiveRequest;
 import com.wetube.wetube_service.dto.live.LiveChatMessage;
 import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
+import com.wetube.wetube_service.dto.live.OpenPollRequest;
+import com.wetube.wetube_service.dto.live.VoteRequest;
 import com.wetube.wetube_service.enumeration.LiveSource;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.RateLimiter.Limit;
 import com.wetube.wetube_service.service.live.LiveChatService;
+import com.wetube.wetube_service.service.live.LivePollService;
 import com.wetube.wetube_service.service.live.LiveStreamService;
 
 /** Controller chỉ chuyển danh tính từ JWT (không tin nội dung request) và áp giới hạn tần suất. */
@@ -37,7 +40,8 @@ class LiveControllerTest {
     private final LiveStreamService service = mock(LiveStreamService.class);
     private final RateLimiter rateLimiter = mock(RateLimiter.class);
     private final LiveChatService chat = mock(LiveChatService.class);
-    private final LiveController controller = new LiveController(service, rateLimiter, chat);
+    private final LivePollService polls = mock(LivePollService.class);
+    private final LiveController controller = new LiveController(service, rateLimiter, chat, polls);
 
     private static Jwt jwtOf(UUID userId, String... roles) {
         Jwt jwt = mock(Jwt.class);
@@ -128,6 +132,31 @@ class LiveControllerTest {
         when(chat.recent(id)).thenReturn(messages);
 
         assertThat(controller.chat(id)).isEqualTo(messages);
+    }
+
+    @Test
+    void pollEndpointsUseTheLoggedInUserNotTheBody() {
+        UUID me = UUID.randomUUID();
+        UUID stream = UUID.randomUUID();
+        UUID poll = UUID.randomUUID();
+        OpenPollRequest open = new OpenPollRequest("?", List.of("a", "b"));
+
+        controller.openPoll(stream, open, jwtOf(me));
+        controller.closePoll(stream, poll, jwtOf(me));
+        controller.vote(stream, poll, new VoteRequest(1), jwtOf(me));
+
+        verify(polls).open(me, stream, open);
+        verify(polls).close(me, stream, poll);
+        verify(polls).vote(me, stream, poll, 1);
+    }
+
+    @Test
+    void voteWithoutAnOptionIs400() {
+        assertThatThrownBy(() -> controller.vote(UUID.randomUUID(), UUID.randomUUID(), new VoteRequest(null),
+                jwtOf(UUID.randomUUID())))
+                .isInstanceOfSatisfying(ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+        verify(polls, never()).vote(any(), any(), any(), org.mockito.ArgumentMatchers.anyInt());
     }
 
     @Test
