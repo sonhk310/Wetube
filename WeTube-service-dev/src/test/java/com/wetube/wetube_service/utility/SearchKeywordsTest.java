@@ -28,6 +28,12 @@ class SearchKeywordsTest {
     }
 
     @Test
+    void sameKeywordWithAndWithoutDiacriticsIsKeptOnce() {
+        assertThat(SearchKeywords.clean("nhạc phim, nhac phim, Đề án, de an, ĐỀ ÁN, anime"))
+                .isEqualTo("nhạc phim,đề án,anime");
+    }
+
+    @Test
     void nothingLeftGivesNull() {
         assertThat(SearchKeywords.clean(null)).isNull();
         assertThat(SearchKeywords.clean(" , ;\n")).isNull();

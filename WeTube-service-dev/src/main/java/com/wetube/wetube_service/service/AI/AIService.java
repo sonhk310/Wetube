@@ -46,9 +46,10 @@ public class AIService {
                 "A video has this title: \"%s\"\nDescription: \"%s\"\nTags: %s\n\n" +
                         "List 10 to 15 short search keywords people might type to find this video. Include: " +
                         "the title translated into Vietnamese and English, the original name written in Latin letters " +
-                        "(romaji for Japanese, pinyin for Chinese), versions without Vietnamese diacritics, and other " +
-                        "common names. Use only what the title, description and tags support; do not invent names " +
-                        "or facts. Answer with one line of keywords separated by commas and nothing else.",
+                        "(romaji for Japanese, pinyin for Chinese) and other common names. Search ignores diacritics, so " +
+                        "never list the same keyword twice with and without diacritics. Use only what the title, " +
+                        "description and tags support; do not invent names or facts. Answer with one line of " +
+                        "keywords separated by commas and nothing else.",
                 title == null ? "" : title, description == null ? "" : description, tags == null ? "" : tags
         );
         String answer;

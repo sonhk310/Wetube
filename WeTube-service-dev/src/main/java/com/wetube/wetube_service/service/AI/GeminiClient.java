@@ -21,13 +21,17 @@ public class GeminiClient {
 
     private final String geminiApiKey;
     private final String model;
+    /** Phụ đề AI gửi cả file âm thanh nên tốn token nhất: có model riêng, để đổi model văn bản không làm cạn hạn mức. */
+    private final String subtitleModel;
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GeminiClient(@Value("${gemini.api-key}") String geminiApiKey,
-                        @Value("${gemini.model:gemini-flash-latest}") String model) {
+                        @Value("${gemini.model:gemini-flash-latest}") String model,
+                        @Value("${gemini.subtitle-model:gemini-flash-latest}") String subtitleModel) {
         this.geminiApiKey = geminiApiKey;
         this.model = model;
+        this.subtitleModel = subtitleModel;
     }
 
     /**
@@ -45,7 +49,7 @@ public class GeminiClient {
                         "temperature", 0.2));
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(endpoint()))
+                .uri(URI.create(endpoint(subtitleModel)))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofMinutes(5))
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
@@ -64,7 +68,7 @@ public class GeminiClient {
         return parts.get(0).path("text").asText("");
     }
 
-    private String endpoint() {
+    private String endpoint(String model) {
         return "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + geminiApiKey;
     }
 
@@ -84,7 +88,7 @@ public class GeminiClient {
         );
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(endpoint()))
+                .uri(URI.create(endpoint(model)))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
