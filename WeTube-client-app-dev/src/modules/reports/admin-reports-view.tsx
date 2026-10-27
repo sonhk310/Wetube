@@ -13,6 +13,7 @@ import {
   reportsApi,
 } from "./reports-api";
 import { Skeleton } from "@/components/ui/skeleton";
+import ChannelQuickView from "./channel-quick-view";
 
 /** Khung chờ cùng hình với thẻ báo cáo: ảnh video bên trái, vài dòng chữ bên phải. */
 function ReportListSkeleton() {
@@ -28,6 +29,40 @@ function ReportListSkeleton() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Căn cứ để admin xét báo cáo: bao nhiêu người đã báo cáo cùng đối tượng (theo lý do), và người báo cáo này
+ * trước đây báo cáo đúng / sai bao nhiêu lần.
+ */
+function ReportEvidence({ report }: { readonly report: ReportView }) {
+  const info = report.admin!;
+  const reasons = Object.entries(info.targetReasonCounts)
+    .map(([reason, n]) => `${reportReasonLabel({ channelId: report.channelId, reason })} ${n}`)
+    .join(" · ");
+  const past = info.reporterConfirmed + info.reporterDismissed;
+  return (
+    <div className="rounded-md bg-gray-50 px-2 py-1.5 text-xs text-gray-700 space-y-0.5">
+      <p>
+        <span className="font-semibold">{info.targetReporters} người đã báo cáo</span>
+        {reasons && <span className="text-gray-500"> ({reasons})</span>}
+      </p>
+      <p>
+        Người báo cáo: <span className="font-medium">{info.reporterName ?? "(không rõ)"}</span>
+        {" · "}
+        {past === 0 ? (
+          <span className="text-gray-500">chưa có báo cáo nào được xét trước đây</span>
+        ) : (
+          <>
+            báo cáo trước: <span className="text-green-700">{info.reporterConfirmed} đúng</span>,{" "}
+            <span className={info.reporterDismissed > info.reporterConfirmed ? "text-red-600 font-semibold" : "text-red-600"}>
+              {info.reporterDismissed} sai
+            </span>
+          </>
+        )}
+      </p>
     </div>
   );
 }
@@ -50,6 +85,15 @@ export default function AdminReportsView() {
   const [reports, setReports] = useState<ReportView[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [quickViewIds, setQuickViewIds] = useState<Set<string>>(new Set());
+
+  const toggleQuickView = (id: string) =>
+    setQuickViewIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const load = useCallback(() => {
     setReports(null);
@@ -171,6 +215,16 @@ export default function AdminReportsView() {
                 {r.channelStatus === "INACTIVE" && " · kênh đang bị ẩn"}
                 {r.resolutionNote && ` · ${r.resolutionNote}`}
               </p>
+              {r.admin && <ReportEvidence report={r} />}
+              {r.channelId && (
+                <button
+                  onClick={() => toggleQuickView(r.id)}
+                  className="text-xs font-medium text-blue-600 hover:underline cursor-pointer"
+                >
+                  {quickViewIds.has(r.id) ? "Ẩn xem nhanh" : "Xem nhanh kênh"}
+                </button>
+              )}
+              {r.channelId && quickViewIds.has(r.id) && <ChannelQuickView channelId={r.channelId} />}
             </div>
             {r.status === "OPEN" && (
               <div className="flex flex-col gap-2 shrink-0">

@@ -27,6 +27,7 @@ import com.wetube.wetube_service.entity.channel.Channel;
 import com.wetube.wetube_service.entity.report.Report;
 import com.wetube.wetube_service.entity.video.Video;
 import com.wetube.wetube_service.enumeration.ActiveStatus;
+import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.interaction.CommentRepository;
 import com.wetube.wetube_service.repository.report.ReportRepository;
@@ -45,6 +46,7 @@ class ChannelReportTest {
     @Mock CommentRepository commentRepository;
     @Mock CommentService commentService;
     @Mock ChannelRepository channelRepository;
+    @Mock UserRepository userRepository;
     @InjectMocks ReportService service;
 
     private final UUID reporterId = UUID.randomUUID();
@@ -210,6 +212,49 @@ class ChannelReportTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("bỏ ẩn kênh trước");
         assertThat(video.getVideosStatus()).isEqualTo(ActiveStatus.INACTIVE);
+    }
+
+    @Test
+    void adminListShowsHowManyPeopleReportedAndHowReliableTheReporterIs() {
+        UUID other = UUID.randomUUID();
+        Report mineOpen = Report.builder().id(UUID.randomUUID()).channelId(channel.getId())
+                .reporterId(reporterId).reason("IMPERSONATION").status(Report.Status.OPEN).build();
+        Report othersOpen = Report.builder().id(UUID.randomUUID()).channelId(channel.getId())
+                .reporterId(other).reason("IMPERSONATION").status(Report.Status.OPEN).build();
+        Report othersOld = Report.builder().id(UUID.randomUUID()).channelId(channel.getId())
+                .reporterId(other).reason("SPAM").status(Report.Status.DISMISSED).build();
+        // Lịch sử của người báo cáo: 2 báo cáo đúng, 1 sai (ở video khác)
+        Report pastRight1 = Report.builder().id(UUID.randomUUID()).videoId(UUID.randomUUID())
+                .reporterId(reporterId).reason("SPAM").status(Report.Status.RESOLVED).build();
+        Report pastRight2 = Report.builder().id(UUID.randomUUID()).videoId(UUID.randomUUID())
+                .reporterId(reporterId).reason("SPAM").status(Report.Status.RESOLVED).build();
+        Report pastWrong = Report.builder().id(UUID.randomUUID()).videoId(UUID.randomUUID())
+                .reporterId(reporterId).reason("SPAM").status(Report.Status.DISMISSED).build();
+        when(reportRepository.findByStatusOrderByCreatedAtDesc(Report.Status.OPEN)).thenReturn(List.of(mineOpen));
+        when(reportRepository.findByChannelIdIn(List.of(channel.getId())))
+                .thenReturn(List.of(mineOpen, othersOpen, othersOld));
+        when(reportRepository.findByReporterIdIn(List.of(reporterId)))
+                .thenReturn(List.of(mineOpen, pastRight1, pastRight2, pastWrong));
+        when(userRepository.findAllById(List.of(reporterId)))
+                .thenReturn(List.of(AppUser.builder().id(reporterId).name("Người báo").build()));
+
+        var admin = service.list(Report.Status.OPEN).get(0).admin();
+
+        assertThat(admin.reporterName()).isEqualTo("Người báo");
+        assertThat(admin.reporterConfirmed()).isEqualTo(2);
+        assertThat(admin.reporterDismissed()).isEqualTo(1);
+        assertThat(admin.targetReporters()).isEqualTo(2);
+        assertThat(admin.targetReasonCounts()).containsExactly(
+                java.util.Map.entry("IMPERSONATION", 2L), java.util.Map.entry("SPAM", 1L));
+    }
+
+    @Test
+    void reporterDoesNotSeeAdminInfoInTheirOwnDiary() {
+        Report report = Report.builder().id(UUID.randomUUID()).channelId(channel.getId())
+                .reporterId(reporterId).reason("SPAM").status(Report.Status.OPEN).build();
+        when(reportRepository.findByReporterIdOrderByCreatedAtDesc(reporterId)).thenReturn(List.of(report));
+
+        assertThat(service.mine(reporterId).get(0).admin()).isNull();
     }
 
     @Test

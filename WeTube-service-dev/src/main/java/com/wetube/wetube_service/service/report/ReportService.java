@@ -1,11 +1,13 @@
 package com.wetube.wetube_service.service.report;
 
+import com.wetube.wetube_service.entity.AppUser;
 import com.wetube.wetube_service.entity.channel.Channel;
 import com.wetube.wetube_service.entity.interaction.Comment;
 import com.wetube.wetube_service.entity.report.Report;
 import com.wetube.wetube_service.entity.video.Video;
 import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.exception.ResourceNotFoundException;
+import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.interaction.CommentRepository;
 import com.wetube.wetube_service.repository.report.ReportRepository;
@@ -18,10 +20,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -49,7 +54,16 @@ public class ReportService {
                              UUID channelId, String channelName, String channelHandle, String channelPicture,
                              String channelStatus,
                              String reason, String details, String status,
-                             String resolutionNote, LocalDateTime createdAt, LocalDateTime resolvedAt) {}
+                             String resolutionNote, LocalDateTime createdAt, LocalDateTime resolvedAt,
+                             AdminInfo admin) {}
+
+    /**
+     * Chỉ có trong danh sách của admin, để xét báo cáo đúng hay sai: người báo cáo và các báo cáo khác của họ
+     * (đã xử lý = đúng, không vi phạm = sai), số người đã báo cáo cùng video / bình luận / kênh và số báo cáo
+     * theo từng lý do.
+     */
+    public record AdminInfo(String reporterName, String reporterPicture, long reporterConfirmed,
+                            long reporterDismissed, long targetReporters, Map<String, Long> targetReasonCounts) {}
 
     public enum Action { HIDE_VIDEO, DELETE_COMMENT, HIDE_CHANNEL, UNHIDE_VIDEO, UNHIDE_CHANNEL, DISMISS }
 
@@ -63,6 +77,7 @@ public class ReportService {
     private final CommentRepository commentRepository;
     private final CommentService commentService;
     private final ChannelRepository channelRepository;
+    private final UserRepository userRepository;
 
     /**
      * channelId khác null: báo cáo kênh đó; commentId khác null: báo cáo bình luận đó (videoId lấy theo bình
@@ -141,9 +156,57 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public List<ReportView> list(Report.Status status) {
-        return toViews(status == null
+        List<Report> reports = status == null
                 ? reportRepository.findAllByOrderByCreatedAtDesc()
-                : reportRepository.findByStatusOrderByCreatedAtDesc(status));
+                : reportRepository.findByStatusOrderByCreatedAtDesc(status);
+        return toViews(reports, adminInfo(reports));
+    }
+
+    /** Video / bình luận / kênh mà báo cáo nhắm tới. */
+    private static String targetKey(Report r) {
+        if (r.getChannelId() != null) return "channel:" + r.getChannelId();
+        if (r.getCommentId() != null) return "comment:" + r.getCommentId();
+        return "video:" + r.getVideoId();
+    }
+
+    private Map<UUID, AdminInfo> adminInfo(List<Report> reports) {
+        if (reports.isEmpty()) {
+            return Map.of();
+        }
+        // Mọi báo cáo về cùng các đối tượng này (kể cả báo cáo đã đóng), gom theo đối tượng
+        List<Report> sameTargets = new ArrayList<>();
+        sameTargets.addAll(reportRepository.findByChannelIdIn(
+                reports.stream().map(Report::getChannelId).filter(Objects::nonNull).distinct().toList()));
+        sameTargets.addAll(reportRepository.findByCommentIdIn(
+                reports.stream().map(Report::getCommentId).filter(Objects::nonNull).distinct().toList()));
+        sameTargets.addAll(reportRepository.findByVideoIdInAndCommentIdIsNullAndChannelIdIsNull(reports.stream()
+                .filter(r -> r.getChannelId() == null && r.getCommentId() == null)
+                .map(Report::getVideoId).filter(Objects::nonNull).distinct().toList()));
+        Map<String, List<Report>> byTarget = sameTargets.stream().collect(Collectors.groupingBy(ReportService::targetKey));
+
+        List<UUID> reporterIds = reports.stream().map(Report::getReporterId).distinct().toList();
+        Map<UUID, List<Report>> byReporter = reportRepository.findByReporterIdIn(reporterIds).stream()
+                .collect(Collectors.groupingBy(Report::getReporterId));
+        Map<UUID, AppUser> reporters = userRepository.findAllById(reporterIds).stream()
+                .collect(Collectors.toMap(AppUser::getId, Function.identity()));
+
+        Map<UUID, AdminInfo> result = new HashMap<>();
+        for (Report r : reports) {
+            List<Report> target = byTarget.getOrDefault(targetKey(r), List.of(r));
+            // Lịch sử của người báo cáo, không tính chính báo cáo này
+            List<Report> history = byReporter.getOrDefault(r.getReporterId(), List.of()).stream()
+                    .filter(o -> !o.getId().equals(r.getId())).toList();
+            AppUser reporter = reporters.get(r.getReporterId());
+            result.put(r.getId(), new AdminInfo(
+                    reporter != null ? reporter.getName() : null,
+                    reporter != null ? reporter.getPicture() : null,
+                    history.stream().filter(o -> o.getStatus() == Report.Status.RESOLVED).count(),
+                    history.stream().filter(o -> o.getStatus() == Report.Status.DISMISSED).count(),
+                    target.stream().map(Report::getReporterId).distinct().count(),
+                    target.stream().collect(Collectors.groupingBy(Report::getReason, TreeMap::new,
+                            Collectors.counting()))));
+        }
+        return result;
     }
 
     /**
@@ -286,6 +349,10 @@ public class ReportService {
     }
 
     private List<ReportView> toViews(List<Report> reports) {
+        return toViews(reports, Map.of());
+    }
+
+    private List<ReportView> toViews(List<Report> reports, Map<UUID, AdminInfo> adminInfo) {
         Map<UUID, Video> videos = videoRepository
                 .findAllById(reports.stream().map(Report::getVideoId).filter(Objects::nonNull).distinct().toList())
                 .stream()
@@ -317,7 +384,7 @@ public class ReportService {
                     ch != null ? ch.getPicture() : null,
                     ch != null && ch.getStatus() != null ? ch.getStatus().name() : null,
                     r.getReason(), r.getDetails(), r.getStatus().name(), r.getResolutionNote(),
-                    r.getCreatedAt(), r.getResolvedAt());
+                    r.getCreatedAt(), r.getResolvedAt(), adminInfo.isEmpty() ? null : adminInfo.get(r.getId()));
         }).toList();
     }
 }

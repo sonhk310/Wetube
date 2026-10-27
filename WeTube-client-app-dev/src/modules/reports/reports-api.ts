@@ -28,6 +28,21 @@ export interface ReportView {
   resolutionNote: string | null;
   createdAt: string;
   resolvedAt: string | null;
+  /** Chỉ có trong danh sách của admin. */
+  admin: ReportAdminInfo | null;
+}
+
+/** Thông tin giúp admin xét báo cáo đúng hay sai. */
+export interface ReportAdminInfo {
+  reporterName: string | null;
+  reporterPicture: string | null;
+  /** Các báo cáo khác của người này đã được xử lý (đúng) / bị bác (không vi phạm). */
+  reporterConfirmed: number;
+  reporterDismissed: number;
+  /** Số người đã báo cáo cùng video / bình luận / kênh (mọi trạng thái). */
+  targetReporters: number;
+  /** Số báo cáo theo từng lý do về cùng đối tượng. */
+  targetReasonCounts: Record<string, number>;
 }
 
 export type ReportAction =

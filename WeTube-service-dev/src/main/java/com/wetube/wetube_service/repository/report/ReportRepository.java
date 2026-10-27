@@ -3,6 +3,7 @@ package com.wetube.wetube_service.repository.report;
 import com.wetube.wetube_service.entity.report.Report;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,4 +26,13 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     boolean existsByChannelIdAndReporterIdAndStatus(UUID channelId, UUID reporterId, Report.Status status);
 
     List<Report> findByChannelIdAndStatus(UUID channelId, Report.Status status);
+
+    // Trang admin: mọi báo cáo về cùng các đối tượng, và lịch sử báo cáo của những người báo cáo
+    List<Report> findByChannelIdIn(Collection<UUID> channelIds);
+
+    List<Report> findByCommentIdIn(Collection<UUID> commentIds);
+
+    List<Report> findByVideoIdInAndCommentIdIsNullAndChannelIdIsNull(Collection<UUID> videoIds);
+
+    List<Report> findByReporterIdIn(Collection<UUID> reporterIds);
 }
