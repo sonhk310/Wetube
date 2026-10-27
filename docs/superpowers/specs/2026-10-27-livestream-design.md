@@ -270,4 +270,4 @@ Cỡ ước tính: khoảng 3–4 ngày làm.
 3. **Mời lên sân khấu / giơ tay:** bỏ khỏi L1.
 4. **Lỗ hổng `/api/streamApi/*`:** sửa ngay (gói 0, tách commit riêng).
 
-Anh hỏi thêm: PRD có nhắc LiveKit nhiều lần (độ trễ dưới 1 giây, "Media & Streaming Engine", luồng 3), nên L1 giữ LiveKit. Nếu hạn mức free quá chật thì phương án thay thế là RTMP + HLS (độ trễ 3–10 giây, bỏ chỉ tiêu dưới 1 giây của PRD) và phải viết lại mục 3.2.
+5. **Giữ LiveKit (anh chốt 27/10):** PRD và BRD bắt buộc dùng LiveKit (độ trễ dưới 1 giây, "Media & Streaming Engine", luồng 3, FR-4.2), nên L1 làm theo LiveKit, kể cả khi gói free chật. Không làm phương án RTMP + HLS. Hạn mức free được xử lý bằng các biện pháp ở mục 3.5; nếu sau này cần nhiều hơn thì nâng gói LiveKit, không đổi code.
