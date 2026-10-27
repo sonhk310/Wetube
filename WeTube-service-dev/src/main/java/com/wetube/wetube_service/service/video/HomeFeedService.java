@@ -75,7 +75,8 @@ public class HomeFeedService {
             chips.add(new Chip(Kind.WATCHED.name(), "Đã xem"));
         }
         for (String tag : topicTags(userId)) {
-            chips.add(new Chip("tag:" + tag, "#" + tag));
+            // Nhãn là tên thẻ, không có dấu # (như chip chủ đề của YouTube)
+            chips.add(new Chip("tag:" + tag, tag));
         }
         return chips;
     }

@@ -103,7 +103,9 @@ class HomeFeedServiceTest {
 
         assertThat(ids(chips)).containsExactly("SUBSCRIPTIONS", "NEW", "UNWATCHED", "WATCHED", "tag:anime", "tag:nhac");
         assertThat(chips.get(0).label()).isEqualTo("Kênh đăng ký");
-        assertThat(chips.get(4).label()).isEqualTo("#anime");
+        // Chip chủ đề hiện tên thẻ, không có dấu #
+        assertThat(chips.get(4).label()).isEqualTo("anime");
+        assertThat(chips).filteredOn(c -> c.id().startsWith("tag:")).allSatisfy(c -> assertThat(c.label()).doesNotStartWith("#"));
     }
 
     @Test
