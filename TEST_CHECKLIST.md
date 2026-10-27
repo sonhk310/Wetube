@@ -355,7 +355,7 @@ Cần một tài khoản có kênh (chủ video) và vài video công khai. Bả
 | 25.8 | Bấm Gợi ý từ khóa liên tục khoảng 21 lần trong một giờ | Lần vượt giới hạn hiện thông báo "Bạn đã dùng hết lượt AI…", các từ khóa đã có không mất | |
 | 25.9 | Video có từ khóa `thiên thần` (ví dụ video "Cruel Angel's Thesis"): tìm `thien than` và `thiên thần` | Ra video đó (nhờ từ khóa), không ra video lạ | |
 | 25.10 | Tìm `thien than` / `nga my` với video chưa có từ khóa tương ứng | "Không tìm thấy kết quả nào" (trước đây ra video Putin / video tiếng Nhật không liên quan) | |
-| 25.11 | Tìm `putn`, `ambesa`, `cruel angle`, `son tung` | Vẫn ra đúng video (sai chính tả nhẹ, không dấu vẫn tìm được) | |
+| 25.11 | Tìm `putn`, `ambesa`, `cruel angle` (và `son tung` nếu có video "Sơn Tùng") | Vẫn ra đúng video (sai chính tả nhẹ, không dấu vẫn tìm được). Em đã đo 27/10 trên production: ba từ đầu ra đúng | |
 | 25.12 | Tìm một từ khóa có kết quả, kéo xuống cuối trang | Có mục **Video tương tự** (tối đa 8 video, không trùng video đã ở kết quả chính); bấm vào mở đúng video / Short | |
 | 25.13 | Bật một bộ lọc (Thời lượng / Ngày tải lên / Sắp xếp) hoặc chọn tab Kênh | Không có mục "Video tương tự" | |
 | 25.14 | Tìm với sắp xếp "Ngày tải lên" và "Lượt xem" | Vẫn đúng thứ tự mới nhất / nhiều nhất; video khớp chặt vẫn nằm trên video khớp lỏng | |
