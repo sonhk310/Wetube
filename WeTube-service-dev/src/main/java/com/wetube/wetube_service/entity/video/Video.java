@@ -65,6 +65,13 @@ public class Video {
     private String videoUrl;
     @Enumerated(EnumType.STRING)
     private ActiveStatus videosStatus;
+    /** Trạng thái trước khi admin ẩn (INACTIVE), để "Bỏ ẩn" trả lại đúng; null nếu không bị admin ẩn. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_before_hidden", length = 20)
+    private ActiveStatus statusBeforeHidden;
+    /** true khi video bị ẩn cùng kênh ("Ẩn kênh"): "Bỏ ẩn kênh" chỉ mở lại những video này. */
+    @Column(name = "hidden_with_channel")
+    private Boolean hiddenWithChannel;
     private int totalView;
     private float duration;
 

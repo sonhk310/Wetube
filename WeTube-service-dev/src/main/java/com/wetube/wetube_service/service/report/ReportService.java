@@ -51,7 +51,7 @@ public class ReportService {
                              String reason, String details, String status,
                              String resolutionNote, LocalDateTime createdAt, LocalDateTime resolvedAt) {}
 
-    public enum Action { HIDE_VIDEO, DELETE_COMMENT, HIDE_CHANNEL, DISMISS }
+    public enum Action { HIDE_VIDEO, DELETE_COMMENT, HIDE_CHANNEL, UNHIDE_VIDEO, UNHIDE_CHANNEL, DISMISS }
 
     /** Video của kênh bị ẩn cùng kênh (bản nháp, riêng tư, đã ẩn / xoá thì giữ nguyên). */
     private static final List<ActiveStatus> HIDDEN_WITH_CHANNEL =
@@ -151,7 +151,8 @@ public class ReportService {
      * cáo đang mở của video đó; DELETE_COMMENT: xoá bình luận bị báo cáo (kèm các trả lời) và đóng mọi
      * báo cáo đang mở của bình luận đó; HIDE_CHANNEL: ẩn kênh (INACTIVE: trang kênh báo không tìm thấy, không
      * hiện khi tìm kênh) cùng các video đang xem được của kênh, đóng mọi báo cáo đang mở của kênh đó;
-     * DISMISS: bác bỏ riêng báo cáo này.
+     * UNHIDE_VIDEO / UNHIDE_CHANNEL: bỏ ẩn, video về trạng thái trước khi bị ẩn (bỏ ẩn kênh chỉ mở lại video
+     * bị ẩn cùng kênh); DISMISS: bác bỏ riêng báo cáo này.
      */
     public ReportView resolve(UUID reportId, Action action) {
         Report report = reportRepository.findById(reportId)
@@ -184,6 +185,47 @@ public class ReportService {
             return toViews(List.of(report)).get(0);
         }
 
+        if (action == Action.UNHIDE_CHANNEL) {
+            UUID channelId = report.getChannelId();
+            if (channelId == null) {
+                throw new IllegalArgumentException("Báo cáo này không phải báo cáo kênh");
+            }
+            Channel channel = channelRepository.findById(channelId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Channel", "id", channelId.toString()));
+            if (channel.getStatus() != ActiveStatus.INACTIVE) {
+                throw new IllegalArgumentException("Kênh này không bị ẩn");
+            }
+            channel.setStatus(ActiveStatus.ACTIVE);
+            if (channel.getUser() != null) {
+                for (Video video : videoRepository.findByUser_IdAndVideosStatusIn(
+                        channel.getUser().getId(), List.of(ActiveStatus.INACTIVE))) {
+                    if (Boolean.TRUE.equals(video.getHiddenWithChannel())) {
+                        restore(video);
+                    }
+                }
+            }
+            report.setResolutionNote("Đã bỏ ẩn kênh");
+            return toViews(List.of(report)).get(0);
+        }
+
+        if (action == Action.UNHIDE_VIDEO) {
+            if (report.getVideoId() == null) {
+                throw new IllegalArgumentException("Báo cáo này không phải báo cáo video");
+            }
+            Video video = videoRepository.findById(report.getVideoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Video", "id", report.getVideoId().toString()));
+            if (video.getVideosStatus() != ActiveStatus.INACTIVE) {
+                throw new IllegalArgumentException("Video này không bị ẩn");
+            }
+            Channel channel = video.getUser() != null ? video.getUser().getChannel() : null;
+            if (channel != null && channel.getStatus() == ActiveStatus.INACTIVE) {
+                throw new IllegalArgumentException("Kênh của video này đang bị ẩn, hãy bỏ ẩn kênh trước.");
+            }
+            restore(video);
+            report.setResolutionNote("Đã bỏ ẩn video");
+            return toViews(List.of(report)).get(0);
+        }
+
         if (action == Action.HIDE_CHANNEL) {
             UUID channelId = report.getChannelId();
             if (channelId == null) {
@@ -195,6 +237,8 @@ public class ReportService {
             if (channel.getUser() != null) {
                 for (Video video : videoRepository.findByUser_IdAndVideosStatusIn(
                         channel.getUser().getId(), HIDDEN_WITH_CHANNEL)) {
+                    video.setStatusBeforeHidden(video.getVideosStatus());
+                    video.setHiddenWithChannel(true);
                     video.setVideosStatus(ActiveStatus.INACTIVE);
                     videoIndexer.remove(video.getId());
                 }
@@ -215,6 +259,11 @@ public class ReportService {
         }
         Video video = videoRepository.findById(report.getVideoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Video", "id", report.getVideoId().toString()));
+        // Đã bị ẩn cùng kênh thì giữ trạng thái gốc; từ nay là ẩn riêng nên "Bỏ ẩn kênh" không mở lại video này
+        if (video.getVideosStatus() != ActiveStatus.INACTIVE) {
+            video.setStatusBeforeHidden(video.getVideosStatus());
+        }
+        video.setHiddenWithChannel(false);
         video.setVideosStatus(ActiveStatus.INACTIVE);
         videoIndexer.remove(video.getId());
         for (Report open : reportRepository.findByVideoIdAndStatus(video.getId(), Report.Status.OPEN)) {
@@ -226,6 +275,14 @@ public class ReportService {
         report.setResolutionNote("Video đã bị ẩn");
         report.setResolvedAt(now);
         return toViews(List.of(report)).get(0);
+    }
+
+    /** Trả video bị admin ẩn về trạng thái trước đó (không rõ thì công khai) và đưa lại vào tìm kiếm. */
+    private void restore(Video video) {
+        video.setVideosStatus(video.getStatusBeforeHidden() != null ? video.getStatusBeforeHidden() : ActiveStatus.PUBLIC);
+        video.setStatusBeforeHidden(null);
+        video.setHiddenWithChannel(null);
+        videoIndexer.index(video);
     }
 
     private List<ReportView> toViews(List<Report> reports) {

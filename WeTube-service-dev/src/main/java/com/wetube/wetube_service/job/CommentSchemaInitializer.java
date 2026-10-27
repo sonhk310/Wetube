@@ -40,6 +40,9 @@ public class CommentSchemaInitializer implements CommandLineRunner {
                 log.error("Không tạo được index reports.comment_id: {}", e.getMessage());
             }
         }
+        // "Bỏ ẩn" video / kênh trả video về đúng trạng thái trước khi admin ẩn
+        addColumn("videos", "status_before_hidden", "VARCHAR(20) NULL");
+        addColumn("videos", "hidden_with_channel", "BIT(1) NULL");
         // Báo cáo kênh: có channel_id, không có video_id
         if (addColumn("reports", "channel_id", "VARCHAR(36) NULL")) {
             try {

@@ -127,6 +127,92 @@ class ChannelReportTest {
     }
 
     @Test
+    void hideChannelRemembersEachVideosStatus() {
+        Report report = Report.builder().id(UUID.randomUUID()).channelId(channel.getId())
+                .reporterId(reporterId).reason("SPAM").status(Report.Status.OPEN).build();
+        Video unlisted = Video.builder().id(UUID.randomUUID()).videosStatus(ActiveStatus.UNLISTED).build();
+        when(reportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(videoRepository.findByUser_IdAndVideosStatusIn(any(), any())).thenReturn(List.of(unlisted));
+
+        service.resolve(report.getId(), ReportService.Action.HIDE_CHANNEL);
+
+        assertThat(unlisted.getStatusBeforeHidden()).isEqualTo(ActiveStatus.UNLISTED);
+        assertThat(unlisted.getHiddenWithChannel()).isTrue();
+    }
+
+    @Test
+    void unhideChannelRestoresOnlyVideosHiddenWithTheChannel() {
+        channel.setStatus(ActiveStatus.INACTIVE);
+        Report report = Report.builder().id(UUID.randomUUID()).channelId(channel.getId())
+                .reporterId(reporterId).reason("SPAM").status(Report.Status.RESOLVED).build();
+        Video withChannel = Video.builder().id(UUID.randomUUID()).videosStatus(ActiveStatus.INACTIVE)
+                .statusBeforeHidden(ActiveStatus.UNLISTED).hiddenWithChannel(true).build();
+        Video hiddenAlone = Video.builder().id(UUID.randomUUID()).videosStatus(ActiveStatus.INACTIVE)
+                .statusBeforeHidden(ActiveStatus.PUBLIC).hiddenWithChannel(false).build();
+        when(reportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(videoRepository.findByUser_IdAndVideosStatusIn(ownerId, List.of(ActiveStatus.INACTIVE)))
+                .thenReturn(List.of(withChannel, hiddenAlone));
+
+        var view = service.resolve(report.getId(), ReportService.Action.UNHIDE_CHANNEL);
+
+        assertThat(channel.getStatus()).isEqualTo(ActiveStatus.ACTIVE);
+        assertThat(withChannel.getVideosStatus()).isEqualTo(ActiveStatus.UNLISTED);
+        assertThat(withChannel.getStatusBeforeHidden()).isNull();
+        verify(videoIndexer).index(withChannel);
+        assertThat(hiddenAlone.getVideosStatus()).isEqualTo(ActiveStatus.INACTIVE);
+        assertThat(view.resolutionNote()).isEqualTo("Đã bỏ ẩn kênh");
+    }
+
+    @Test
+    void hideThenUnhideVideoRestoresItsStatus() {
+        Video video = Video.builder().id(UUID.randomUUID()).videosStatus(ActiveStatus.UNLISTED)
+                .user(channel.getUser()).build();
+        channel.getUser().setChannel(channel);
+        Report report = Report.builder().id(UUID.randomUUID()).videoId(video.getId())
+                .reporterId(reporterId).reason("SPAM").status(Report.Status.OPEN).build();
+        when(reportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(videoRepository.findById(video.getId())).thenReturn(Optional.of(video));
+
+        service.resolve(report.getId(), ReportService.Action.HIDE_VIDEO);
+        assertThat(video.getVideosStatus()).isEqualTo(ActiveStatus.INACTIVE);
+        assertThat(video.getStatusBeforeHidden()).isEqualTo(ActiveStatus.UNLISTED);
+
+        service.resolve(report.getId(), ReportService.Action.UNHIDE_VIDEO);
+        assertThat(video.getVideosStatus()).isEqualTo(ActiveStatus.UNLISTED);
+        verify(videoIndexer).index(video);
+    }
+
+    @Test
+    void videoHiddenBeforeThisChangeIsRestoredAsPublic() {
+        Video video = Video.builder().id(UUID.randomUUID()).videosStatus(ActiveStatus.INACTIVE).build();
+        Report report = Report.builder().id(UUID.randomUUID()).videoId(video.getId())
+                .reporterId(reporterId).reason("SPAM").status(Report.Status.RESOLVED).build();
+        when(reportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(videoRepository.findById(video.getId())).thenReturn(Optional.of(video));
+
+        service.resolve(report.getId(), ReportService.Action.UNHIDE_VIDEO);
+
+        assertThat(video.getVideosStatus()).isEqualTo(ActiveStatus.PUBLIC);
+    }
+
+    @Test
+    void cannotUnhideVideoWhileItsChannelIsHidden() {
+        channel.setStatus(ActiveStatus.INACTIVE);
+        channel.getUser().setChannel(channel);
+        Video video = Video.builder().id(UUID.randomUUID()).videosStatus(ActiveStatus.INACTIVE)
+                .user(channel.getUser()).build();
+        Report report = Report.builder().id(UUID.randomUUID()).videoId(video.getId())
+                .reporterId(reporterId).reason("SPAM").status(Report.Status.RESOLVED).build();
+        when(reportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(videoRepository.findById(video.getId())).thenReturn(Optional.of(video));
+
+        assertThatThrownBy(() -> service.resolve(report.getId(), ReportService.Action.UNHIDE_VIDEO))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("bỏ ẩn kênh trước");
+        assertThat(video.getVideosStatus()).isEqualTo(ActiveStatus.INACTIVE);
+    }
+
+    @Test
     void hideChannelOnAVideoReportIsRejected() {
         Report videoReport = Report.builder().id(UUID.randomUUID()).videoId(UUID.randomUUID())
                 .reporterId(reporterId).reason("SPAM").status(Report.Status.OPEN).build();

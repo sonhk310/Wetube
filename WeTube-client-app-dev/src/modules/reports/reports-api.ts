@@ -30,7 +30,13 @@ export interface ReportView {
   resolvedAt: string | null;
 }
 
-export type ReportAction = "HIDE_VIDEO" | "DELETE_COMMENT" | "HIDE_CHANNEL" | "DISMISS";
+export type ReportAction =
+  | "HIDE_VIDEO"
+  | "DELETE_COMMENT"
+  | "HIDE_CHANNEL"
+  | "UNHIDE_VIDEO"
+  | "UNHIDE_CHANNEL"
+  | "DISMISS";
 
 export type ReportTarget = { videoId: string } | { commentId: string } | { channelId: string };
 

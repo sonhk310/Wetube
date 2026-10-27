@@ -57,7 +57,7 @@ public class ReportController {
 
     /**
      * Admin: action=HIDE_VIDEO ẩn video, DELETE_COMMENT xoá bình luận bị báo cáo, HIDE_CHANNEL ẩn kênh,
-     * DISMISS bác bỏ báo cáo.
+     * UNHIDE_VIDEO / UNHIDE_CHANNEL bỏ ẩn, DISMISS bác bỏ báo cáo.
      */
     @PostMapping("/{reportId}/resolve")
     public ResponseEntity<ReportView> resolve(
@@ -69,7 +69,8 @@ public class ReportController {
         try {
             parsed = ReportService.Action.valueOf(action);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("action phải là HIDE_VIDEO, DELETE_COMMENT, HIDE_CHANNEL hoặc DISMISS");
+            throw new IllegalArgumentException(
+                    "action phải là HIDE_VIDEO, DELETE_COMMENT, HIDE_CHANNEL, UNHIDE_VIDEO, UNHIDE_CHANNEL hoặc DISMISS");
         }
         return ResponseEntity.ok(reportService.resolve(reportId, parsed));
     }

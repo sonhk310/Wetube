@@ -39,7 +39,10 @@ const FILTERS: { label: string; value?: ReportStatus }[] = [
   { label: "Tất cả" },
 ];
 
-/** Trang quản trị: admin xem báo cáo vi phạm (video, bình luận, kênh) và ẩn video / xoá bình luận / ẩn kênh / bác bỏ. */
+/**
+ * Trang quản trị: admin xem báo cáo vi phạm (video, bình luận, kênh) và ẩn video / xoá bình luận / ẩn kênh /
+ * bác bỏ; video hoặc kênh đang bị ẩn thì có nút bỏ ẩn.
+ */
 export default function AdminReportsView() {
   const { user, isLoading } = useAuth();
   const isAdmin = !!user?.roles?.includes("ROLE_ADMIN");
@@ -66,6 +69,12 @@ export default function AdminReportsView() {
       !window.confirm("Ẩn kênh này và mọi video đang xem được của kênh với mọi người (trừ chủ kênh)?")
     )
       return;
+    if (
+      action === "UNHIDE_CHANNEL" &&
+      !window.confirm("Bỏ ẩn kênh này? Các video bị ẩn cùng kênh sẽ trở lại trạng thái trước khi bị ẩn.")
+    )
+      return;
+    if (action === "UNHIDE_VIDEO" && !window.confirm("Bỏ ẩn video này?")) return;
     setBusyId(id);
     try {
       await reportsApi.resolve(id, action);
@@ -198,6 +207,15 @@ export default function AdminReportsView() {
                   Không vi phạm
                 </button>
               </div>
+            )}
+            {(r.channelId ? r.channelStatus === "INACTIVE" : !r.commentId && r.videoStatus === "INACTIVE") && (
+              <button
+                onClick={() => resolve(r.id, r.channelId ? "UNHIDE_CHANNEL" : "UNHIDE_VIDEO")}
+                disabled={busyId === r.id}
+                className="px-3 py-1 rounded-md border shrink-0 disabled:opacity-60"
+              >
+                {r.channelId ? "Bỏ ẩn kênh" : "Bỏ ẩn video"}
+              </button>
             )}
           </div>
         ))}
