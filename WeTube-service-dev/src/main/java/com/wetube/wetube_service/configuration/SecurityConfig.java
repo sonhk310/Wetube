@@ -111,7 +111,6 @@ public class SecurityConfig {
                                 "/api/subscriptions/**",
                                 "/api/videos", "/api/videos/**",
                                 "/api/tags/**",
-                                "/api/recommend/**",
                                 "/api/likes/**",
                                 "/api/comments/**").permitAll()
 
