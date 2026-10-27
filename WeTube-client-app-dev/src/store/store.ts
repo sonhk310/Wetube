@@ -12,6 +12,7 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { channelApi } from '@/app/api/channelApi';
 import { interactionApi } from "@/app/api/interactionApi";
 import { analyticsApi } from "@/app/api/analyticsApi";
+import { liveApi } from "@/app/api/liveApi";
 
 export const store = configureStore({
   reducer: {
@@ -27,6 +28,7 @@ export const store = configureStore({
     [channelApi.reducerPath]: channelApi.reducer,
     [interactionApi.reducerPath] : interactionApi.reducer,
     [analyticsApi.reducerPath]: analyticsApi.reducer,
+    [liveApi.reducerPath]: liveApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -41,7 +43,8 @@ export const store = configureStore({
       channelApi.middleware,
       subscriptionsApi.middleware,
       interactionApi.middleware,
-      analyticsApi.middleware
+      analyticsApi.middleware,
+      liveApi.middleware
     ),
 });
 

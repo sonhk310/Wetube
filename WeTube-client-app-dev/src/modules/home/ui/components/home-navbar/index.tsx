@@ -12,6 +12,7 @@ import React, { useEffect } from "react";
 import { useProgressRouter } from "@/hooks/use-progress-router";
 import AuthButton from "@/modules/auth/ui/components/auth-button";
 import { useAuth } from "@/contexts/auth-context";
+import { pageUrls } from "@/lib/enums/page-urls";
 
 const HomeNavbar = () => {
   const router = useProgressRouter();
@@ -33,6 +34,11 @@ const HomeNavbar = () => {
   const handleUploadVideoClick = (closeDropdown: () => void) => {
     closeDropdown();
     router.push("/studio?openUploadModal=true");
+  };
+
+  const handleGoLiveClick = (closeDropdown: () => void) => {
+    closeDropdown();
+    router.push(pageUrls.STUDIO_LIVE);
   };
 
   return (
@@ -86,7 +92,7 @@ const HomeNavbar = () => {
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
-                          onSelect={() => closeDropdown()}
+                          onSelect={() => handleGoLiveClick(closeDropdown)}
                           className="cursor-pointer text-base p-3"
                         >
                           <RadioTower className="mr-2 h-5 w-5" />
