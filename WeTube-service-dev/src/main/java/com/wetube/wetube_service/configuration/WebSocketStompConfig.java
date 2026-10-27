@@ -7,7 +7,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
@@ -34,7 +33,8 @@ public class WebSocketStompConfig implements WebSocketMessageBrokerConfigurer {
 
     /**
      * Danh tính của kết nối lấy từ cookie đăng nhập (Spring Security đặt Principal lúc bắt tay /ws).
-     * Kết nối chưa đăng nhập không được kết nối, đăng ký hay gửi gì.
+     * Khách chưa đăng nhập chỉ được kết nối và nghe topic của buổi phát trực tiếp (xem {@link StompAccessRule});
+     * gửi tin và mọi topic khác cần đăng nhập.
      */
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
@@ -42,10 +42,8 @@ public class WebSocketStompConfig implements WebSocketMessageBrokerConfigurer {
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-                if (accessor != null && accessor.getUser() == null
-                        && (StompCommand.CONNECT.equals(accessor.getCommand())
-                        || StompCommand.SUBSCRIBE.equals(accessor.getCommand())
-                        || StompCommand.SEND.equals(accessor.getCommand()))) {
+                if (accessor != null && !StompAccessRule.allowed(accessor.getCommand(), accessor.getDestination(),
+                        accessor.getUser() != null)) {
                     throw new MessageDeliveryException("Bạn cần đăng nhập");
                 }
                 return message;
