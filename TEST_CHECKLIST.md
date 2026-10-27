@@ -288,6 +288,7 @@ Cần đăng nhập (trang chủ chỉ có gợi ý khi đã đăng nhập) và 
 | 20.3 | Bấm một thẻ Short | Mở trình phát Shorts (`/shorts/{id}`), không phải trang xem thường | |
 | 20.4 | Thu cửa sổ về cỡ điện thoại | Hàng Shorts hiện sau 3 video đầu, không tràn ngang trang | |
 | 20.5 | Tài khoản chưa có Short nào được gợi ý | Trang chủ như cũ, không có hàng Shorts trống | |
+| 20.6 | Mở một Short (trình phát `/shorts/{id}`) | Video lấp đầy khung 9:16, không còn dải đen trên / dưới; mép hai bên bị cắt bớt một chút; tên kênh, nút Đăng ký, tiêu đề ở đáy vẫn đọc được (có lớp phủ tối) | |
 
 ## 21. Ảnh thu nhỏ nét và xoá ảnh cũ
 
