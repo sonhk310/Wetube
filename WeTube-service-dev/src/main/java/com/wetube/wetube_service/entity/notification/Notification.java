@@ -40,7 +40,9 @@ public class Notification {
         /** Chủ video thả tim bình luận của mình. */
         COMMENT_HEART,
         /** Có người nhắc @handle của mình trong bình luận. */
-        COMMENT_MENTION
+        COMMENT_MENTION,
+        /** Kênh đã đăng ký bắt đầu phát trực tiếp. */
+        LIVE_STARTED
     }
 
     @Id
@@ -70,7 +72,12 @@ public class Notification {
     @JdbcTypeCode(SqlTypes.VARCHAR)
     private UUID commentId;
 
-    /** Trích đoạn bình luận. */
+    /** Buổi phát trực tiếp (thông báo LIVE_STARTED). */
+    @Column(name = "live_id", columnDefinition = "VARCHAR(36)")
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    private UUID liveId;
+
+    /** Trích đoạn bình luận, hoặc tiêu đề buổi phát. */
     @Column(length = 255)
     private String text;
 

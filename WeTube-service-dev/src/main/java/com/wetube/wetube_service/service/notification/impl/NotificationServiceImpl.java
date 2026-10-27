@@ -67,6 +67,31 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void notifyLiveStarted(UUID liveId, UUID ownerId, UUID channelId, String title) {
+        if (channelId == null || notificationRepo.existsByTypeAndLiveId(Notification.Type.LIVE_STARTED, liveId)) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        String text = title == null ? null : title.length() > TEXT_MAX ? title.substring(0, TEXT_MAX) : title;
+        List<Notification> items = subscriptionRepo
+                .findNotifiableSubscriberIds(channelId, List.of(SubscriptionType.ALL, SubscriptionType.PERSONALIZE))
+                .stream()
+                .filter(id -> !id.equals(ownerId))
+                .map(id -> Notification.builder()
+                        .recipientId(id)
+                        .type(Notification.Type.LIVE_STARTED)
+                        .actorId(ownerId)
+                        .liveId(liveId)
+                        .text(text)
+                        .createdAt(now)
+                        .build())
+                .toList();
+        notificationRepo.saveAll(items);
+        log.info("Thông báo phát trực tiếp {} tới {} người đăng ký", liveId, items.size());
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void notifyComment(Notification.Type type, UUID recipientId, UUID actorId, UUID videoId, UUID commentId,
             String text) {
         if (recipientId == null || recipientId.equals(actorId)) {
@@ -123,7 +148,8 @@ public class NotificationServiceImpl implements NotificationService {
                             video != null ? video.getTitle() : null,
                             video != null ? video.getThumbnailUrl() : null,
                             n.getCommentId(),
-                            n.getText());
+                            n.getText(),
+                            n.getLiveId());
                 })
                 .toList();
         return new NotificationPage(views, result.hasNext(), unreadCount(userId));

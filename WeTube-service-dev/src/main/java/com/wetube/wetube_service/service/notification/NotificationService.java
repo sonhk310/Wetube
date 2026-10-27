@@ -19,7 +19,8 @@ public interface NotificationService {
             String videoTitle,
             String thumbnailUrl,
             UUID commentId,
-            String text) {
+            String text,
+            UUID liveId) {
     }
 
     record NotificationPage(List<NotificationView> items, boolean hasMore, long unread) {
@@ -30,6 +31,12 @@ public interface NotificationService {
      * Shorts; Cá nhân hoá = chỉ video thường; Không có thông báo = không báo.
      */
     void notifyNewVideo(UUID videoId, UUID ownerId, UUID channelId, boolean isShort);
+
+    /**
+     * Kênh bắt đầu phát trực tiếp: báo người đăng ký có chuông Tất cả hoặc Cá nhân hoá (như video thường), mỗi buổi
+     * một lần, trừ chủ kênh.
+     */
+    void notifyLiveStarted(UUID liveId, UUID ownerId, UUID channelId, String title);
 
     /** Trả lời bình luận / bình luận video. Bỏ qua khi người nhận chính là người bình luận. */
     void notifyComment(Notification.Type type, UUID recipientId, UUID actorId, UUID videoId, UUID commentId, String text);
