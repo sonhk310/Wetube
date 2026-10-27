@@ -33,9 +33,10 @@ public class RecommendationController {
     public ResponseEntity<Page<RecommendVideoDto>> recommendVideos(
             @PathVariable UUID userId,
             Pageable pageable,
+            @RequestParam(defaultValue = "") String seed,
             @AuthenticationPrincipal Jwt jwt) {
         requireSelf(userId, jwt);
-        return ResponseEntity.ok(recommendationService.recommendVideos(userId, pageable));
+        return ResponseEntity.ok(recommendationService.recommendVideos(userId, pageable, seed));
     }
 
     @GetMapping("/scout/{userId}")

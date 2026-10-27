@@ -27,6 +27,9 @@ public interface CommentService {
 
     CommentResponseDto createComment(CommentRequestDto request);
 
+    /** Số bình luận gốc (không tính trả lời) của một người trên một đối tượng. */
+    long countRootCommentsBy(UUID userId, Comment.TargetType type, UUID targetId);
+
     CommentResponseDto updateComment(UUID id, CommentRequestDto request);
 
     void deleteComment(UUID id);

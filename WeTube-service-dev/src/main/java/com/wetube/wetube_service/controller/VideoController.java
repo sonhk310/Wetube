@@ -38,6 +38,7 @@ import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.video.WatchProgressService;
 import com.wetube.wetube_service.service.analytics.WatchTimeTracker;
 
+import com.wetube.wetube_service.service.video.TagAffinityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,6 +57,7 @@ public class VideoController {
     private final RateLimiter rateLimiter;
     private final WatchProgressService watchProgressService;
     private final WatchTimeTracker watchTimeTracker;
+    private final TagAffinityService tagAffinityService;
 
     private static final PolicyFactory SANITIZER_POLICY = Sanitizers.FORMATTING.and(Sanitizers.LINKS);
 
@@ -310,7 +312,11 @@ public class VideoController {
                     ? "a:" + anonId.trim()
                     : "ip:" + clientIp(request);
         }
-        return ResponseEntity.ok(videoService.registerView(id, viewerKey, userId, CurrentUser.isAdmin(jwt)));
+        Map<String, Object> result = videoService.registerView(id, viewerKey, userId, CurrentUser.isAdmin(jwt));
+        if (userId != null && Boolean.TRUE.equals(result.get("counted"))) {
+            tagAffinityService.addQuietly(userId, id, TagAffinityService.VIEW);
+        }
+        return ResponseEntity.ok(result);
     }
 
     /**

@@ -36,22 +36,24 @@ class RecommendationControllerTest {
     void ownerReadsOwnRecommendations() {
         UUID me = UUID.randomUUID();
         PageRequest page = PageRequest.of(0, 10);
-        when(recService.recommendVideos(me, page)).thenReturn(Page.<RecommendVideoDto>empty(page));
+        when(recService.recommendVideos(me, page, "s1")).thenReturn(Page.<RecommendVideoDto>empty(page));
 
-        assertThat(controller.recommendVideos(me, page, jwtOf(me)).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(controller.recommendVideos(me, page, "s1", jwtOf(me)).getStatusCode()).isEqualTo(HttpStatus.OK);
+        // seed của client được chuyển nguyên cho bộ gợi ý
+        verify(recService).recommendVideos(me, page, "s1");
     }
 
     @Test
     void otherUserIsForbidden() {
         UUID victim = UUID.randomUUID();
 
-        assertThatThrownBy(() -> controller.recommendVideos(victim, PageRequest.of(0, 10), jwtOf(UUID.randomUUID())))
+        assertThatThrownBy(() -> controller.recommendVideos(victim, PageRequest.of(0, 10), "", jwtOf(UUID.randomUUID())))
                 .isInstanceOfSatisfying(ResponseStatusException.class,
                         e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
         assertThatThrownBy(() -> controller.getTopRankedVideos(victim, 100, 5, jwtOf(UUID.randomUUID())))
                 .isInstanceOfSatisfying(ResponseStatusException.class,
                         e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
-        verify(recService, never()).recommendVideos(any(), any());
+        verify(recService, never()).recommendVideos(any(), any(), any());
         verify(recService, never()).findTopRankedVideos(any(), org.mockito.ArgumentMatchers.anyInt(),
                 org.mockito.ArgumentMatchers.anyInt());
     }
@@ -60,7 +62,7 @@ class RecommendationControllerTest {
     void anonymousIsUnauthorized() {
         UUID victim = UUID.randomUUID();
 
-        assertThatThrownBy(() -> controller.recommendVideos(victim, PageRequest.of(0, 10), null))
+        assertThatThrownBy(() -> controller.recommendVideos(victim, PageRequest.of(0, 10), "", null))
                 .isInstanceOfSatisfying(ResponseStatusException.class,
                         e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
     }

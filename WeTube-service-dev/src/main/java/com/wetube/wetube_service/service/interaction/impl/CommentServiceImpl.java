@@ -113,6 +113,12 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public long countRootCommentsBy(UUID userId, Comment.TargetType type, UUID targetId) {
+        return commentRepository.countByUser_IdAndTargetTypeAndTargetIdAndParentCommentIdIsNull(userId, type, targetId);
+    }
+
+    @Override
     @Transactional
     public CommentResponseDto createComment(CommentRequestDto request) {
         Comment comment = commentMapper.toEntity(request);

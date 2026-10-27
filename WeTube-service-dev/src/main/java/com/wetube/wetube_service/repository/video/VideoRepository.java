@@ -27,6 +27,16 @@ public interface VideoRepository extends JpaRepository<Video, UUID> {
     Page<Video> findFeed(@Param("channelIds") Collection<UUID> channelIds,
                          @Param("statuses") Collection<ActiveStatus> statuses,
                          Pageable pageable);
+    /** Video đang được liệt kê, đăng từ `since`, mới nhất trước, trừ video của `userId` (chip "Mới tải lên"). */
+    @Query("""
+            SELECT v FROM Video v
+            WHERE v.videosStatus IN :statuses AND v.createdAt >= :since AND v.user.id <> :userId
+            ORDER BY v.createdAt DESC""")
+    Page<Video> findRecentListed(@Param("statuses") Collection<ActiveStatus> statuses,
+                                 @Param("since") java.time.LocalDateTime since,
+                                 @Param("userId") UUID userId,
+                                 Pageable pageable);
+
     Video findByIdAndUser_Id(UUID videoId, UUID userId);
 
     List<Video> findByVideoTags_Tag_NameOrderByTotalViewDesc(String tagName);

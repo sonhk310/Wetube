@@ -359,3 +359,22 @@ Cần một tài khoản có kênh (chủ video) và vài video công khai. Bả
 | 25.12 | Tìm một từ khóa có kết quả, kéo xuống cuối trang | Có mục **Video tương tự** (tối đa 8 video, không trùng video đã ở kết quả chính); bấm vào mở đúng video / Short | |
 | 25.13 | Bật một bộ lọc (Thời lượng / Ngày tải lên / Sắp xếp) hoặc chọn tab Kênh | Không có mục "Video tương tự" | |
 | 25.14 | Tìm với sắp xếp "Ngày tải lên" và "Lượt xem" | Vẫn đúng thứ tự mới nhất / nhiều nhất; video khớp chặt vẫn nằm trên video khớp lỏng | |
+
+## 26. Gợi ý trang chủ "giống YouTube" và chip trang chủ (C7, C6)
+
+Cần tài khoản đã xem ít nhất một video, đã đăng ký một kênh có video, và có video của người khác đăng trong 7 ngày gần đây. Bản thiết kế: `docs/superpowers/specs/2026-10-27-search-home-feed-hashtag-design.md` mục 3 và 4.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 26.1 | Mở trang chủ | Có hàng chip: **Tất cả**, rồi **Kênh đăng ký**, **Mới tải lên**, **Chưa xem**, **Đã xem** (chip nào không có video thì không hiện), rồi các chip **#thẻ** | |
+| 26.2 | Bấm **Chưa xem** | Chỉ có video anh chưa xem (không có video đã có trong Lịch sử xem), cuộn xuống thì tải thêm | |
+| 26.3 | Bấm **Đã xem** | Các video trong Lịch sử xem (còn công khai), video xem gần nhất đứng đầu | |
+| 26.4 | Bấm **Mới tải lên** | Video công khai đăng trong 7 ngày gần đây, mới nhất trước, **không có video của chính anh** | |
+| 26.5 | Bấm **Kênh đăng ký** | Video mới của các kênh anh đã đăng ký | |
+| 26.6 | Bấm một chip **#thẻ** | Các video có thẻ đó | |
+| 26.7 | Bấm lại **Tất cả**, rồi mở lại trang chủ (bấm logo) vài lần | Thứ tự video **đổi nhẹ** mỗi lần mở lại trang chủ; cuộn xuống tải thêm thì không bị xáo hay lặp video | |
+| 26.8 | Xem một video đến gần hết (từ 90% độ dài), rồi về trang chủ (bấm logo) | Video đó bị đẩy xuống thấp trong "Tất cả" | |
+| 26.9 | Trang chủ "Tất cả" | Không có video của chính anh; một kênh không chiếm cả màn hình (tối đa 2 video của cùng kênh trong mỗi 8 video liên tiếp khi còn kênh khác) | |
+| 26.10 | Mở một video có thẻ (ví dụ `#animevn`), bấm **Thích** (hoặc xem 10 giây, bình luận, bấm Sao chép liên kết ở hộp Chia sẻ), rồi về trang chủ | Chip thẻ đó lên đứng đầu trong các chip **#thẻ** (điểm yêu thích thẻ tăng lên) | |
+| 26.11 | Tài khoản chưa xem video nào (hoặc xoá hết Lịch sử xem) | Trang chủ trống "Hãy thử tìm kiếm để bắt đầu" và **không có hàng chip** | |
+| 26.12 | Đăng xuất, mở trang chủ | Không có hàng chip, như trước | |

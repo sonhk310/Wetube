@@ -59,6 +59,8 @@ class RecServiceIndexTest {
     @Mock RedisService redisService;
     @Mock SearchIndexes indexes;
     @Mock PlaylistVideoRepository playlistVideoRepo;
+    @Mock com.wetube.wetube_service.repository.channel.SubscriptionRepository subscriptionRepo;
+    @Mock com.wetube.wetube_service.service.video.WatchProgressService watchProgressService;
 
     @InjectMocks RecServiceImpl service;
 
@@ -69,6 +71,7 @@ class RecServiceIndexTest {
         ReflectionTestUtils.setField(service, "poolSize", 20);
         when(indexes.videos()).thenReturn(V2);
         when(userTagRepo.findAllByUserIdOrderByPointDesc(userId)).thenReturn(List.of());
+        when(watchProgressService.getMany(any(), any())).thenReturn(java.util.Map.of());
         // Mặc định: đã xem ít nhất một video
         when(playlistVideoRepo.existsByPlaylist_User_IdAndPlaylist_PlaylistType(userId, PlaylistType.HISTORY))
                 .thenReturn(true);
@@ -80,7 +83,7 @@ class RecServiceIndexTest {
                 .thenReturn(false);
         when(redisService.get(any())).thenReturn(null);
 
-        Page<RecommendVideoDto> page = service.recommendVideos(userId, PageRequest.of(0, 10));
+        Page<RecommendVideoDto> page = service.recommendVideos(userId, PageRequest.of(0, 10), "");
 
         assertThat(page.getContent()).isEmpty();
         verify(elasticOps, never()).search(any(Query.class), eq(VideoDocument.class), eq(V2));
@@ -119,10 +122,10 @@ class RecServiceIndexTest {
         when(redisService.get(any())).thenReturn(null);
         when(elasticOps.search(any(Query.class), eq(VideoDocument.class), eq(V2))).thenReturn(hits);
 
-        service.recommendVideos(userId, PageRequest.of(0, 10));
+        service.recommendVideos(userId, PageRequest.of(0, 10), "");
 
-        // Hai lần tìm (lấy danh sách id mới nhất, rồi lấy từng video) đều phải vào chỉ mục hiện tại
-        verify(elasticOps, times(2)).search(any(Query.class), eq(VideoDocument.class), eq(V2));
+        // Ba lần tìm (thịnh hành, video mới nhất, rồi lấy từng video của trang) đều phải vào chỉ mục hiện tại
+        verify(elasticOps, times(3)).search(any(Query.class), eq(VideoDocument.class), eq(V2));
         // Không được dùng hàm không nêu chỉ mục (sẽ rơi vào chỉ mục cũ "videos")
         verify(elasticOps, never()).search(any(Query.class), eq(VideoDocument.class));
     }
@@ -134,7 +137,7 @@ class RecServiceIndexTest {
         when(redisService.get(any())).thenReturn(video.toString());
         when(elasticOps.search(any(Query.class), eq(VideoDocument.class), eq(V2))).thenReturn(hits);
 
-        Page<RecommendVideoDto> page = service.recommendVideos(userId, PageRequest.of(0, 10));
+        Page<RecommendVideoDto> page = service.recommendVideos(userId, PageRequest.of(0, 10), "");
 
         assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().get(0).getPicture()).endsWith("channels/b.jpg");

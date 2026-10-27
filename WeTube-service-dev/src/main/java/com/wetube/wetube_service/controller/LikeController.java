@@ -7,6 +7,7 @@ import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.dto.LikeDto;
 import com.wetube.wetube_service.entity.interaction.Like;
 import com.wetube.wetube_service.service.interaction.LikeService;
+import com.wetube.wetube_service.service.video.TagAffinityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ public class LikeController {
 
     private final LikeService likeService;
     private final VideoAccess videoAccess;
+    private final TagAffinityService tagAffinityService;
 
     @GetMapping
     public ResponseEntity<LikeDto> getLikeInfo(
@@ -42,7 +44,13 @@ public class LikeController {
         if (targetType == Like.TargetType.VIDEO) {
             videoAccess.requireViewable(targetId, jwt);
         }
-        likeService.toggleLike(targetId, targetType, CurrentUser.id(jwt));
+        UUID userId = CurrentUser.id(jwt);
+        boolean addsLike = targetType == Like.TargetType.VIDEO
+                && !Boolean.TRUE.equals(likeService.getLikeInfo(targetId, targetType, userId).getLiked());
+        likeService.toggleLike(targetId, targetType, userId);
+        if (addsLike) {
+            tagAffinityService.addQuietly(userId, targetId, TagAffinityService.LIKE);
+        }
         return ResponseEntity.ok().build();
     }
 }

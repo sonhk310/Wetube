@@ -5,12 +5,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.wetube.wetube_service.entity.playlist.PlaylistVideo;
+import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.enumeration.PlaylistType;
 
 @Repository
@@ -24,6 +28,18 @@ public interface PlaylistVideoRepository extends JpaRepository<PlaylistVideo, UU
 
     /** Người dùng đã có video nào trong một loại danh sách (vd. HISTORY = đã xem ít nhất một video) chưa. */
     boolean existsByPlaylist_User_IdAndPlaylist_PlaylistType(UUID userId, PlaylistType type);
+
+    /** Id mọi video trong lịch sử xem của user. */
+    @Query("""
+            SELECT pv.video.id FROM PlaylistVideo pv
+            WHERE pv.playlist.user.id = :userId
+              AND pv.playlist.playlistType = com.wetube.wetube_service.enumeration.PlaylistType.HISTORY
+            """)
+    List<UUID> findHistoryVideoIds(@Param("userId") UUID userId);
+
+    /** Video trong một loại danh sách của user mà còn ở các trạng thái này (chip "Đã xem": lịch sử, còn công khai). */
+    Page<PlaylistVideo> findByPlaylist_User_IdAndPlaylist_PlaylistTypeAndVideo_VideosStatusIn(
+            UUID userId, PlaylistType type, Collection<ActiveStatus> statuses, Pageable pageable);
 
     @Modifying
     @Query("DELETE FROM PlaylistVideo pv WHERE pv.video.id = :videoId")

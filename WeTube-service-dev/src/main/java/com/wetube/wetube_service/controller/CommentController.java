@@ -9,6 +9,7 @@ import com.wetube.wetube_service.dto.CommentDto.CommentRequestDto;
 import com.wetube.wetube_service.dto.CommentDto.CommentResponseDto;
 import com.wetube.wetube_service.entity.interaction.Comment;
 import com.wetube.wetube_service.service.interaction.CommentService;
+import com.wetube.wetube_service.service.video.TagAffinityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,7 @@ public class CommentController {
     private final CommentService commentService;
     private final OwnershipGuard ownershipGuard;
     private final RateLimiter rateLimiter;
+    private final TagAffinityService tagAffinityService;
 
     /** sort=top (mặc định: nhiều thích + trả lời trước) hoặc newest. Bình luận đã ghim luôn đứng đầu. */
     @GetMapping("/{targetType}/{targetId}")
@@ -50,7 +52,12 @@ public class CommentController {
     public ResponseEntity<CommentResponseDto> createComment(@RequestBody CommentRequestDto request, @AuthenticationPrincipal Jwt jwt) {
         request.setUserId(CurrentUser.id(jwt));
         rateLimiter.check(RateLimiter.Limit.COMMENT, request.getUserId());
-        return ResponseEntity.ok(commentService.createComment(request));
+        CommentResponseDto created = commentService.createComment(request);
+        if (request.getParentCommentId() == null && request.getTargetType() == Comment.TargetType.VIDEO
+                && commentService.countRootCommentsBy(request.getUserId(), Comment.TargetType.VIDEO, request.getTargetId()) == 1) {
+            tagAffinityService.addQuietly(request.getUserId(), request.getTargetId(), TagAffinityService.COMMENT);
+        }
+        return ResponseEntity.ok(created);
     }
 
     @PutMapping("/{id}")
