@@ -3,7 +3,9 @@ package com.wetube.wetube_service.service.video.impl;
 import com.wetube.wetube_service.dto.video.RecommendVideoDto;
 import com.wetube.wetube_service.entity.video.Tag;
 import com.wetube.wetube_service.entity.video.UserTag;
+import com.wetube.wetube_service.enumeration.PlaylistType;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
+import com.wetube.wetube_service.repository.PlaylistVideoRepository;
 import com.wetube.wetube_service.repository.video.TagRepository;
 import com.wetube.wetube_service.repository.video.UserTagRepository;
 import com.wetube.wetube_service.search.SearchIndexes;
@@ -42,6 +44,7 @@ public class RecServiceImpl implements RecService {
     private final SearchIndexes indexes;
     private final VideoMapper videoMapper;
     private final RedisService redisService;
+    private final PlaylistVideoRepository playlistVideoRepo;
 
     /** Danh sách gợi ý của mỗi người được giữ trong Redis trong khoảng này (phân trang ổn định, đỡ tải Elasticsearch). */
     private static final Duration CACHE_TTL = Duration.ofMinutes(5);
@@ -81,6 +84,11 @@ public class RecServiceImpl implements RecService {
         String cached = redisService.get(key);
         if (cached != null) {
             return cached.isEmpty() ? List.of() : List.of(cached.split(","));
+        }
+        // Như YouTube: chưa xem video nào (lịch sử trống) thì chưa gợi ý, trang chủ mời tìm kiếm.
+        // Không lưu cache để xem xong video đầu tiên là có gợi ý ngay.
+        if (!playlistVideoRepo.existsByPlaylist_User_IdAndPlaylist_PlaylistType(userId, PlaylistType.HISTORY)) {
+            return List.of();
         }
         List<String> ids = getSortedRecommendedIdsForUser(userId);
         redisService.set(key, String.join(",", ids), CACHE_TTL);

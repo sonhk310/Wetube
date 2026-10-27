@@ -37,6 +37,8 @@ import com.wetube.wetube_service.repository.video.TagRepository;
 import com.wetube.wetube_service.repository.video.UserTagRepository;
 import com.wetube.wetube_service.search.SearchIndexes;
 import com.wetube.wetube_service.search.VideoDocument;
+import com.wetube.wetube_service.enumeration.PlaylistType;
+import com.wetube.wetube_service.repository.PlaylistVideoRepository;
 import com.wetube.wetube_service.service.RedisService;
 import com.wetube.wetube_service.service.video.impl.RecServiceImpl;
 
@@ -56,6 +58,7 @@ class RecServiceIndexTest {
     @Spy VideoMapper videoMapper = new com.wetube.wetube_service.mapper.video.VideoMapperImpl();
     @Mock RedisService redisService;
     @Mock SearchIndexes indexes;
+    @Mock PlaylistVideoRepository playlistVideoRepo;
 
     @InjectMocks RecServiceImpl service;
 
@@ -66,6 +69,23 @@ class RecServiceIndexTest {
         ReflectionTestUtils.setField(service, "poolSize", 20);
         when(indexes.videos()).thenReturn(V2);
         when(userTagRepo.findAllByUserIdOrderByPointDesc(userId)).thenReturn(List.of());
+        // Mặc định: đã xem ít nhất một video
+        when(playlistVideoRepo.existsByPlaylist_User_IdAndPlaylist_PlaylistType(userId, PlaylistType.HISTORY))
+                .thenReturn(true);
+    }
+
+    @Test
+    void accountThatHasNotWatchedAnythingGetsNoRecommendationsAndNothingCached() {
+        when(playlistVideoRepo.existsByPlaylist_User_IdAndPlaylist_PlaylistType(userId, PlaylistType.HISTORY))
+                .thenReturn(false);
+        when(redisService.get(any())).thenReturn(null);
+
+        Page<RecommendVideoDto> page = service.recommendVideos(userId, PageRequest.of(0, 10));
+
+        assertThat(page.getContent()).isEmpty();
+        verify(elasticOps, never()).search(any(Query.class), eq(VideoDocument.class), eq(V2));
+        // Không lưu cache: xem xong video đầu tiên là trang chủ có gợi ý ngay
+        verify(redisService, never()).set(any(), any(), any());
     }
 
     @SuppressWarnings("unchecked")
@@ -93,7 +113,7 @@ class RecServiceIndexTest {
     }
 
     @Test
-    void newUsersGetTheLatestVideosFromTheCurrentIndex() {
+    void usersWithoutTagPointsGetTheLatestVideosFromTheCurrentIndex() {
         UUID video = UUID.randomUUID();
         SearchHits<VideoDocument> hits = hitsOf(doc(video, "new.jpg"));
         when(redisService.get(any())).thenReturn(null);

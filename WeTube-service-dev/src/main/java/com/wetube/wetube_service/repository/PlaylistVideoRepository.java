@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.wetube.wetube_service.entity.playlist.PlaylistVideo;
+import com.wetube.wetube_service.enumeration.PlaylistType;
 
 @Repository
 public interface PlaylistVideoRepository extends JpaRepository<PlaylistVideo, UUID>{
@@ -20,6 +21,9 @@ public interface PlaylistVideoRepository extends JpaRepository<PlaylistVideo, UU
 
     @Query("SELECT pv FROM PlaylistVideo pv WHERE pv.playlist.id = :playlistId ORDER BY pv.updatedAt DESC")
     List<PlaylistVideo> findByPlaylist_IdOrderByUpdatedAtDesc(UUID playlistId);
+
+    /** Người dùng đã có video nào trong một loại danh sách (vd. HISTORY = đã xem ít nhất một video) chưa. */
+    boolean existsByPlaylist_User_IdAndPlaylist_PlaylistType(UUID userId, PlaylistType type);
 
     @Modifying
     @Query("DELETE FROM PlaylistVideo pv WHERE pv.video.id = :videoId")

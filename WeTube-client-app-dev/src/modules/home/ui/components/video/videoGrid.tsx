@@ -12,6 +12,7 @@ import { RecommendedVideoItem } from "@/types/video";
 import { SHORTS_SHELF_AFTER, SHORTS_SHELF_AFTER_MOBILE, splitHomeFeed } from "@/lib/homeFeed";
 import { useIsMobile } from "@/hooks/use-mobile";
 import HomeShortsShelf from "./homeShortsShelf";
+import { SearchIcon } from "lucide-react";
 
 const LOAD_COUNT = 18;
 
@@ -183,10 +184,17 @@ export default function VideoGrid() {
           className="h-10"
         />
       )}
+      {/* Như YouTube: chưa xem video nào thì backend chưa gợi ý, mời tìm kiếm trước */}
       {isEmpty && (
-        <p className="text-center mt-6 text-gray-500">
-          Chưa có video gợi ý cho bạn. Hãy bắt đầu xem một vài video!
-        </p>
+        <div className="mx-auto mt-16 flex max-w-md flex-col items-center gap-3 text-center">
+          <span className="flex size-20 items-center justify-center rounded-full bg-gray-100">
+            <SearchIcon className="size-9 text-gray-600" />
+          </span>
+          <h2 className="text-xl font-semibold">Hãy thử tìm kiếm để bắt đầu</h2>
+          <p className="text-sm text-gray-600">
+            Hãy bắt đầu xem video để chúng tôi xây dựng một nguồn cấp dữ liệu gồm những video mà bạn sẽ thích.
+          </p>
+        </div>
       )}
 
       {!hasMore && displayedVideos.length > 0 && (
