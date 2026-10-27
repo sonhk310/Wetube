@@ -2,7 +2,9 @@ package com.wetube.wetube_service.service.AI;
 
 import com.wetube.wetube_service.utility.SearchKeywords;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -31,9 +33,13 @@ public class AIService {
         }
     }
 
+    /** Nghỉ giữa hai lần gọi Gemini khi lần đầu lỗi (Gemini hay trả 503 "high demand" thoáng qua). */
+    long retryPauseMillis = 1500;
+
     /**
-     * Gợi ý từ khóa tìm kiếm cho video (S2): chủ video xem và sửa trước khi lưu. Gemini lỗi thì trả rỗng,
-     * việc đăng video không phụ thuộc vào bước này.
+     * Gợi ý từ khóa tìm kiếm cho video (S2): chủ video xem và sửa trước khi lưu. Gemini lỗi thì thử lại một lần,
+     * vẫn lỗi thì trả 503 kèm thông báo (khác với "không có gợi ý nào" là danh sách rỗng); việc đăng video
+     * không phụ thuộc vào bước này.
      */
     public String suggestSearchKeywords(String title, String description, String tags) {
         String prompt = String.format(
@@ -45,21 +51,34 @@ public class AIService {
                         "or facts. Answer with one line of keywords separated by commas and nothing else.",
                 title == null ? "" : title, description == null ? "" : description, tags == null ? "" : tags
         );
+        String answer;
         try {
-            String cleaned = SearchKeywords.clean(geminiClient.generateText(prompt));
-            if (cleaned == null) {
-                return "";
-            }
-            // Bỏ từ trùng với thẻ hoặc cả tiêu đề (người xem đã tìm được bằng chúng)
-            String lowerTitle = title == null ? "" : title.trim().toLowerCase(Locale.ROOT);
-            String lowerTags = tags == null ? "" : tags.toLowerCase(Locale.ROOT);
-            return Arrays.stream(cleaned.split(","))
-                    .filter(k -> !k.equals(lowerTitle))
-                    .filter(k -> !Arrays.asList(lowerTags.split("[\\s#,]+")).contains(k))
-                    .collect(Collectors.joining(","));
+            answer = generateWithRetry(prompt);
         } catch (Exception e) {
             log.warn("[Gemini] Không gợi ý được từ khóa tìm kiếm: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "AI đang quá tải, vui lòng thử lại sau ít phút.");
+        }
+        String cleaned = SearchKeywords.clean(answer);
+        if (cleaned == null) {
             return "";
+        }
+        // Bỏ từ trùng với thẻ hoặc cả tiêu đề (người xem đã tìm được bằng chúng)
+        String lowerTitle = title == null ? "" : title.trim().toLowerCase(Locale.ROOT);
+        String lowerTags = tags == null ? "" : tags.toLowerCase(Locale.ROOT);
+        return Arrays.stream(cleaned.split(","))
+                .filter(k -> !k.equals(lowerTitle))
+                .filter(k -> !Arrays.asList(lowerTags.split("[\\s#,]+")).contains(k))
+                .collect(Collectors.joining(","));
+    }
+
+    private String generateWithRetry(String prompt) throws Exception {
+        try {
+            return geminiClient.generateText(prompt);
+        } catch (Exception first) {
+            log.info("[Gemini] Lần đầu lỗi, thử lại một lần: {}", first.getMessage());
+            Thread.sleep(retryPauseMillis);
+            return geminiClient.generateText(prompt);
         }
     }
 

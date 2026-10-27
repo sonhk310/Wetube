@@ -1,16 +1,27 @@
 package com.wetube.wetube_service.service.AI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 class AIServiceKeywordsTest {
 
     private final GeminiClient gemini = mock(GeminiClient.class);
     private final AIService service = new AIService(gemini);
+
+    @BeforeEach
+    void noPauseBetweenRetries() {
+        service.retryPauseMillis = 0;
+    }
 
     @Test
     void cleansGeminiAnswerAndDropsWordsThatAreTheTitleOrATag() throws Exception {
@@ -23,10 +34,25 @@ class AIServiceKeywordsTest {
     }
 
     @Test
-    void geminiFailureGivesNoKeywordsInsteadOfAnError() throws Exception {
-        when(gemini.generateText(anyString())).thenThrow(new RuntimeException("Gemini API error"));
+    void geminiFailingTwiceIsAnExplicit503NotAnEmptyList() throws Exception {
+        when(gemini.generateText(anyString())).thenThrow(new RuntimeException("Gemini API error 503"));
 
-        assertThat(service.suggestSearchKeywords("t", "d", "")).isEmpty();
+        assertThatThrownBy(() -> service.suggestSearchKeywords("t", "d", ""))
+                .isInstanceOfSatisfying(ResponseStatusException.class, e -> {
+                    assertThat(e.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                    assertThat(e.getReason()).contains("quá tải");
+                });
+        verify(gemini, times(2)).generateText(anyString());
+    }
+
+    @Test
+    void aTransientGeminiErrorIsRetriedOnce() throws Exception {
+        when(gemini.generateText(anyString()))
+                .thenThrow(new RuntimeException("503 high demand"))
+                .thenReturn("angel, thiên thần");
+
+        assertThat(service.suggestSearchKeywords("Cruel Angel's Thesis", "", "")).isEqualTo("angel,thiên thần");
+        verify(gemini, times(2)).generateText(anyString());
     }
 
     @Test

@@ -149,6 +149,8 @@ class VideoSearchServiceTest {
         ArgumentCaptor<Query> captor = ArgumentCaptor.forClass(Query.class);
         verify(ops, times(2)).search(captor.capture(), eq(VideoDocument.class), eq(V2));
         String mlt = ((NativeQuery) captor.getAllValues().get(1)).getQuery().toString();
+        // Chỉ so tiêu đề, thẻ, từ khóa: tên kênh và mô tả làm mọi video cùng kênh thành "tương tự"
+        assertThat(mlt).doesNotContain("channelName").doesNotContain("description");
         assertThat(mlt).contains("more_like_this").contains("must_not")
                 .contains(main[0].toString()).contains(main[1].toString()).contains(main[2].toString());
         // Chỉ 3 video đầu làm mẫu, nhưng cả 4 video chính đều bị loại

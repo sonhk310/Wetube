@@ -148,9 +148,10 @@ public class VideoSearchService {
 
                 NativeQuery query = new NativeQueryBuilder()
                                 .withQuery(bool(b -> {
-                                        // min_term_freq / min_doc_freq = 1 vì kho video còn nhỏ
+                                        // min_term_freq / min_doc_freq = 1 vì kho video còn nhỏ. Không so tên kênh và mô tả:
+                                        // video cùng kênh (hay cùng mẫu mô tả như mốc thời gian) sẽ bị coi là giống nhau.
                                         b.must(moreLikeThis(m -> m
-                                                        .fields("title", "tags.text", "description", "channelName", "searchKeywords")
+                                                        .fields("title", "tags.text", "searchKeywords")
                                                         .like(like).minTermFreq(1).minDocFreq(1).maxQueryTerms(25))
                                                         );
                                         b.mustNot(ids(i -> i.values(mainIds)));
