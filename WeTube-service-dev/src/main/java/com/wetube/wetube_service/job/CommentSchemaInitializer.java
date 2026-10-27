@@ -61,7 +61,7 @@ public class CommentSchemaInitializer implements CommandLineRunner {
         } catch (Exception e) {
             log.error("Không tạo được bảng user_topic: {}", e.getMessage());
         }
-        // Phát trực tiếp (L1): thông báo LIVE_STARTED trỏ tới buổi phát; chỉ mục cho bảng do Hibernate tạo
+        // Phát trực tiếp (L1): thông báo LIVE_STARTED trỏ tới buổi phát; chỉ mục cho các bảng do LiveSchemaInitializer tạo
         addColumn("notifications", "live_id", "VARCHAR(36) NULL");
         addIndex("live_streams", "idx_live_streams_status", "status");
         addIndex("live_streams", "idx_live_streams_channel", "channel_id");
