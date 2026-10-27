@@ -1,6 +1,6 @@
 # Thiết kế: phát trực tiếp làm lại (L1)
 
-Ngày: 2026-10-27. Trạng thái: **chờ anh duyệt**.
+Ngày: 2026-10-27. Trạng thái: **chờ anh duyệt** (anh đã trả lời 4 câu hỏi ngày 27/10, xem mục 5; mục 3.5 mới thêm vì hạn mức gói free của LiveKit).
 
 ## 1. Vì sao
 
@@ -57,7 +57,7 @@ Lộ trình (`YOUTUBE_PARITY.md` mục L1) thêm: trang "Đang phát trực ti�
   - Tiêu đề (bắt buộc, tối đa 100 ký tự) và mô tả (tuỳ chọn, tối đa 5.000 ký tự). `#thẻ` và `@handle` trong mô tả bấm được như ở trang xem (dùng lại code có sẵn).
   - Chọn nguồn phát:
     - **Webcam:** xem trước camera ở ngay trang, chọn camera / micro (dùng lại `media-device-settings`), bật / tắt micro và camera.
-    - **Phần mềm phát:** hiện **URL máy chủ** và **Khoá luồng** (nút Chép, khoá ẩn bằng dấu chấm và có nút hiện). Hướng dẫn ngắn cho OBS. Trạng thái "Đang chờ tín hiệu từ phần mềm phát…" cho tới khi LiveKit nhận được hình.
+    - **Phần mềm phát (OBS):** chọn giao thức **WHIP** (mặc định, không tốn phút transcode) hoặc **RTMP** (kèm cảnh báo hạn mức, xem mục 3.5). Hiện **URL máy chủ** và **Khoá luồng** / mã (nút Chép, khoá ẩn bằng dấu chấm và có nút hiện). Hướng dẫn ngắn cho OBS. Trạng thái "Đang chờ tín hiệu từ phần mềm phát…" cho tới khi LiveKit nhận được hình.
   - Bật / tắt chat (mặc định bật).
 - **Bước 2, đang phát:**
   - Bên trái: hình đang phát (xem trước của chính mình), tiêu đề, số người đang xem, thời gian đã phát, nút **Kết thúc buổi phát** (có hộp thoại xác nhận).
@@ -216,9 +216,27 @@ REST, tiền tố `/api/live`:
   - Gói `livekit-server-sdk`, `jsonwebtoken`, `js-confetti`, `@radix-ui/themes` nếu không còn chỗ nào dùng (em sẽ kiểm trước khi gỡ).
 - **Biến môi trường client:** sau khi xoá `lib/controller.ts`, client không cần `LIVEKIT_API_SECRET`, `LIVEKIT_API_KEY`, `LIVEKIT_wsUrl` nữa. Em đề nghị anh xoá chúng trên Vibe Host. Địa chỉ LiveKit cho trình duyệt lấy từ API token, không cần biến client.
 
-### 3.5 Hiệu năng và chi phí
+### 3.5 Hiệu năng và hạn mức gói free của LiveKit
 - Hình và tiếng đi thẳng giữa trình duyệt / OBS và máy chủ LiveKit, không qua backend Vibe Host (1 CPU, 1,5 GB). Backend chỉ ký token, giữ chat và hỏi LiveKit mỗi 15 giây.
-- Chi phí phút phát và phút xem tính theo gói LiveKit anh đang dùng (xem câu hỏi 2).
+- **Hạn mức gói Build (free) của LiveKit Cloud**, em đọc ở [docs.livekit.io](https://docs.livekit.io/deploy/admin/quotas-and-limits/) ngày 27/10 (anh nên đối chiếu lại ở trang Settings của dự án LiveKit, vì em chưa đăng nhập được vào đó):
+
+  | Hạn mức | Giá trị | Ý nghĩa với WeTube |
+  |---|---|---|
+  | Phút người tham gia WebRTC | **5.000 / tháng**, cứng | Mỗi người xem tính theo phút ở trong phòng, người phát cũng tính. Ví dụ: 1 buổi 1 giờ với 20 người xem ≈ 1.260 phút, nên khoảng 4 buổi như vậy là hết tháng |
+  | Dữ liệu tải xuống | **50 GB / tháng**, cứng | Một người xem 720p khoảng 1–2 GB mỗi giờ, nên 50 GB đủ cho khoảng 25–50 giờ-người |
+  | Người tham gia cùng lúc | **100** (mọi phòng cộng lại) | Trần cứng cho số người xem |
+  | Phút transcode (Ingress RTMP) | **60 / tháng** | Phát qua OBS bằng RTMP **chỉ được khoảng 1 giờ mỗi tháng** |
+  | Ingress cùng lúc | **2** | Tối đa 2 kênh phát bằng OBS cùng lúc |
+
+  Quá hạn mức thì yêu cầu mới **thất bại** (không tính thêm tiền).
+- **Cách thiết kế xử lý:**
+  - **Webcam** chỉ tốn phút WebRTC, không tốn phút transcode. Đây là đường phát chính của L1.
+  - **OBS: mặc định dùng WHIP** (không transcode, không tốn 60 phút), RTMP chỉ là lựa chọn phụ, kèm cảnh báo "RTMP chỉ còn dùng được khoảng 1 giờ/tháng trên gói miễn phí". Cần OBS bản 30 trở lên cho WHIP. Backend hiện luôn tạo RTMP và bật transcode; em sẽ cho tạo WHIP với `enableTranscoding = false`. *Em chưa kiểm được điều này với server thật; sẽ thử trong gói 1 bằng một buổi phát OBS thật, và nếu LiveKit vẫn tính phút transcode cho WHIP thì báo anh.*
+  - **Trần số người xem cho mỗi buổi:** 40 người vào bằng WebRTC (em chọn con số này để hai buổi phát cùng lúc vẫn nằm dưới trần 100). Người thứ 41 trở đi thấy "Buổi phát đang đầy người xem" thay vì bị lỗi khó hiểu. Chat và Poll vẫn dùng được cho người xem ngoài trần vì đi qua backend, nhưng họ không có hình.
+  - **Hết hạn mức tháng:** khi cấp token hoặc tạo Ingress thất bại vì quota, backend trả lỗi rõ ràng, chủ kênh thấy "Đã hết hạn mức phát trực tiếp của tháng này, sẽ có lại vào ngày 1", người xem thấy "Buổi phát tạm thời không xem được". Không để lỗi 500 trống.
+  - **Tiết kiệm phút xem:** trang xem ngắt kết nối WebRTC khi tab bị ẩn quá 2 phút và nối lại khi quay lại (người đó vẫn thấy chat). Em đoán điều này tiết kiệm đáng kể vì nhiều người để tab chạy nền. *Đây là đề xuất của em.*
+  - Số người đang xem của mỗi buổi và phút đã dùng ước tính được ghi vào log backend mỗi lần job 15 giây chạy, để anh nhìn ra mức sử dụng; không làm trang thống kê riêng.
+- Nếu sau này cần nhiều hơn, nâng lên gói trả tiền của LiveKit là đủ, không phải đổi code.
 
 ## 4. Chia gói
 Mỗi gói một commit. Gói 0 deploy riêng ngay nếu anh đồng ý. Các gói 1–5 chỉ deploy khi anh duyệt, backend trước, client sau.
@@ -246,10 +264,10 @@ Mỗi gói một commit. Gói 0 deploy riêng ngay nếu anh đồng ý. Các g�
 
 Cỡ ước tính: khoảng 3–4 ngày làm.
 
-## 5. Câu hỏi cho anh
-1. **Bản xem lại.** "Lưu lịch sử buổi phát" anh muốn là:
-   - **(a)** Danh sách các buổi đã phát kèm số liệu và kết quả Poll, **không có video**. Em đề xuất cách này cho L1.
-   - **(b)** Ghi hình để xem lại như một video. Cách này cần LiveKit Egress, cộng thêm một kho lưu trữ kiểu S3 (ví dụ Cloudflare R2), vì Egress không ghi thẳng lên Cloudinary. Như vậy là thêm chi phí, thêm khoá bí mật, và việc chuyển file sang Cloudinary sau khi phát xong.
-2. **Máy chủ LiveKit** anh đang dùng là LiveKit Cloud (gói nào) hay tự cài? Em cần biết để chắc chắn phát qua OBS (Ingress) có sẵn và không vượt hạn mức của gói. Em không xem được giá trị biến `LIVEKIT_WS_URL`.
-3. **"Mời lên sân khấu / giơ tay"** (người xem lên phát cùng) đang có trong code cũ nhưng chưa bao giờ chạy được. Em đề xuất **bỏ** trong L1 (YouTube cũng không có). Anh đồng ý không?
-4. **Gói 0:** em xoá ngay các route `/api/streamApi/*` đang mở cho mọi người, push và deploy client như một bản sửa lỗi riêng được không?
+## 5. Anh đã trả lời (27/10)
+1. **Lịch sử buổi phát:** chọn **(a)**, danh sách buổi đã phát kèm số liệu và kết quả Poll, không ghi hình. Bản xem lại để sau.
+2. **Máy chủ LiveKit:** LiveKit Cloud, **gói free (Build)** theo trí nhớ của anh. Em chưa xác nhận được trong trang quản trị LiveKit; hạn mức ở mục 3.5 lấy từ tài liệu công khai.
+3. **Mời lên sân khấu / giơ tay:** bỏ khỏi L1.
+4. **Lỗ hổng `/api/streamApi/*`:** sửa ngay (gói 0, tách commit riêng).
+
+Anh hỏi thêm: PRD có nhắc LiveKit nhiều lần (độ trễ dưới 1 giây, "Media & Streaming Engine", luồng 3), nên L1 giữ LiveKit. Nếu hạn mức free quá chật thì phương án thay thế là RTMP + HLS (độ trễ 3–10 giây, bỏ chỉ tiêu dưới 1 giây của PRD) và phải viết lại mục 3.2.
