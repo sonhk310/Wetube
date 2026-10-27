@@ -57,6 +57,10 @@ public class VideoDocument {
     @Field(type = FieldType.Boolean)
     private Boolean isShort;
 
+    /** Từ khóa tìm kiếm do chủ video duyệt (S2). */
+    @Field(type = FieldType.Text)
+    private String searchKeywords;
+
     @Field(type = FieldType.Text)
     private String name;
 

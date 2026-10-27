@@ -220,6 +220,14 @@ public class VideoController {
                 page, Math.min(size, 50));
     }
 
+    // "Video tương tự" dưới kết quả tìm kiếm; bỏ các video đã nằm trong trang kết quả chính (size)
+    @GetMapping("/search/similar")
+    public List<VideoDto> searchSimilar(@RequestParam String title,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String type) {
+        return searchService.similarVideos(title, SearchFilters.of(type, null, null, null), Math.min(size, 50), 8);
+    }
+
     // Suggest autocomplete
     @GetMapping("/search/suggest")
     public ResponseEntity<SearchResponseDto<List<String>>> suggest(
@@ -244,6 +252,7 @@ public class VideoController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam("status") String status,
             @RequestParam(value = "tags", required = false) String tags,
+            @RequestParam(value = "searchKeywords", required = false) String searchKeywords,
             @RequestParam(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
             @AuthenticationPrincipal Jwt jwt) {
 
@@ -255,6 +264,7 @@ public class VideoController {
         updateDto.setDescription(description);
         updateDto.setStatus(status);
         updateDto.setTags(tags);
+        updateDto.setSearchKeywords(searchKeywords);
 
         VideoDto updatedVideo = videoService.updateVideo(id, updateDto, thumbnailFile, authenticatedUserId);
 

@@ -60,6 +60,9 @@ public class Video {
     private String title;
     @Column(columnDefinition = "TEXT")
     private String description;
+    /** Từ khóa tìm kiếm do chủ video duyệt (phân cách dấu phẩy); chỉ dùng cho tìm kiếm, không phải thẻ. */
+    @Column(name = "search_keywords", columnDefinition = "TEXT")
+    private String searchKeywords;
 
     private String thumbnailUrl;
     private String videoUrl;

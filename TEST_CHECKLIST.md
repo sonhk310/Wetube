@@ -338,3 +338,24 @@ Cần 3 tài khoản: A (chủ kênh, có vài video công khai), B (người xe
 | 24.2 | Tìm một video, mở và xem khoảng 5 giây, rồi quay về trang chủ | Trang chủ có video gợi ý (có thể phải tải lại trang) | |
 | 24.3 | Lướt một Short dưới 3 giây rồi quay về trang chủ (với tài khoản chưa xem gì) | Vẫn trống: video chưa đủ 3 giây không được tính vào lịch sử | |
 | 24.4 | Tài khoản đã xem nhiều video (tài khoản của anh) | Trang chủ vẫn có video như trước | |
+
+## 25. #thẻ, từ khóa tìm kiếm, tìm kiếm chính xác hơn, "Video tương tự" (T1, S2, S1)
+
+Cần một tài khoản có kênh (chủ video) và vài video công khai. Bản thiết kế: `docs/superpowers/specs/2026-10-27-search-home-feed-hashtag-design.md`.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 25.1 | Studio → sửa một video công khai: gõ vào **Mô tả** một dòng như `Hay lắm #AnimeVN #nhạcphim` và vào **Tiêu đề** một `#thẻ`, bấm Lưu | Lưu được; ở Studio mở lại video thấy ô **Thẻ** có thêm `#animevn #nhạcphim`; chữ `#thẻ` trong tiêu đề và mô tả **giữ nguyên** | |
+| 25.2 | Mở video đó ở trang xem | `#thẻ` trong tiêu đề và mô tả màu tím, bấm vào mở `/hashtag/animevn`; các chip thẻ dưới video cũng bấm được và mở `/hashtag/…` | |
+| 25.3 | Trang `/hashtag/animevn` | Có tiêu đề `#animevn`, danh sách video gắn thẻ đó (chỉ video công khai); thẻ chưa ai dùng thì ghi "Chưa có video nào với thẻ #…"; tab trình duyệt ghi `#animevn - WeTube` | |
+| 25.4 | Gõ `C#`, `#1`, một link có `#` ở giữa vào mô tả, lưu | Không thành thẻ, không có link `/hashtag` cho các chữ đó | |
+| 25.5 | Trong Studio, xoá một thẻ khỏi ô Thẻ nhưng mô tả vẫn còn `#thẻ` đó, lưu | Thẻ quay lại (đúng thiết kế); xoá `#thẻ` trong mô tả thì bỏ được hẳn | |
+| 25.6 | Hộp thoại tải lên / sửa video: ô **Từ khóa tìm kiếm**, bấm **Gợi ý từ khóa** | Vài giây sau hiện khoảng 10–15 từ khóa (tên dịch Việt / Anh, không dấu…) thành các chip có nút xoá; bấm lại thì chỉ thêm, không ghi đè, không trùng | |
+| 25.7 | Xoá bớt vài chip, tự gõ thêm một từ khóa rồi Enter, bấm Lưu; mở lại video | Từ khóa còn đúng như đã sửa; người xem (đăng nhập tài khoản khác) **không thấy** từ khóa ở đâu | |
+| 25.8 | Bấm Gợi ý từ khóa liên tục khoảng 21 lần trong một giờ | Lần vượt giới hạn hiện thông báo "Bạn đã dùng hết lượt AI…", các từ khóa đã có không mất | |
+| 25.9 | Video có từ khóa `thiên thần` (ví dụ video "Cruel Angel's Thesis"): tìm `thien than` và `thiên thần` | Ra video đó (nhờ từ khóa), không ra video lạ | |
+| 25.10 | Tìm `thien than` / `nga my` với video chưa có từ khóa tương ứng | "Không tìm thấy kết quả nào" (trước đây ra video Putin / video tiếng Nhật không liên quan) | |
+| 25.11 | Tìm `putn`, `ambesa`, `cruel angle`, `son tung` | Vẫn ra đúng video (sai chính tả nhẹ, không dấu vẫn tìm được) | |
+| 25.12 | Tìm một từ khóa có kết quả, kéo xuống cuối trang | Có mục **Video tương tự** (tối đa 8 video, không trùng video đã ở kết quả chính); bấm vào mở đúng video / Short | |
+| 25.13 | Bật một bộ lọc (Thời lượng / Ngày tải lên / Sắp xếp) hoặc chọn tab Kênh | Không có mục "Video tương tự" | |
+| 25.14 | Tìm với sắp xếp "Ngày tải lên" và "Lượt xem" | Vẫn đúng thứ tự mới nhất / nhiều nhất; video khớp chặt vẫn nằm trên video khớp lỏng | |

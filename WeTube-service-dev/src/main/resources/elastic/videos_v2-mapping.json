@@ -14,6 +14,10 @@
       "type": "text", "analyzer": "folded",
       "fields": { "compact": { "type": "text", "analyzer": "compact" } }
     },
+    "searchKeywords": {
+      "type": "text", "analyzer": "folded",
+      "fields": { "compact": { "type": "text", "analyzer": "compact" } }
+    },
     "tags": { "type": "keyword", "fields": { "text": { "type": "text", "analyzer": "folded" } } },
     "userId": { "type": "keyword" },
     "channelId": { "type": "keyword" },

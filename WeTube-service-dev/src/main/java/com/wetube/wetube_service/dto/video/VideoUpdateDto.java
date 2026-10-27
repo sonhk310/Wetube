@@ -14,4 +14,6 @@ public class VideoUpdateDto {
     private String description;
     private String status;
     private String tags;
+    /** null = giữ nguyên; chuỗi rỗng = xoá hết. */
+    private String searchKeywords;
 }

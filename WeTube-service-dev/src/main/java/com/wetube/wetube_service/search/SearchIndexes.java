@@ -3,6 +3,8 @@ package com.wetube.wetube_service.search;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -25,6 +27,9 @@ public class SearchIndexes {
     static final IndexCoordinates VIDEOS_V2 = IndexCoordinates.of("videos_v2");
     public static final IndexCoordinates CHANNELS = IndexCoordinates.of("channels");
 
+    /** Trường thêm sau khi videos_v2 được tạo lần đầu. */
+    private static final List<String> NEW_VIDEO_FIELDS = List.of("searchKeywords");
+
     private final ElasticsearchOperations operations;
     private volatile IndexCoordinates videos = OLD_VIDEOS;
     private volatile boolean channelsReady = false;
@@ -46,6 +51,7 @@ public class SearchIndexes {
     public void ensureIndexes() {
         if (ensure(VIDEOS_V2, "elastic/videos_v2-mapping.json")) {
             videos = VIDEOS_V2;
+            addNewVideoFields();
         }
         channelsReady = ensure(CHANNELS, "elastic/channels-mapping.json");
         log.info("Chỉ mục tìm kiếm: video = {}, kênh = {}", videos.getIndexName(),
@@ -65,6 +71,24 @@ public class SearchIndexes {
         } catch (Exception e) {
             log.warn("Không tạo / dùng được chỉ mục {}: {}", index.getIndexName(), e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Chỉ mục videos_v2 đã có trên production từ trước nên không nhận trường mới từ file mapping: thêm riêng
+     * từng trường mới (Elasticsearch cho phép thêm trường, lặp lại cùng định nghĩa thì không sao).
+     */
+    @SuppressWarnings("unchecked")
+    private void addNewVideoFields() {
+        try {
+            Map<String, Object> properties = (Map<String, Object>) Document
+                    .parse(read("elastic/videos_v2-mapping.json")).get("properties");
+            for (String field : NEW_VIDEO_FIELDS) {
+                operations.indexOps(VIDEOS_V2).putMapping(
+                        Document.from(Map.of("properties", Map.of(field, properties.get(field)))));
+            }
+        } catch (Exception e) {
+            log.warn("Không thêm được trường mới vào chỉ mục {}: {}", VIDEOS_V2.getIndexName(), e.getMessage());
         }
     }
 

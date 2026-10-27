@@ -49,6 +49,8 @@ import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.entity.video.Tag;
 import com.wetube.wetube_service.repository.channel.CategoryVideoRepository;
 import com.wetube.wetube_service.security.VideoAccess;
+import com.wetube.wetube_service.utility.Hashtags;
+import com.wetube.wetube_service.utility.SearchKeywords;
 import com.wetube.wetube_service.service.VideoIndexer;
 import com.wetube.wetube_service.service.analytics.AnalyticsTime;
 import com.wetube.wetube_service.service.analytics.VideoStatsStore;
@@ -167,7 +169,8 @@ public VideoDto createVideo(MultipartFile videoFile,
 
         addVideoToUserUploadedPlaylist(savedVideo);
 
-        String tagsAsString = videoDto.getTagsAsString();
+        String tagsAsString = Hashtags.mergeWithTagsInput(
+                videoDto.getTagsAsString(), videoDto.getTitle(), videoDto.getDescription());
         VideoDto resultDto = (tagsAsString != null && !tagsAsString.isBlank())
                 ? this.addTags(savedVideo.getId(), tagsAsString)
                 : videoMapper.toDto(savedVideo);
@@ -559,6 +562,7 @@ private static String draftTitle(String fileName) {
                 .createdAt(video.getCreatedAt())
                 .updatedAt(video.getUpdatedAt())
                 .tags(tags)
+                .searchKeywords(video.getSearchKeywords())
                 .isShort(video.isShort())
                 .build();
     }
@@ -616,8 +620,13 @@ private static String draftTitle(String fileName) {
         video.getVideoTags().clear();
         videoRepository.flush();
 
-        if (updateDto.getTags() != null && !updateDto.getTags().isBlank()) {
-            addTags(videoId, updateDto.getTags());
+        // #thẻ trong tiêu đề / mô tả được gộp vào thẻ của video (chữ trong tiêu đề, mô tả giữ nguyên)
+        String mergedTags = Hashtags.mergeWithTagsInput(updateDto.getTags(), updateDto.getTitle(), updateDto.getDescription());
+        if (!mergedTags.isBlank()) {
+            addTags(videoId, mergedTags);
+        }
+        if (updateDto.getSearchKeywords() != null) {
+            video.setSearchKeywords(SearchKeywords.clean(updateDto.getSearchKeywords()));
         }
 
         Video updatedVideo = videoRepository.save(video);

@@ -1,6 +1,7 @@
 package com.wetube.wetube_service.controller;
 
 import com.wetube.wetube_service.dto.ai.DescriptionRequest;
+import com.wetube.wetube_service.dto.ai.KeywordsRequest;
 import com.wetube.wetube_service.dto.ai.TranscriptRequest;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.security.RateLimiter;
@@ -29,6 +30,13 @@ public class AIController {
         rateLimiter.check(RateLimiter.Limit.AI_TEXT, CurrentUser.id(jwt));
         String result = aiService.generateVideoDescription(request.getTitle(), request.getTags());
         return ResponseEntity.ok(Map.of("description", result));
+    }
+
+    @PostMapping("/keywords")
+    public ResponseEntity<?> suggestKeywords(@RequestBody KeywordsRequest request, @AuthenticationPrincipal Jwt jwt) {
+        rateLimiter.check(RateLimiter.Limit.AI_TEXT, CurrentUser.id(jwt));
+        return ResponseEntity.ok(Map.of("keywords",
+                aiService.suggestSearchKeywords(request.getTitle(), request.getDescription(), request.getTags())));
     }
 
     @PostMapping("/transcript")
