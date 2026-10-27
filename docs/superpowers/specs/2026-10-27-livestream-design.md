@@ -147,8 +147,8 @@ Lộ trình (`YOUTUBE_PARITY.md` mục L1) thêm: trang "Đang phát trực ti�
 
 ### 3.2 LiveKit (backend)
 - **Danh tính luôn lấy từ JWT đăng nhập** (`CurrentUser`), không bao giờ từ nội dung request. Identity trong LiveKit:
-  - Người đăng nhập: `u:{userId}`, kèm tên và ảnh kênh trong metadata của token. Backend ký nên không giả được.
-  - Khách: `g:{chuỗi ngẫu nhiên}`.
+  - Chủ kênh (webcam hoặc OBS): `u:{ownerId}`.
+  - Người xem (đăng nhập hay khách): `v:{uuid ngẫu nhiên}` mỗi lần lấy token. Chat và Poll đi qua backend nên không cần nối identity LiveKit về tài khoản; mở hai tab cũng không đá nhau. *(Đổi so với bản nháp đầu, quyết định của em khi viết kế hoạch.)*
 - **Token** (do backend ký, hạn 6 giờ):
   - Chủ kênh (webcam): `canPublish` (camera + micro), `canSubscribe`.
   - Người xem và khách: chỉ `canSubscribe`. Không ai có `canPublishData`, vì chat và Poll đi qua backend.
