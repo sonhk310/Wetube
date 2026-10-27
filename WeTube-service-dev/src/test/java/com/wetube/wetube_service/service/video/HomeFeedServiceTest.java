@@ -8,9 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -23,15 +21,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import com.wetube.wetube_service.entity.playlist.PlaylistVideo;
-import com.wetube.wetube_service.entity.video.Tag;
-import com.wetube.wetube_service.entity.video.UserTag;
 import com.wetube.wetube_service.entity.video.Video;
 import com.wetube.wetube_service.enumeration.PlaylistType;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.repository.PlaylistVideoRepository;
 import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
-import com.wetube.wetube_service.repository.video.TagRepository;
-import com.wetube.wetube_service.repository.video.UserTagRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.video.HomeFeedService.Chip;
@@ -43,11 +37,9 @@ class HomeFeedServiceTest {
     private final VideoRepository videoRepository = mock(VideoRepository.class);
     private final SubscriptionRepository subscriptionRepository = mock(SubscriptionRepository.class);
     private final PlaylistVideoRepository playlistVideoRepository = mock(PlaylistVideoRepository.class);
-    private final UserTagRepository userTagRepository = mock(UserTagRepository.class);
-    private final TagRepository tagRepository = mock(TagRepository.class);
     private final VideoMapper videoMapper = mock(VideoMapper.class);
     private final HomeFeedService service = new HomeFeedService(recService, videoRepository, subscriptionRepository,
-            playlistVideoRepository, userTagRepository, tagRepository, videoMapper);
+            playlistVideoRepository, videoMapper);
 
     private final UUID userId = UUID.randomUUID();
 
@@ -59,16 +51,6 @@ class HomeFeedServiceTest {
         when(recService.hasUnwatched(any(), any())).thenReturn(false);
         when(playlistVideoRepository.findByPlaylist_User_IdAndPlaylist_PlaylistTypeAndVideo_VideosStatusIn(any(), any(), any(), any()))
                 .thenReturn(Page.empty());
-        when(tagRepository.findPopularTagNames(any(), any())).thenReturn(List.of());
-        when(userTagRepository.findAllByUserIdOrderByPointDesc(userId)).thenReturn(List.of());
-    }
-
-    private static List<Object[]> popular(String... names) {
-        List<Object[]> rows = new ArrayList<>();
-        for (String n : names) {
-            rows.add(new Object[] {n, 1L});
-        }
-        return rows;
     }
 
     private static List<String> ids(List<Chip> chips) {
@@ -78,7 +60,6 @@ class HomeFeedServiceTest {
     @Test
     void noHistoryMeansNoChipsAtAll() {
         when(playlistVideoRepository.existsByPlaylist_User_IdAndPlaylist_PlaylistType(userId, PlaylistType.HISTORY)).thenReturn(false);
-        when(tagRepository.findPopularTagNames(any(), any())).thenReturn(popular("anime"));
 
         assertThat(service.chips(userId, "s")).isEmpty();
     }
@@ -97,15 +78,12 @@ class HomeFeedServiceTest {
         when(recService.hasUnwatched(userId, "s")).thenReturn(true);
         when(playlistVideoRepository.findByPlaylist_User_IdAndPlaylist_PlaylistTypeAndVideo_VideosStatusIn(any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(new PlaylistVideo())));
-        when(tagRepository.findPopularTagNames(any(), any())).thenReturn(popular("anime", "nhac"));
 
         List<Chip> chips = service.chips(userId, "s");
 
-        assertThat(ids(chips)).containsExactly("SUBSCRIPTIONS", "NEW", "UNWATCHED", "WATCHED", "tag:anime", "tag:nhac");
+        // Không còn chip chủ đề lấy từ thẻ
+        assertThat(ids(chips)).containsExactly("SUBSCRIPTIONS", "NEW", "UNWATCHED", "WATCHED");
         assertThat(chips.get(0).label()).isEqualTo("Kênh đăng ký");
-        // Chip chủ đề hiện tên thẻ, không có dấu #
-        assertThat(chips.get(4).label()).isEqualTo("anime");
-        assertThat(chips).filteredOn(c -> c.id().startsWith("tag:")).allSatisfy(c -> assertThat(c.label()).doesNotStartWith("#"));
     }
 
     @Test
@@ -114,36 +92,6 @@ class HomeFeedServiceTest {
         when(videoRepository.findFeed(any(), any(), any())).thenReturn(Page.empty());
 
         assertThat(ids(service.chips(userId, "s"))).doesNotContain("SUBSCRIPTIONS");
-    }
-
-    @Test
-    void theViewersFavouriteTagsComeFirstAndAtMostEightTopicChips() {
-        UUID favouriteId = UUID.randomUUID();
-        Tag favourite = new Tag();
-        favourite.setName("nhac");
-        when(tagRepository.findPopularTagNames(any(), any()))
-                .thenReturn(popular("t1", "t2", "t3", "nhac", "t5", "t6", "t7", "t8", "t9", "t10"));
-        when(userTagRepository.findAllByUserIdOrderByPointDesc(userId))
-                .thenReturn(List.of(UserTag.builder().userId(userId).tagId(favouriteId).point(50).build()));
-        when(tagRepository.findById(favouriteId)).thenReturn(Optional.of(favourite));
-
-        List<String> topics = ids(service.chips(userId, "s"));
-
-        assertThat(topics).hasSize(HomeFeedService.MAX_TOPIC_CHIPS);
-        assertThat(topics.get(0)).isEqualTo("tag:nhac");
-    }
-
-    @Test
-    void aFavouriteTagWithoutPublicVideosGetsNoChip() {
-        UUID goneId = UUID.randomUUID();
-        Tag gone = new Tag();
-        gone.setName("khong-con-video");
-        when(tagRepository.findPopularTagNames(any(), any())).thenReturn(popular("anime"));
-        when(userTagRepository.findAllByUserIdOrderByPointDesc(userId))
-                .thenReturn(List.of(UserTag.builder().userId(userId).tagId(goneId).point(50).build()));
-        when(tagRepository.findById(goneId)).thenReturn(Optional.of(gone));
-
-        assertThat(ids(service.chips(userId, "s"))).containsExactly("tag:anime");
     }
 
     @Test
