@@ -25,9 +25,11 @@ import com.wetube.wetube_service.entity.playlist.PlaylistVideo;
 import com.wetube.wetube_service.entity.video.UserTopic;
 import com.wetube.wetube_service.entity.video.Video;
 import com.wetube.wetube_service.enumeration.PlaylistType;
+import com.wetube.wetube_service.enumeration.LiveStatus;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.repository.PlaylistVideoRepository;
 import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
+import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.repository.video.UserTopicRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.security.VideoAccess;
@@ -42,8 +44,9 @@ class HomeFeedServiceTest {
     private final PlaylistVideoRepository playlistVideoRepository = mock(PlaylistVideoRepository.class);
     private final UserTopicRepository userTopicRepository = mock(UserTopicRepository.class);
     private final VideoMapper videoMapper = mock(VideoMapper.class);
+    private final LiveStreamRepository liveStreamRepository = mock(LiveStreamRepository.class);
     private final HomeFeedService service = new HomeFeedService(recService, videoRepository, subscriptionRepository,
-            playlistVideoRepository, userTopicRepository, new TopicCatalog(), videoMapper);
+            playlistVideoRepository, userTopicRepository, new TopicCatalog(), videoMapper, liveStreamRepository);
 
     private final UUID userId = UUID.randomUUID();
 
@@ -86,6 +89,29 @@ class HomeFeedServiceTest {
     @Test
     void emptyChipsAreHidden() {
         assertThat(service.chips(userId, "s")).isEmpty();
+    }
+
+    @Test
+    void liveChipSitsAfterSubscriptionsAndOnlyWhenSomeoneIsLive() {
+        UUID channel = UUID.randomUUID();
+        when(subscriptionRepository.findSubscribedChannelIds(userId)).thenReturn(List.of(channel));
+        when(videoRepository.findFeed(any(), any(), any())).thenReturn(new PageImpl<>(List.of(new Video())));
+        when(videoRepository.findRecentListed(any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of(new Video())));
+
+        assertThat(ids(service.chips(userId, "s"))).containsExactly("SUBSCRIPTIONS", "NEW");
+
+        when(liveStreamRepository.existsByStatus(LiveStatus.LIVE)).thenReturn(true);
+        List<Chip> chips = service.chips(userId, "s");
+
+        assertThat(ids(chips)).containsExactly("SUBSCRIPTIONS", "LIVE", "NEW");
+        assertThat(chips.get(1).label()).isEqualTo("Trực tiếp");
+    }
+
+    @Test
+    void liveChipIsTheFirstOneWhenThereAreNoSubscriptionVideos() {
+        when(liveStreamRepository.existsByStatus(LiveStatus.LIVE)).thenReturn(true);
+
+        assertThat(ids(service.chips(userId, "s"))).containsExactly("LIVE");
     }
 
     @Test

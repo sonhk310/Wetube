@@ -18,10 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.wetube.wetube_service.dto.video.RecommendVideoDto;
 import com.wetube.wetube_service.entity.video.UserTopic;
+import com.wetube.wetube_service.enumeration.LiveStatus;
 import com.wetube.wetube_service.enumeration.PlaylistType;
 import com.wetube.wetube_service.mapper.video.VideoMapper;
 import com.wetube.wetube_service.repository.PlaylistVideoRepository;
 import com.wetube.wetube_service.repository.channel.SubscriptionRepository;
+import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.repository.video.UserTopicRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.security.VideoAccess;
@@ -40,6 +42,9 @@ public class HomeFeedService {
 
     public static final String TOPIC_PREFIX = "topic:";
 
+    /** Id của chip Trực tiếp (không thuộc {@link Kind}). */
+    public static final String LIVE_CHIP = "LIVE";
+
     /** id: tên một {@link Kind} hoặc "topic:{id chủ đề}". */
     public record Chip(String id, String label) {
     }
@@ -54,6 +59,7 @@ public class HomeFeedService {
     private final UserTopicRepository userTopicRepository;
     private final TopicCatalog topicCatalog;
     private final VideoMapper videoMapper;
+    private final LiveStreamRepository liveStreamRepository;
 
     /** Chưa có lịch sử xem thì trang chủ trống và không có hàng chip (giống YouTube). */
     @Transactional(readOnly = true)
@@ -65,6 +71,10 @@ public class HomeFeedService {
         List<Chip> chips = new ArrayList<>();
         if (hasSubscriptionVideos(userId)) {
             chips.add(new Chip(Kind.SUBSCRIPTIONS.name(), "Kênh đăng ký"));
+        }
+        // Chip riêng: lưới của nó là các buổi phát (client tự lấy từ /api/live), không đi qua feed(...)
+        if (liveStreamRepository.existsByStatus(LiveStatus.LIVE)) {
+            chips.add(new Chip(LIVE_CHIP, "Trực tiếp"));
         }
         if (recentVideos(userId, one).hasContent()) {
             chips.add(new Chip(Kind.NEW.name(), "Mới tải lên"));

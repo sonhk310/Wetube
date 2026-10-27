@@ -91,9 +91,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/videos/*/view").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/videos/*/watch-time").permitAll()
 
-                        // Xem livestream không cần đăng nhập
-                        .requestMatchers(HttpMethod.POST, "/api/livekit/join-stream").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/livekit/**").permitAll()
+                        // Xem phát trực tiếp không cần đăng nhập: lấy token xem (đọc buổi phát ở nhóm GET bên dưới)
+                        .requestMatchers(HttpMethod.POST, "/api/live/*/token").permitAll()
 
                         // Dữ liệu cần đăng nhập ngay cả khi đọc
                         .requestMatchers("/api/me").authenticated()
@@ -112,6 +111,7 @@ public class SecurityConfig {
                                 "/api/videos", "/api/videos/**",
                                 "/api/tags/**",
                                 "/api/topics",
+                                "/api/live", "/api/live/**",
                                 "/api/likes/**",
                                 "/api/comments/**").permitAll()
 
