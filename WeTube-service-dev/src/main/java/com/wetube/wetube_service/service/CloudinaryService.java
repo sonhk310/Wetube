@@ -106,16 +106,29 @@ public class CloudinaryService {
         return value instanceof Number n ? n.floatValue() : null;
     }
 
-    /** Link ảnh thu nhỏ: video ngang 300x200, Shorts 360x640 (9:16). */
+    /** Kích thước ảnh thu nhỏ video ngang (16:9, khớp khung thẻ) và Shorts (9:16). Ảnh gốc vẫn nằm trên Cloudinary. */
+    public static final int THUMB_WIDTH = 1280;
+    public static final int THUMB_HEIGHT = 720;
+    public static final int SHORT_THUMB_WIDTH = 540;
+    public static final int SHORT_THUMB_HEIGHT = 960;
+    /**
+     * Phần biến đổi trong link (Cloudinary sắp tham số theo bảng chữ cái) để job đổi link cũ khớp với {@link #thumbnailUrl}.
+     * Trước đây ảnh bị cắt xuống 300x200 / 360x640 nên bị vỡ nét khi thẻ rộng hơn (màn hình lớn, độ nét cao).
+     */
+    public static final String THUMB_TRANSFORM = "c_fill,h_" + THUMB_HEIGHT + ",q_auto,w_" + THUMB_WIDTH;
+    public static final String SHORT_THUMB_TRANSFORM = "c_fill,h_" + SHORT_THUMB_HEIGHT + ",q_auto,w_" + SHORT_THUMB_WIDTH;
+
+    /** Link ảnh thu nhỏ: video ngang 1280x720 (16:9), Shorts 540x960 (9:16); chất lượng tự chọn. */
     static String thumbnailUrl(Cloudinary cloudinary, String publicId, boolean vertical) {
         return cloudinary.url()
                 .resourceType("image")
                 .format("webp")
                 .transformation(
                         new Transformation()
-                                .width(vertical ? 360 : 300)
-                                .height(vertical ? 640 : 200)
+                                .width(vertical ? SHORT_THUMB_WIDTH : THUMB_WIDTH)
+                                .height(vertical ? SHORT_THUMB_HEIGHT : THUMB_HEIGHT)
                                 .crop("fill")
+                                .quality("auto")
                 )
                 .secure(true)
                 .generate(publicId);
