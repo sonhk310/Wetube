@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { useGetChannelInfoQuery } from "@/app/api/channelApi";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
@@ -81,10 +82,14 @@ export default function ChannelHeader() {
           <button
             type="button"
             onClick={() => setAboutOpen(true)}
-            className="mt-2 flex max-w-2xl items-center gap-1 text-left text-sm text-gray-600 max-sm:mx-auto"
+            className="group mt-2 flex max-w-2xl cursor-pointer items-center gap-1 text-left text-sm text-gray-600 hover:text-gray-900 max-sm:mx-auto"
           >
             <span className="line-clamp-1">{channel.description || "Tìm hiểu thêm về kênh này"}</span>
-            {channel.description && <span className="shrink-0 font-medium text-gray-900">...xem thêm</span>}
+            {channel.description ? (
+              <span className="shrink-0 font-medium text-gray-900 group-hover:underline">...xem thêm</span>
+            ) : (
+              <ChevronRight className="size-4 shrink-0" />
+            )}
           </button>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
             {isOwner ? (
@@ -115,7 +120,7 @@ export default function ChannelHeader() {
         </div>
       </div>
 
-      <ChannelAboutDialog channel={channel} open={aboutOpen} onOpenChange={setAboutOpen} />
+      <ChannelAboutDialog channel={channel} isOwner={isOwner} open={aboutOpen} onOpenChange={setAboutOpen} />
     </div>
   );
 }

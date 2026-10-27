@@ -21,4 +21,8 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     List<Report> findByCommentIdAndStatus(UUID commentId, Report.Status status);
 
     List<Report> findByVideoIdAndStatus(UUID videoId, Report.Status status);
+
+    boolean existsByChannelIdAndReporterIdAndStatus(UUID channelId, UUID reporterId, Report.Status status);
+
+    List<Report> findByChannelIdAndStatus(UUID channelId, Report.Status status);
 }

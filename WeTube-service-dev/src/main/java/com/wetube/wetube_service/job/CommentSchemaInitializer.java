@@ -40,6 +40,21 @@ public class CommentSchemaInitializer implements CommandLineRunner {
                 log.error("Không tạo được index reports.comment_id: {}", e.getMessage());
             }
         }
+        // Báo cáo kênh: có channel_id, không có video_id
+        if (addColumn("reports", "channel_id", "VARCHAR(36) NULL")) {
+            try {
+                tx.executeWithoutResult(s -> em.createNativeQuery(
+                        "CREATE INDEX idx_reports_channel ON reports (channel_id)").executeUpdate());
+            } catch (Exception e) {
+                log.error("Không tạo được index reports.channel_id: {}", e.getMessage());
+            }
+        }
+        try {
+            tx.executeWithoutResult(s -> em.createNativeQuery(
+                    "ALTER TABLE reports MODIFY video_id VARCHAR(36) NULL").executeUpdate());
+        } catch (Exception e) {
+            log.error("Không đổi được reports.video_id sang NULL: {}", e.getMessage());
+        }
     }
 
     /** Thêm cột nếu chưa có; true nếu vừa thêm. */

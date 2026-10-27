@@ -13,10 +13,12 @@ import { useCopyToClipboard } from "@/lib/clipboard";
 import { cn } from "@/lib/utils";
 
 interface ShareDialogProps {
-  readonly videoId: string;
+  readonly videoId?: string;
+  /** Liên kết cố định (vd. kênh) thay cho liên kết video; khi đó không có "Bắt đầu tại". */
+  readonly link?: string;
   readonly title: string;
   /** Vị trí đang phát (giây), dùng cho tuỳ chọn "Bắt đầu tại". */
-  readonly currentTime: number;
+  readonly currentTime?: number;
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
 }
@@ -60,8 +62,9 @@ interface ShareTarget {
 
 export default function ShareDialog({
   videoId,
+  link,
   title,
-  currentTime,
+  currentTime = 0,
   open,
   onOpenChange,
 }: ShareDialogProps) {
@@ -87,10 +90,11 @@ export default function ShareDialog({
   }, [open]);
 
   const url = useMemo(() => {
+    if (link) return link;
     if (typeof window === "undefined") return "";
     const base = `${window.location.origin}/watch/${videoId}`;
     return withTime && startAt > 0 ? `${base}?t=${startAt}` : base;
-  }, [videoId, withTime, startAt]);
+  }, [link, videoId, withTime, startAt]);
 
   const commitTime = () => {
     const parsed = parseTimestamp(timeText);
@@ -248,7 +252,7 @@ export default function ShareDialog({
             value={url}
             onFocus={(e) => e.currentTarget.select()}
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-            aria-label="Liên kết video"
+            aria-label={link ? "Liên kết" : "Liên kết video"}
           />
           <button
             type="button"
@@ -259,29 +263,31 @@ export default function ShareDialog({
           </button>
         </div>
 
-        <div className="flex items-center gap-2 border-t pt-4 text-sm">
-          <label className="flex cursor-pointer select-none items-center gap-2">
+        {!link && (
+          <div className="flex items-center gap-2 border-t pt-4 text-sm">
+            <label className="flex cursor-pointer select-none items-center gap-2">
+              <input
+                type="checkbox"
+                className="size-4"
+                checked={withTime}
+                onChange={(e) => setWithTime(e.target.checked)}
+              />
+              Bắt đầu tại
+            </label>
             <input
-              type="checkbox"
-              className="size-4"
-              checked={withTime}
-              onChange={(e) => setWithTime(e.target.checked)}
+              value={timeText}
+              disabled={!withTime}
+              onChange={(e) => setTimeText(e.target.value)}
+              onBlur={commitTime}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+              inputMode="numeric"
+              aria-label="Thời điểm bắt đầu"
+              className="w-20 border-b border-gray-300 bg-transparent px-1 py-0.5 outline-none focus:border-gray-800 disabled:text-gray-400"
             />
-            Bắt đầu tại
-          </label>
-          <input
-            value={timeText}
-            disabled={!withTime}
-            onChange={(e) => setTimeText(e.target.value)}
-            onBlur={commitTime}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-            }}
-            inputMode="numeric"
-            aria-label="Thời điểm bắt đầu"
-            className="w-20 border-b border-gray-300 bg-transparent px-1 py-0.5 outline-none focus:border-gray-800 disabled:text-gray-400"
-          />
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

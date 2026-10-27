@@ -77,6 +77,11 @@ public class ChannelServiceImpl implements ChannelService {
     public ChannelResponseDto getChannelById(UUID channelId, UUID viewerId) {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Channel", "id", channelId.toString()));
+        // Kênh bị admin ẩn (báo cáo người dùng): chỉ chủ kênh còn xem được
+        boolean isOwner = viewerId != null && channel.getUser() != null && viewerId.equals(channel.getUser().getId());
+        if (channel.getStatus() == ActiveStatus.INACTIVE && !isOwner) {
+            throw new ResourceNotFoundException("Channel", "id", channelId.toString());
+        }
 
         ChannelResponseDto dto = channelMapper.toChannelResponseDto(channel);
         // Đếm video công khai (cả Shorts) và lượt xem của chúng, như YouTube

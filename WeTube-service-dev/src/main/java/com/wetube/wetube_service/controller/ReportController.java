@@ -20,22 +20,23 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReportController {
 
-    /** Báo cáo video: videoId; báo cáo bình luận: commentId. */
-    public record CreateReportRequest(UUID videoId, UUID commentId, String reason, String details) {}
+    /** Báo cáo video: videoId; báo cáo bình luận: commentId; báo cáo kênh (người dùng): channelId. */
+    public record CreateReportRequest(UUID videoId, UUID commentId, UUID channelId, String reason, String details) {}
 
     private final ReportService reportService;
     private final RateLimiter rateLimiter;
 
-    /** Người xem báo cáo một video hoặc một bình luận. */
+    /** Người xem báo cáo một video, một bình luận hoặc một kênh. */
     @PostMapping
     public ResponseEntity<ReportView> create(@RequestBody CreateReportRequest request, @AuthenticationPrincipal Jwt jwt) {
-        if ((request.videoId() == null && request.commentId() == null) || request.reason() == null) {
-            throw new IllegalArgumentException("Thiếu videoId/commentId hoặc lý do báo cáo");
+        if ((request.videoId() == null && request.commentId() == null && request.channelId() == null)
+                || request.reason() == null) {
+            throw new IllegalArgumentException("Thiếu videoId/commentId/channelId hoặc lý do báo cáo");
         }
         UUID userId = CurrentUser.id(jwt);
         rateLimiter.check(RateLimiter.Limit.REPORT, userId);
-        ReportView view = reportService.create(userId, request.videoId(), request.commentId(), request.reason(),
-                request.details());
+        ReportView view = reportService.create(userId, request.videoId(), request.commentId(), request.channelId(),
+                request.reason(), request.details());
         return ResponseEntity.status(HttpStatus.CREATED).body(view);
     }
 
@@ -54,7 +55,10 @@ public class ReportController {
         return ResponseEntity.ok(reportService.list(status));
     }
 
-    /** Admin: action=HIDE_VIDEO ẩn video, DELETE_COMMENT xoá bình luận bị báo cáo, DISMISS bác bỏ báo cáo. */
+    /**
+     * Admin: action=HIDE_VIDEO ẩn video, DELETE_COMMENT xoá bình luận bị báo cáo, HIDE_CHANNEL ẩn kênh,
+     * DISMISS bác bỏ báo cáo.
+     */
     @PostMapping("/{reportId}/resolve")
     public ResponseEntity<ReportView> resolve(
             @PathVariable UUID reportId,
@@ -65,7 +69,7 @@ public class ReportController {
         try {
             parsed = ReportService.Action.valueOf(action);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("action phải là HIDE_VIDEO, DELETE_COMMENT hoặc DISMISS");
+            throw new IllegalArgumentException("action phải là HIDE_VIDEO, DELETE_COMMENT, HIDE_CHANNEL hoặc DISMISS");
         }
         return ResponseEntity.ok(reportService.resolve(reportId, parsed));
     }

@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  REPORT_REASONS,
   REPORT_STATUS_LABELS,
+  reportReasonLabel,
   ReportView,
   reportsApi,
 } from "@/modules/reports/reports-api";
@@ -66,9 +66,15 @@ const ReportStatus: React.FC = () => {
               {reports.map((r) => (
                 <tr key={r.id} className="border-t border-gray-200 align-top">
                   <td className="py-3 px-4">
-                    <Link href={`/watch/${r.videoId}`} className="text-blue-600 hover:underline">
-                      {r.videoTitle}
-                    </Link>
+                    {r.channelId ? (
+                      <Link href={`/channel/${r.channelId}`} className="text-blue-600 hover:underline">
+                        Kênh: {r.channelName ?? "(kênh không còn)"}
+                      </Link>
+                    ) : (
+                      <Link href={`/watch/${r.videoId}`} className="text-blue-600 hover:underline">
+                        {r.videoTitle}
+                      </Link>
+                    )}
                     {r.commentId && (
                       <div className="text-xs text-gray-600 mt-1 break-words">
                         Bình luận: {r.commentContent ?? "(đã bị xoá)"}
@@ -76,7 +82,7 @@ const ReportStatus: React.FC = () => {
                     )}
                   </td>
                   <td className="py-3 px-4">
-                    {REPORT_REASONS[r.reason] ?? r.reason}
+                    {reportReasonLabel(r)}
                     {r.details && <div className="text-xs text-gray-600 mt-1">{r.details}</div>}
                     <div className="text-xs text-gray-500 mt-1">
                       {new Date(r.createdAt).toLocaleDateString("vi-VN")}

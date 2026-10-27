@@ -1,10 +1,12 @@
 package com.wetube.wetube_service.service.report;
 
+import com.wetube.wetube_service.entity.channel.Channel;
 import com.wetube.wetube_service.entity.interaction.Comment;
 import com.wetube.wetube_service.entity.report.Report;
 import com.wetube.wetube_service.entity.video.Video;
 import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.exception.ResourceNotFoundException;
+import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.interaction.CommentRepository;
 import com.wetube.wetube_service.repository.report.ReportRepository;
 import com.wetube.wetube_service.repository.video.VideoRepository;
@@ -23,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
@@ -33,22 +36,43 @@ public class ReportService {
     public static final Set<String> REASONS = Set.of(
             "SPAM", "VIOLENCE", "SEXUAL", "HATE", "COPYRIGHT", "MISINFORMATION", "OTHER");
 
-    /** commentId != null: báo cáo bình luận; commentContent / commentAuthor null nếu bình luận đã bị xoá. */
+    /** Lý do báo cáo người dùng (kênh), theo YouTube. */
+    public static final Set<String> CHANNEL_REASONS = Set.of(
+            "IMPERSONATION", "INAPPROPRIATE_PROFILE", "SPAM", "HATE", "OTHER");
+
+    /**
+     * commentId != null: báo cáo bình luận; commentContent / commentAuthor null nếu bình luận đã bị xoá.
+     * channelId != null: báo cáo kênh (các trường video null); channelName null nếu kênh không còn.
+     */
     public record ReportView(UUID id, UUID videoId, String videoTitle, String thumbnailUrl,
                              String videoStatus, UUID commentId, String commentContent, String commentAuthor,
+                             UUID channelId, String channelName, String channelHandle, String channelPicture,
+                             String channelStatus,
                              String reason, String details, String status,
                              String resolutionNote, LocalDateTime createdAt, LocalDateTime resolvedAt) {}
 
-    public enum Action { HIDE_VIDEO, DELETE_COMMENT, DISMISS }
+    public enum Action { HIDE_VIDEO, DELETE_COMMENT, HIDE_CHANNEL, DISMISS }
+
+    /** Video của kênh bị ẩn cùng kênh (bản nháp, riêng tư, đã ẩn / xoá thì giữ nguyên). */
+    private static final List<ActiveStatus> HIDDEN_WITH_CHANNEL =
+            List.of(ActiveStatus.ACTIVE, ActiveStatus.PUBLIC, ActiveStatus.UNLISTED);
 
     private final ReportRepository reportRepository;
     private final VideoRepository videoRepository;
     private final VideoIndexer videoIndexer;
     private final CommentRepository commentRepository;
     private final CommentService commentService;
+    private final ChannelRepository channelRepository;
 
-    /** commentId khác null: báo cáo bình luận đó (videoId lấy theo bình luận, tham số videoId bỏ qua). */
-    public ReportView create(UUID reporterId, UUID videoId, UUID commentId, String reason, String details) {
+    /**
+     * channelId khác null: báo cáo kênh đó; commentId khác null: báo cáo bình luận đó (videoId lấy theo bình
+     * luận, tham số videoId bỏ qua); còn lại báo cáo video.
+     */
+    public ReportView create(UUID reporterId, UUID videoId, UUID commentId, UUID channelId, String reason,
+                             String details) {
+        if (channelId != null) {
+            return createChannelReport(reporterId, channelId, reason, details);
+        }
         if (!REASONS.contains(reason)) {
             throw new IllegalArgumentException("Lý do báo cáo không hợp lệ: " + reason);
         }
@@ -87,6 +111,29 @@ public class ReportService {
         return toViews(List.of(report)).get(0);
     }
 
+    private ReportView createChannelReport(UUID reporterId, UUID channelId, String reason, String details) {
+        if (!CHANNEL_REASONS.contains(reason)) {
+            throw new IllegalArgumentException("Lý do báo cáo không hợp lệ: " + reason);
+        }
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new ResourceNotFoundException("Channel", "id", channelId.toString()));
+        if (channel.getUser() != null && reporterId.equals(channel.getUser().getId())) {
+            throw new IllegalArgumentException("Bạn không thể báo cáo kênh của chính mình.");
+        }
+        if (reportRepository.existsByChannelIdAndReporterIdAndStatus(channelId, reporterId, Report.Status.OPEN)) {
+            throw new IllegalArgumentException("Bạn đã báo cáo kênh này, báo cáo đang chờ xử lý.");
+        }
+        Report report = reportRepository.save(Report.builder()
+                .channelId(channelId)
+                .reporterId(reporterId)
+                .reason(reason)
+                .details(details == null ? null : details.strip())
+                .status(Report.Status.OPEN)
+                .createdAt(LocalDateTime.now())
+                .build());
+        return toViews(List.of(report)).get(0);
+    }
+
     @Transactional(readOnly = true)
     public List<ReportView> mine(UUID reporterId) {
         return toViews(reportRepository.findByReporterIdOrderByCreatedAtDesc(reporterId));
@@ -102,7 +149,9 @@ public class ReportService {
     /**
      * Admin xử lý báo cáo. HIDE_VIDEO: ẩn video (INACTIVE, gỡ khỏi tìm kiếm/gợi ý) và đóng mọi báo
      * cáo đang mở của video đó; DELETE_COMMENT: xoá bình luận bị báo cáo (kèm các trả lời) và đóng mọi
-     * báo cáo đang mở của bình luận đó; DISMISS: bác bỏ riêng báo cáo này.
+     * báo cáo đang mở của bình luận đó; HIDE_CHANNEL: ẩn kênh (INACTIVE: trang kênh báo không tìm thấy, không
+     * hiện khi tìm kênh) cùng các video đang xem được của kênh, đóng mọi báo cáo đang mở của kênh đó;
+     * DISMISS: bác bỏ riêng báo cáo này.
      */
     public ReportView resolve(UUID reportId, Action action) {
         Report report = reportRepository.findById(reportId)
@@ -135,6 +184,35 @@ public class ReportService {
             return toViews(List.of(report)).get(0);
         }
 
+        if (action == Action.HIDE_CHANNEL) {
+            UUID channelId = report.getChannelId();
+            if (channelId == null) {
+                throw new IllegalArgumentException("Báo cáo này không phải báo cáo kênh");
+            }
+            Channel channel = channelRepository.findById(channelId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Channel", "id", channelId.toString()));
+            channel.setStatus(ActiveStatus.INACTIVE);
+            if (channel.getUser() != null) {
+                for (Video video : videoRepository.findByUser_IdAndVideosStatusIn(
+                        channel.getUser().getId(), HIDDEN_WITH_CHANNEL)) {
+                    video.setVideosStatus(ActiveStatus.INACTIVE);
+                    videoIndexer.remove(video.getId());
+                }
+            }
+            for (Report open : reportRepository.findByChannelIdAndStatus(channelId, Report.Status.OPEN)) {
+                open.setStatus(Report.Status.RESOLVED);
+                open.setResolutionNote("Kênh đã bị ẩn");
+                open.setResolvedAt(now);
+            }
+            report.setStatus(Report.Status.RESOLVED);
+            report.setResolutionNote("Kênh đã bị ẩn");
+            report.setResolvedAt(now);
+            return toViews(List.of(report)).get(0);
+        }
+
+        if (report.getVideoId() == null) {
+            throw new IllegalArgumentException("Báo cáo này không phải báo cáo video");
+        }
         Video video = videoRepository.findById(report.getVideoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Video", "id", report.getVideoId().toString()));
         video.setVideosStatus(ActiveStatus.INACTIVE);
@@ -152,9 +230,14 @@ public class ReportService {
 
     private List<ReportView> toViews(List<Report> reports) {
         Map<UUID, Video> videos = videoRepository
-                .findAllById(reports.stream().map(Report::getVideoId).distinct().toList())
+                .findAllById(reports.stream().map(Report::getVideoId).filter(Objects::nonNull).distinct().toList())
                 .stream()
                 .collect(Collectors.toMap(Video::getId, Function.identity()));
+        // ChannelRepository là CrudRepository: findAllById trả Iterable
+        Map<UUID, Channel> channels = StreamSupport.stream(channelRepository
+                        .findAllById(reports.stream().map(Report::getChannelId).filter(Objects::nonNull).distinct().toList())
+                        .spliterator(), false)
+                .collect(Collectors.toMap(Channel::getId, Function.identity()));
         Map<UUID, Comment> comments = commentRepository
                 .findAllById(reports.stream().map(Report::getCommentId).filter(Objects::nonNull).distinct().toList())
                 .stream()
@@ -162,13 +245,20 @@ public class ReportService {
         return reports.stream().map(r -> {
             Video v = videos.get(r.getVideoId());
             Comment c = r.getCommentId() != null ? comments.get(r.getCommentId()) : null;
+            Channel ch = r.getChannelId() != null ? channels.get(r.getChannelId()) : null;
+            boolean isChannelReport = r.getChannelId() != null;
             return new ReportView(r.getId(), r.getVideoId(),
-                    v != null ? v.getTitle() : "(video đã bị xoá)",
+                    v != null ? v.getTitle() : isChannelReport ? null : "(video đã bị xoá)",
                     v != null ? v.getThumbnailUrl() : null,
                     v != null && v.getVideosStatus() != null ? v.getVideosStatus().name() : null,
                     r.getCommentId(),
                     c != null ? c.getContent() : null,
                     c != null && c.getUser() != null ? c.getUser().getName() : null,
+                    r.getChannelId(),
+                    ch != null ? ch.getName() : null,
+                    ch != null ? ch.getHandle() : null,
+                    ch != null ? ch.getPicture() : null,
+                    ch != null && ch.getStatus() != null ? ch.getStatus().name() : null,
                     r.getReason(), r.getDetails(), r.getStatus().name(), r.getResolutionNote(),
                     r.getCreatedAt(), r.getResolvedAt());
         }).toList();

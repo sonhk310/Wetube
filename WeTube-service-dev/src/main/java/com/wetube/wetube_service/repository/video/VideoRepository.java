@@ -85,6 +85,8 @@ public interface VideoRepository extends JpaRepository<Video, UUID> {
 
     List<Video> findByVideosStatusIn(Collection<ActiveStatus> statuses);
 
+    List<Video> findByUser_IdAndVideosStatusIn(UUID userId, Collection<ActiveStatus> statuses);
+
     Page<Video> findByVideosStatusIn(Collection<ActiveStatus> statuses, Pageable pageable);
 
     Page<Video> findDistinctByVideoTags_Tag_NameIgnoreCaseAndVideosStatusIn(String tagName,

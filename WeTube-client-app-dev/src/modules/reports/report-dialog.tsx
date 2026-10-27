@@ -8,9 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { REPORT_REASONS, reportsApi } from "./reports-api";
+import { CHANNEL_REPORT_REASONS, REPORT_REASONS, ReportTarget, reportsApi } from "./reports-api";
 
-/** Hộp thoại báo cáo vi phạm, dùng cho video ({ videoId }) và bình luận ({ commentId }). */
+/** Hộp thoại báo cáo vi phạm, dùng cho video ({ videoId }), bình luận ({ commentId }) và kênh ({ channelId }). */
 export default function ReportDialog({
   open,
   onOpenChange,
@@ -19,10 +19,11 @@ export default function ReportDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  target: { videoId: string } | { commentId: string };
+  target: ReportTarget;
   title: string;
 }) {
-  const [reason, setReason] = useState("SPAM");
+  const reasons = "channelId" in target ? CHANNEL_REPORT_REASONS : REPORT_REASONS;
+  const [reason, setReason] = useState(Object.keys(reasons)[0]);
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -58,7 +59,7 @@ export default function ReportDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 text-sm">
-          {Object.entries(REPORT_REASONS).map(([value, label]) => (
+          {Object.entries(reasons).map(([value, label]) => (
             <label key={value} className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"

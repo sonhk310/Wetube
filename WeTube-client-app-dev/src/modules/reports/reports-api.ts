@@ -5,8 +5,9 @@ export type ReportStatus = "OPEN" | "RESOLVED" | "DISMISSED";
 
 export interface ReportView {
   id: string;
-  videoId: string;
-  videoTitle: string;
+  /** null khi là báo cáo kênh. */
+  videoId: string | null;
+  videoTitle: string | null;
   thumbnailUrl: string | null;
   videoStatus: string | null;
   /** Có giá trị khi là báo cáo bình luận. */
@@ -14,6 +15,13 @@ export interface ReportView {
   /** null nếu bình luận đã bị xoá. */
   commentContent: string | null;
   commentAuthor: string | null;
+  /** Có giá trị khi là báo cáo kênh (khi đó các trường video là null). */
+  channelId: string | null;
+  /** null nếu kênh không còn. */
+  channelName: string | null;
+  channelHandle: string | null;
+  channelPicture: string | null;
+  channelStatus: string | null;
   reason: string;
   details: string | null;
   status: ReportStatus;
@@ -22,7 +30,9 @@ export interface ReportView {
   resolvedAt: string | null;
 }
 
-export type ReportAction = "HIDE_VIDEO" | "DELETE_COMMENT" | "DISMISS";
+export type ReportAction = "HIDE_VIDEO" | "DELETE_COMMENT" | "HIDE_CHANNEL" | "DISMISS";
+
+export type ReportTarget = { videoId: string } | { commentId: string } | { channelId: string };
 
 export const REPORT_REASONS: Record<string, string> = {
   SPAM: "Spam hoặc gây hiểu lầm",
@@ -33,6 +43,19 @@ export const REPORT_REASONS: Record<string, string> = {
   MISINFORMATION: "Thông tin sai lệch",
   OTHER: "Lý do khác",
 };
+
+/** Lý do "Báo cáo người dùng" (kênh), theo YouTube. */
+export const CHANNEL_REPORT_REASONS: Record<string, string> = {
+  IMPERSONATION: "Mạo danh người khác",
+  INAPPROPRIATE_PROFILE: "Ảnh, tên hoặc mô tả kênh không phù hợp",
+  SPAM: "Spam hoặc lừa đảo",
+  HATE: "Thù ghét hoặc quấy rối",
+  OTHER: "Lý do khác",
+};
+
+/** Nhãn lý do của một báo cáo (báo cáo kênh dùng bộ lý do riêng). */
+export const reportReasonLabel = (r: { channelId: string | null; reason: string }) =>
+  (r.channelId ? CHANNEL_REPORT_REASONS : REPORT_REASONS)[r.reason] ?? r.reason;
 
 export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   OPEN: "Đang chờ xử lý",
@@ -50,9 +73,9 @@ async function readError(res: Response) {
 }
 
 export const reportsApi = {
-  /** Báo cáo video ({ videoId }) hoặc bình luận ({ commentId }). */
+  /** Báo cáo video ({ videoId }), bình luận ({ commentId }) hoặc kênh ({ channelId }). */
   create: async (
-    target: { videoId: string } | { commentId: string },
+    target: ReportTarget,
     reason: string,
     details?: string,
   ): Promise<ReportView> => {

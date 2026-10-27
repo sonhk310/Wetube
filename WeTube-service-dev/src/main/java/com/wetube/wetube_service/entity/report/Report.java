@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Báo cáo vi phạm của người xem đối với một video, hoặc một bình luận dưới video (commentId khác null);
+ * Báo cáo vi phạm của người xem đối với một video, một bình luận dưới video (commentId khác null)
+ * hoặc một kênh (channelId khác null, videoId null);
  * admin xử lý trong trang quản trị của client.
  */
 @Entity
@@ -29,9 +30,15 @@ public class Report {
     @JdbcTypeCode(SqlTypes.VARCHAR)
     private UUID id;
 
-    @Column(name = "video_id", nullable = false, columnDefinition = "VARCHAR(36)")
+    /** Null khi báo cáo một kênh (channelId). */
+    @Column(name = "video_id", columnDefinition = "VARCHAR(36)")
     @JdbcTypeCode(SqlTypes.VARCHAR)
     private UUID videoId;
+
+    /** Có giá trị khi báo cáo một kênh ("Báo cáo người dùng" ở hộp Giới thiệu của kênh). */
+    @Column(name = "channel_id", columnDefinition = "VARCHAR(36)")
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    private UUID channelId;
 
     /** Có giá trị khi báo cáo một bình luận (videoId là video chứa bình luận đó). */
     @Column(name = "comment_id", columnDefinition = "VARCHAR(36)")

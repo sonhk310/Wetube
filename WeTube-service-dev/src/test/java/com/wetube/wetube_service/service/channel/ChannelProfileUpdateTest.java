@@ -88,6 +88,17 @@ class ChannelProfileUpdateTest {
         assertThat(dto.getTotalViews()).isEqualTo(28);
     }
 
+    @Test
+    void hiddenChannelIsNotFoundExceptForItsOwner() {
+        channel.setStatus(com.wetube.wetube_service.enumeration.ActiveStatus.INACTIVE);
+
+        assertThatThrownBy(() -> service.getChannelById(channel.getId(), null))
+                .isInstanceOf(com.wetube.wetube_service.exception.ResourceNotFoundException.class);
+        assertThatThrownBy(() -> service.getChannelById(channel.getId(), UUID.randomUUID()))
+                .isInstanceOf(com.wetube.wetube_service.exception.ResourceNotFoundException.class);
+        assertThat(service.getChannelById(channel.getId(), userId)).isNotNull();
+    }
+
     private void assertBadRequest(ChannelUpdateRequest request) {
         assertThatThrownBy(() -> service.updateChannel(userId, request))
                 .isInstanceOfSatisfying(ResponseStatusException.class,

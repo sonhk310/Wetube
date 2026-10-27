@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  REPORT_REASONS,
   REPORT_STATUS_LABELS,
+  reportReasonLabel,
   ReportAction,
   ReportStatus,
   ReportView,
@@ -39,7 +39,7 @@ const FILTERS: { label: string; value?: ReportStatus }[] = [
   { label: "Tất cả" },
 ];
 
-/** Trang quản trị: admin xem báo cáo vi phạm (video, bình luận) và ẩn video / xoá bình luận / bác bỏ. */
+/** Trang quản trị: admin xem báo cáo vi phạm (video, bình luận, kênh) và ẩn video / xoá bình luận / ẩn kênh / bác bỏ. */
 export default function AdminReportsView() {
   const { user, isLoading } = useAuth();
   const isAdmin = !!user?.roles?.includes("ROLE_ADMIN");
@@ -61,6 +61,11 @@ export default function AdminReportsView() {
   const resolve = async (id: string, action: ReportAction) => {
     if (action === "HIDE_VIDEO" && !window.confirm("Ẩn video này với mọi người (trừ chủ video)?")) return;
     if (action === "DELETE_COMMENT" && !window.confirm("Xoá bình luận này (kèm các phản hồi)?")) return;
+    if (
+      action === "HIDE_CHANNEL" &&
+      !window.confirm("Ẩn kênh này và mọi video đang xem được của kênh với mọi người (trừ chủ kênh)?")
+    )
+      return;
     setBusyId(id);
     try {
       await reportsApi.resolve(id, action);
@@ -106,15 +111,35 @@ export default function AdminReportsView() {
       <div className="space-y-3">
         {reports?.map((r) => (
           <div key={r.id} className="flex gap-4 border rounded-lg p-3 items-start">
-            <div className="relative w-40 aspect-video bg-gray-200 rounded overflow-hidden shrink-0">
-              {r.thumbnailUrl && (
-                <Image src={r.thumbnailUrl} alt={r.videoTitle} fill sizes="160px" className="object-cover" />
-              )}
-            </div>
+            {r.channelId ? (
+              <div className="w-40 flex justify-center shrink-0">
+                <div className="relative size-20 bg-gray-200 rounded-full overflow-hidden">
+                  {r.channelPicture && (
+                    <Image src={r.channelPicture} alt={r.channelName ?? ""} fill sizes="80px" className="object-cover" />
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="relative w-40 aspect-video bg-gray-200 rounded overflow-hidden shrink-0">
+                {r.thumbnailUrl && (
+                  <Image src={r.thumbnailUrl} alt={r.videoTitle ?? ""} fill sizes="160px" className="object-cover" />
+                )}
+              </div>
+            )}
             <div className="flex-1 space-y-1">
-              <Link href={`/watch/${r.videoId}`} className="font-semibold text-blue-600 hover:underline">
-                {r.videoTitle}
-              </Link>
+              {r.channelId ? (
+                <p>
+                  <span className="text-xs font-semibold">Kênh: </span>
+                  <Link href={`/channel/${r.channelId}`} className="font-semibold text-blue-600 hover:underline">
+                    {r.channelName ?? "(kênh không còn)"}
+                  </Link>
+                  {r.channelHandle && <span className="text-gray-500"> @{r.channelHandle}</span>}
+                </p>
+              ) : (
+                <Link href={`/watch/${r.videoId}`} className="font-semibold text-blue-600 hover:underline">
+                  {r.videoTitle}
+                </Link>
+              )}
               {r.commentId && (
                 <p className="border-l-2 border-gray-300 pl-2 text-gray-700">
                   {r.commentContent !== null ? (
@@ -128,18 +153,27 @@ export default function AdminReportsView() {
                 </p>
               )}
               <p>
-                <span className="font-medium">{REPORT_REASONS[r.reason] ?? r.reason}</span>
+                <span className="font-medium">{reportReasonLabel(r)}</span>
                 {r.details && <span className="text-gray-600"> · {r.details}</span>}
               </p>
               <p className="text-xs text-gray-500">
                 {new Date(r.createdAt).toLocaleString("vi-VN")} · {REPORT_STATUS_LABELS[r.status]}
                 {r.videoStatus === "INACTIVE" && " · video đang bị ẩn"}
+                {r.channelStatus === "INACTIVE" && " · kênh đang bị ẩn"}
                 {r.resolutionNote && ` · ${r.resolutionNote}`}
               </p>
             </div>
             {r.status === "OPEN" && (
               <div className="flex flex-col gap-2 shrink-0">
-                {r.commentId ? (
+                {r.channelId ? (
+                  <button
+                    onClick={() => resolve(r.id, "HIDE_CHANNEL")}
+                    disabled={busyId === r.id}
+                    className="px-3 py-1 rounded-md bg-red-600 text-white disabled:opacity-60"
+                  >
+                    Ẩn kênh
+                  </button>
+                ) : r.commentId ? (
                   <button
                     onClick={() => resolve(r.id, "DELETE_COMMENT")}
                     disabled={busyId === r.id}
