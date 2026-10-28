@@ -169,6 +169,26 @@ function BrowserBroadcast({ id, thumbnailUrl }: { id: string; thumbnailUrl: stri
   );
 }
 
+/** Trạng thái ghi hình của buổi đang phát: đang ghi, hoặc lý do không ghi / ngừng ghi (hết hạn mức, lỗi). */
+function RecordingNote({ live }: { live: LiveView }) {
+  const { recordingStatus: status, recordingMessage: message } = live;
+  if (status === "RECORDING") {
+    return (
+      <p className="flex items-center gap-2 text-sm font-medium text-red-600">
+        <span className="size-2.5 animate-pulse rounded-full bg-red-600" />
+        Đang ghi hình để xem lại
+      </p>
+    );
+  }
+  if (message) {
+    return <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{message}</p>;
+  }
+  if (status === "NONE") {
+    return <p className="text-sm text-gray-500">Sẽ bắt đầu ghi hình khi buổi lên sóng.</p>;
+  }
+  return null;
+}
+
 function useElapsed(startedAt: string | null): string | null {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -203,7 +223,11 @@ export default function LiveOnAirPanel({ live }: { live: LiveView }) {
   const onEnd = async () => {
     try {
       await endLive(live.id).unwrap();
-      toastEmitter.success("Đã kết thúc buổi phát");
+      toastEmitter.success(
+        live.recordingEnabled && live.recordingStatus === "RECORDING"
+          ? "Đã kết thúc buổi phát. Bản ghi sẽ thành video của kênh sau ít phút."
+          : "Đã kết thúc buổi phát"
+      );
       setEndOpen(false);
     } catch (err) {
       toastEmitter.error(apiErrorMessage(err, "Không kết thúc được buổi phát, vui lòng thử lại."));
@@ -241,6 +265,8 @@ export default function LiveOnAirPanel({ live }: { live: LiveView }) {
             </span>
           )}
         </div>
+
+        {live.recordingEnabled ? <RecordingNote live={live} /> : null}
 
         <h1 className="text-2xl font-bold tracking-tight">{live.title}</h1>
 

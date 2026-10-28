@@ -18,6 +18,7 @@ import LinkifiedText from "@/modules/watch/components/linkified-text";
 import ShareDialog from "@/modules/watch/components/share-dialog";
 import { useLiveChannel } from "../lib/useLiveChannel";
 import { formatLiveDuration, liveUrl } from "../lib/format";
+import type { RecordingStatus } from "../types";
 import { LiveBadge, ViewerCount } from "./live-badge";
 import LiveEndDialog from "./live-end-dialog";
 import LiveChat from "./live-chat";
@@ -25,7 +26,9 @@ import LivePlayer from "./live-player";
 import LivePollCard from "./live-poll-card";
 
 const FALLBACK_AVATAR = "https://placehold.co/160x160?text=W";
-/** Khi buổi chưa lên sóng, hỏi lại thông tin mỗi chừng này (STOMP cũng báo, đây là dự phòng). */
+/**
+ * Khi buổi chưa lên sóng (STOMP cũng báo, đây là dự phòng) hoặc bản ghi chưa xong, hỏi lại thông tin mỗi chừng này.
+ */
 const CREATED_POLL_MS = 30_000;
 
 function WatchSkeleton() {
@@ -41,15 +44,24 @@ function WatchSkeleton() {
   );
 }
 
-/** Màn hình thay cho trình phát khi buổi đã kết thúc: ngày phát, thời lượng, số người xem cao nhất. */
+/**
+ * Màn hình thay cho trình phát khi buổi đã kết thúc: ngày phát, thời lượng, số người xem cao nhất. Có bản ghi thì nút
+ * Xem lại; đang xử lý thì báo; chủ kênh còn thấy lý do khi không có video xem lại.
+ */
 function EndedScreen({
   endedAt,
   startedAt,
   peakViewers,
+  replayVideoId,
+  recordingStatus,
+  recordingMessage,
 }: {
   endedAt: string | null;
   startedAt: string | null;
   peakViewers: number;
+  replayVideoId: string | null;
+  recordingStatus: RecordingStatus;
+  recordingMessage: string | null;
 }) {
   const duration = formatLiveDuration(startedAt, endedAt);
   return (
@@ -60,6 +72,18 @@ function EndedScreen({
         {duration ? ` · Thời lượng ${duration}` : null}
         {` · Cao nhất ${peakViewers.toLocaleString("vi-VN")} người xem`}
       </p>
+      {replayVideoId ? (
+        <Link
+          href={`/watch/${replayVideoId}`}
+          className="mt-2 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black hover:bg-neutral-200"
+        >
+          Xem lại
+        </Link>
+      ) : recordingStatus === "STOPPING" ? (
+        <p className="mt-1 text-sm text-neutral-300">Đang xử lý bản ghi…</p>
+      ) : recordingMessage ? (
+        <p className="mt-1 max-w-md text-sm text-amber-300">{recordingMessage}</p>
+      ) : null}
     </div>
   );
 }
@@ -77,9 +101,11 @@ export default function LiveWatchView({ id }: { id: string }) {
   const [expanded, setExpanded] = useState(false);
 
   const status = channelState.status ?? live?.status;
+  // Buổi đã kết thúc mà bản ghi chưa xong: hỏi lại cho tới khi có nút Xem lại (hoặc lý do không có)
+  const waitingForReplay = status === "ENDED" && live?.recordingStatus === "STOPPING";
   useEffect(() => {
-    setPollMs(status === "CREATED" ? CREATED_POLL_MS : 0);
-  }, [status]);
+    setPollMs(status === "CREATED" || waitingForReplay ? CREATED_POLL_MS : 0);
+  }, [status, waitingForReplay]);
 
   // STOMP báo buổi đã kết thúc nhưng `live` còn là bản lúc đang phát (chưa có giờ kết thúc, người xem cao nhất,
   // kết quả Poll): tải lại để màn hình "đã kết thúc" đủ thông tin
@@ -140,7 +166,14 @@ export default function LiveWatchView({ id }: { id: string }) {
         {unfinished ? (
           <LivePlayer id={id} status={status} thumbnailUrl={live.thumbnailUrl} />
         ) : (
-          <EndedScreen endedAt={live.endedAt} startedAt={live.startedAt} peakViewers={live.peakViewers} />
+          <EndedScreen
+            endedAt={live.endedAt}
+            startedAt={live.startedAt}
+            peakViewers={live.peakViewers}
+            replayVideoId={live.replayVideoId}
+            recordingStatus={live.recordingStatus}
+            recordingMessage={live.recordingMessage}
+          />
         )}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">

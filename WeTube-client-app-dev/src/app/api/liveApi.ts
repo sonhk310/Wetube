@@ -6,6 +6,7 @@ import type {
   CreateLiveBody,
   LiveCard,
   LiveChatMessage,
+  LiveRecordingInfo,
   LiveTokenResponse,
   LiveView,
   PollView,
@@ -45,6 +46,12 @@ export const liveApi = createApi({
     getMyLive: builder.query<LiveView | null, void>({
       query: () => "/me",
       providesTags: ["MyLive"],
+      keepUnusedDataFor: 0,
+    }),
+
+    /** Form chuẩn bị: máy chủ có bật ghi hình không và kênh còn bao nhiêu giây ghi trong tháng. */
+    getLiveRecording: builder.query<LiveRecordingInfo, void>({
+      query: () => "/recording",
       keepUnusedDataFor: 0,
     }),
 
@@ -116,6 +123,7 @@ export const {
   useGetLiveListQuery,
   useGetChannelLivesQuery,
   useGetMyLiveQuery,
+  useGetLiveRecordingQuery,
   useGetLiveChatQuery,
   useLazyGetLiveChatQuery,
   useCreateLiveMutation,

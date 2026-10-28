@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Mic, Monitor, PictureInPicture2, Video, type LucideIcon } from "lucide-react";
-import { useCreateLiveMutation, useUploadLiveThumbnailMutation } from "@/app/api/liveApi";
+import { useCreateLiveMutation, useGetLiveRecordingQuery, useUploadLiveThumbnailMutation } from "@/app/api/liveApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ import {
   type PublishMode,
 } from "../lib/publishMode";
 import type { LiveProtocol, LiveSource } from "../types";
+import LiveRecordingOption from "./live-recording-option";
 import LiveThumbnailPicker from "./live-thumbnail-picker";
 
 const TITLE_MAX = 100;
@@ -141,6 +142,12 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
   const [screenSupported, setScreenSupported] = useState(false);
   const [protocol, setProtocol] = useState<LiveProtocol>("WHIP");
   const [chatEnabled, setChatEnabled] = useState(true);
+  const { data: recordingInfo } = useGetLiveRecordingQuery();
+  const [record, setRecord] = useState(false);
+  const [topicId, setTopicId] = useState("");
+  // Chỉ buổi phát từ trình duyệt, máy chủ đã bật ghi hình và kênh còn phần ghi
+  const recordingOn =
+    source === "BROWSER" && record && !!recordingInfo?.enabled && (recordingInfo?.secondsLeft ?? 0) > 0;
 
   // Chỉ biết được ở trình duyệt (render phía máy chủ không có navigator)
   useEffect(() => setScreenSupported(canShareScreen()), []);
@@ -153,6 +160,8 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
         source,
         protocol: source === "ENCODER" ? protocol : undefined,
         chatEnabled,
+        recordingEnabled: recordingOn || undefined,
+        topicId: recordingOn ? topicId : undefined,
       }).unwrap();
       // Phải nhớ ngay: trang đang phát đọc kiểu này khi dựng lên, ngay sau khi tạo xong
       if (source === "BROWSER") savePublishMode(created.id, mode);
@@ -248,6 +257,18 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
           </div>
         ) : null}
 
+        {source === "BROWSER" && recordingInfo?.enabled ? (
+          <LiveRecordingOption
+            info={recordingInfo}
+            checked={record}
+            onChecked={setRecord}
+            topicId={topicId}
+            onTopic={setTopicId}
+            title={title}
+            description={description}
+          />
+        ) : null}
+
         {source === "ENCODER" ? (
           <div className="space-y-2">
             <Label>Giao thức</Label>
@@ -267,12 +288,24 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
             ) : (
               <p className="text-sm text-gray-500">Cần OBS phiên bản 30 trở lên.</p>
             )}
+            <p className="text-sm text-gray-500">
+              WeTube không ghi hình buổi phát bằng OBS. Muốn có video xem lại, hãy bấm Record trong OBS rồi tải tệp
+              lên như một video bình thường.
+            </p>
           </div>
         ) : null}
 
-        <Button className="rounded-full" size="lg" disabled={!title.trim() || isLoading} onClick={() => void submit()}>
+        <Button
+          className="rounded-full"
+          size="lg"
+          disabled={!title.trim() || (recordingOn && !topicId) || isLoading}
+          onClick={() => void submit()}
+        >
           {isLoading ? <Spinner className="size-4" /> : "Bắt đầu"}
         </Button>
+        {recordingOn && !topicId ? (
+          <p className="text-sm text-gray-500">Hãy chọn chủ đề cho video xem lại để bắt đầu.</p>
+        ) : null}
       </div>
 
       <div className="space-y-5">

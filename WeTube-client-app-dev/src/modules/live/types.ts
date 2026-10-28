@@ -3,6 +3,8 @@
 export type LiveStatus = "CREATED" | "LIVE" | "ENDED" | "CANCELED";
 export type LiveSource = "BROWSER" | "ENCODER";
 export type LiveProtocol = "WHIP" | "RTMP";
+/** NONE: chưa ghi; RECORDING: đang ghi; STOPPING: chờ file; DONE: đã thành video; FAILED / SKIPPED: không có video. */
+export type RecordingStatus = "NONE" | "RECORDING" | "STOPPING" | "DONE" | "FAILED" | "SKIPPED";
 
 export interface PollView {
   id: string;
@@ -35,6 +37,13 @@ export interface LiveView {
   source: LiveSource;
   protocol: LiveProtocol | null;
   chatEnabled: boolean;
+  /** Chủ kênh đã bật "Ghi hình để xem lại". */
+  recordingEnabled: boolean;
+  recordingStatus: RecordingStatus;
+  /** Lý do không có video xem lại (hết hạn mức, lỗi...); chỉ có khi người gọi là chủ kênh. */
+  recordingMessage: string | null;
+  /** Có khi bản ghi đã thành video: /watch/{replayVideoId}. */
+  replayVideoId: string | null;
   currentViewers: number;
   peakViewers: number;
   createdAt: string;
@@ -111,6 +120,18 @@ export interface CreateLiveBody {
   /** Chỉ dùng với ENCODER; mặc định WHIP. */
   protocol?: LiveProtocol;
   chatEnabled: boolean;
+  /** Chỉ buổi phát từ trình duyệt; kèm topicId (chủ đề của video xem lại). */
+  recordingEnabled?: boolean;
+  topicId?: string;
+}
+
+/** Ghi hình còn được bao nhiêu trong tháng (kênh và chung, lấy mức thấp hơn). */
+export interface LiveRecordingInfo {
+  /** Máy chủ đã bật ghi hình (đã cấu hình kho lưu trữ). */
+  enabled: boolean;
+  secondsLeft: number;
+  /** "CHANNEL" hoặc "TOTAL" khi đã hết; null nếu còn. */
+  limitedBy: "CHANNEL" | "TOTAL" | null;
 }
 
 export interface UpdateLiveBody {
