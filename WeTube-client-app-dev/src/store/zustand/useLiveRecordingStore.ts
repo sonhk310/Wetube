@@ -5,6 +5,7 @@ import {
   recordingMimeType,
   startLiveRecorder,
   type LiveRecorder,
+  type RecorderSources,
   type RecorderStopReason,
   type RecordingResult,
 } from "@/modules/live/lib/liveRecorder";
@@ -29,8 +30,7 @@ interface LiveRecordingState {
   /** Kết quả từ máy chủ sau khi tải lên (có replayVideoId, hoặc recordingMessage nếu không đăng). */
   published: LiveView | null;
 
-  start: (liveId: string, video: MediaStreamTrack, audio: MediaStreamTrack[], limitSeconds: number) => void;
-  setAudio: (tracks: MediaStreamTrack[]) => void;
+  start: (liveId: string, sources: RecorderSources, limitSeconds: number) => void;
   stop: (liveId: string, reason?: RecorderStopReason) => void;
   upload: () => void;
   dismiss: () => void;
@@ -61,6 +61,7 @@ function send(liveId: string, result: RecordingResult, onProgress: (p: number) =
     const ext = result.blob.type.includes("mp4") ? "mp4" : "webm";
     form.append("file", result.blob, `live-${liveId}.${ext}`);
     form.append("duration", String(Math.round(result.seconds)));
+    form.append("reason", result.reason); // chỉ để máy chủ ghi log, dễ tìm nguyên nhân khi bản ghi ngắn bất thường
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_PREFIX}/live/${liveId}/replay`);
     xhr.withCredentials = true;
@@ -82,7 +83,7 @@ function send(liveId: string, result: RecordingResult, onProgress: (p: number) =
 export const useLiveRecordingStore = create<LiveRecordingState>((set, get) => ({
   ...initial,
 
-  start: (liveId, video, audio, limitSeconds) => {
+  start: (liveId, sources, limitSeconds) => {
     const { phase, liveId: current } = get();
     // Bản ghi của buổi trước chưa tải xong thì không ghi đè lên nó
     if (current !== liveId && hasPendingRecording(phase, get().retryable)) return;
@@ -93,8 +94,7 @@ export const useLiveRecordingStore = create<LiveRecordingState>((set, get) => ({
     }
     try {
       recorder = startLiveRecorder({
-        video,
-        audio,
+        sources,
         limitSeconds,
         onDone: (result) => {
           recorder = null;
@@ -106,8 +106,6 @@ export const useLiveRecordingStore = create<LiveRecordingState>((set, get) => ({
       set({ ...initial, liveId, phase: "unsupported" });
     }
   },
-
-  setAudio: (tracks) => recorder?.setAudio(tracks),
 
   stop: (liveId, reason) => {
     if (get().liveId !== liveId || get().phase !== "recording") return;

@@ -84,12 +84,16 @@ public class LiveController {
         return service.uploadThumbnail(CurrentUser.id(jwt), id, file);
     }
 
-    /** Trình duyệt của chủ kênh tải bản ghi buổi phát lên sau khi kết thúc; duration = số giây trình duyệt đo. */
+    /**
+     * Trình duyệt của chủ kênh tải bản ghi buổi phát lên sau khi kết thúc; duration = số giây trình duyệt đo, reason = vì
+     * sao bộ ghi dừng (chỉ để ghi log).
+     */
     @PostMapping("/{id}/replay")
     public LiveView replay(@PathVariable UUID id, @RequestParam("file") MultipartFile file,
                            @RequestParam(value = "duration", required = false) Double duration,
+                           @RequestParam(value = "reason", required = false) String reason,
                            @AuthenticationPrincipal Jwt jwt) {
-        return service.uploadReplay(CurrentUser.id(jwt), id, file, duration);
+        return service.uploadReplay(CurrentUser.id(jwt), id, file, duration, reason);
     }
 
     @PostMapping("/{id}/started")

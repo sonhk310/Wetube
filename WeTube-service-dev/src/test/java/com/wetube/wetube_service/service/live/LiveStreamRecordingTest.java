@@ -407,7 +407,7 @@ class LiveStreamRecordingTest {
         givenUploaded(590.4f);
         when(videos.createLiveReplay(any())).thenReturn(videoId);
 
-        LiveView view = service.uploadReplay(owner, s.getId(), webm, 595.0);
+        LiveView view = service.uploadReplay(owner, s.getId(), webm, 595.0, "USER");
 
         assertThat(view.recordingStatus()).isEqualTo(RecordingStatus.DONE);
         assertThat(view.replayVideoId()).isEqualTo(videoId);
@@ -435,7 +435,7 @@ class LiveStreamRecordingTest {
         givenUploaded(300f);
         when(videos.createLiveReplay(any())).thenReturn(UUID.randomUUID());
 
-        service.uploadReplay(owner, s.getId(), webm, null);
+        service.uploadReplay(owner, s.getId(), webm, null, "USER");
 
         ArgumentCaptor<LiveReplay> replay = ArgumentCaptor.forClass(LiveReplay.class);
         verify(videos).createLiveReplay(replay.capture());
@@ -448,7 +448,7 @@ class LiveStreamRecordingTest {
         givenUploaded(null);
         when(videos.createLiveReplay(any())).thenReturn(UUID.randomUUID());
 
-        service.uploadReplay(owner, s.getId(), webm, 412.6);
+        service.uploadReplay(owner, s.getId(), webm, 412.6, "USER");
 
         assertThat(s.getRecordingSeconds()).isEqualTo(413);
     }
@@ -459,7 +459,7 @@ class LiveStreamRecordingTest {
         givenUploaded(null);
         when(videos.createLiveReplay(any())).thenReturn(UUID.randomUUID());
 
-        service.uploadReplay(owner, s.getId(), webm, 5000.0);
+        service.uploadReplay(owner, s.getId(), webm, 5000.0, "USER");
 
         assertThat(s.getRecordingSeconds()).isEqualTo(600);
     }
@@ -471,7 +471,7 @@ class LiveStreamRecordingTest {
         givenUploaded(590f);
         when(videos.createLiveReplay(any())).thenReturn(UUID.randomUUID());
 
-        service.uploadReplay(owner, s.getId(), webm, null);
+        service.uploadReplay(owner, s.getId(), webm, null, "USER");
 
         assertThat(s.getRecordingStatus()).isEqualTo(RecordingStatus.DONE);
         assertThat(s.getRecordingMessage()).contains("Đã ghi đủ phần ghi hình của tháng");
@@ -482,7 +482,7 @@ class LiveStreamRecordingTest {
         LiveStream s = stoppingStream(now.minusMinutes(1));
         givenUploaded(20f);
 
-        service.uploadReplay(owner, s.getId(), webm, null);
+        service.uploadReplay(owner, s.getId(), webm, null, "USER");
 
         assertThat(s.getRecordingStatus()).isEqualTo(RecordingStatus.SKIPPED);
         assertThat(s.getRecordingMessage()).contains("dưới 30 giây");
@@ -497,7 +497,7 @@ class LiveStreamRecordingTest {
         when(videos.createLiveReplay(any())).thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "Kênh của bạn đang bị quản trị viên ẩn"));
 
-        service.uploadReplay(owner, s.getId(), webm, null);
+        service.uploadReplay(owner, s.getId(), webm, null, "USER");
 
         assertThat(s.getRecordingStatus()).isEqualTo(RecordingStatus.FAILED);
         assertThat(s.getRecordingMessage()).contains("Không đăng được bản ghi thành video")
@@ -513,11 +513,11 @@ class LiveStreamRecordingTest {
                 .thenReturn(new UploadedVideo(VIDEO_URL, 1280, 720, 600f));
         when(videos.createLiveReplay(any())).thenReturn(UUID.randomUUID());
 
-        assertThatThrownBy(() -> service.uploadReplay(owner, s.getId(), webm, null))
+        assertThatThrownBy(() -> service.uploadReplay(owner, s.getId(), webm, null, "USER"))
                 .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.BAD_GATEWAY));
         assertThat(s.getRecordingStatus()).isEqualTo(RecordingStatus.STOPPING);
 
-        service.uploadReplay(owner, s.getId(), webm, null);
+        service.uploadReplay(owner, s.getId(), webm, null, "USER");
         assertThat(s.getRecordingStatus()).isEqualTo(RecordingStatus.DONE);
     }
 
@@ -525,7 +525,7 @@ class LiveStreamRecordingTest {
     void onlyTheOwnerCanUploadTheRecording() {
         LiveStream s = stoppingStream(now.minusMinutes(1));
 
-        assertThatThrownBy(() -> service.uploadReplay(UUID.randomUUID(), s.getId(), webm, null))
+        assertThatThrownBy(() -> service.uploadReplay(UUID.randomUUID(), s.getId(), webm, null, "USER"))
                 .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.FORBIDDEN));
         verify(cloudinary, never()).uploadLiveRecording(any());
     }
@@ -540,10 +540,10 @@ class LiveStreamRecordingTest {
         givenUp.setRecordingStatus(RecordingStatus.FAILED);
 
         for (LiveStream s : List.of(live, done, notRecorded, givenUp)) {
-            assertThatThrownBy(() -> service.uploadReplay(owner, s.getId(), webm, null))
+            assertThatThrownBy(() -> service.uploadReplay(owner, s.getId(), webm, null, "USER"))
                     .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.CONFLICT));
         }
-        assertThatThrownBy(() -> service.uploadReplay(owner, done.getId(), webm, null))
+        assertThatThrownBy(() -> service.uploadReplay(owner, done.getId(), webm, null, "USER"))
                 .hasMessageContaining("đã có video xem lại");
         verify(cloudinary, never()).uploadLiveRecording(any());
     }
@@ -553,10 +553,10 @@ class LiveStreamRecordingTest {
         LiveStream s = stoppingStream(now.minusMinutes(1));
 
         assertThatThrownBy(() -> service.uploadReplay(owner, s.getId(),
-                new MockMultipartFile("file", "a.txt", "text/plain", new byte[] {1}), null))
+                new MockMultipartFile("file", "a.txt", "text/plain", new byte[] {1}), null, "USER"))
                 .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.BAD_REQUEST));
         assertThatThrownBy(() -> service.uploadReplay(owner, s.getId(),
-                new MockMultipartFile("file", "a.webm", "video/webm", new byte[0]), null))
+                new MockMultipartFile("file", "a.webm", "video/webm", new byte[0]), null, "USER"))
                 .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.BAD_REQUEST));
         verify(cloudinary, never()).uploadLiveRecording(any());
     }
@@ -567,7 +567,7 @@ class LiveStreamRecordingTest {
         List<Throwable> second = new ArrayList<>();
         when(cloudinary.uploadLiveRecording(webm)).thenAnswer(inv -> {
             try {
-                service.uploadReplay(owner, s.getId(), webm, null);
+                service.uploadReplay(owner, s.getId(), webm, null, "USER");
             } catch (ResponseStatusException e) {
                 second.add(e);
             }
@@ -575,7 +575,7 @@ class LiveStreamRecordingTest {
         });
         when(videos.createLiveReplay(any())).thenReturn(UUID.randomUUID());
 
-        service.uploadReplay(owner, s.getId(), webm, null);
+        service.uploadReplay(owner, s.getId(), webm, null, "USER");
 
         assertThat(second).singleElement().satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.CONFLICT));
         verify(videos).createLiveReplay(any());
@@ -590,7 +590,7 @@ class LiveStreamRecordingTest {
             return new UploadedVideo(VIDEO_URL, 1280, 720, 600f);
         });
 
-        assertThatThrownBy(() -> service.uploadReplay(owner, s.getId(), webm, null))
+        assertThatThrownBy(() -> service.uploadReplay(owner, s.getId(), webm, null, "USER"))
                 .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.CONFLICT));
         verify(cloudinary).deleteVideo(VIDEO_URL);
         verify(videos, never()).createLiveReplay(any());

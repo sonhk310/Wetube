@@ -79,10 +79,10 @@ class LiveControllerTest {
         UUID id = UUID.randomUUID();
         var file = new org.springframework.mock.web.MockMultipartFile("file", "a.webm", "video/webm", new byte[] {1});
         LiveView done = LiveView.builder().id(id).build();
-        when(service.uploadReplay(me, id, file, 42.0)).thenReturn(done);
+        when(service.uploadReplay(me, id, file, 42.0, "USER")).thenReturn(done);
 
-        assertThat(controller.replay(id, file, 42.0, jwtOf(me))).isSameAs(done);
-        assertThatThrownBy(() -> controller.replay(id, file, 42.0, null))
+        assertThat(controller.replay(id, file, 42.0, "USER", jwtOf(me))).isSameAs(done);
+        assertThatThrownBy(() -> controller.replay(id, file, 42.0, "USER", null))
                 .isInstanceOfSatisfying(ResponseStatusException.class,
                         e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
     }

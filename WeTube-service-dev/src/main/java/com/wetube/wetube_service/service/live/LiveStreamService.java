@@ -602,10 +602,11 @@ public class LiveStreamService {
     /**
      * Trình duyệt của chủ kênh tải bản ghi lên sau khi buổi kết thúc: lên Cloudinary rồi thành video công khai của kênh.
      * Tải lên chạy ngoài transaction (có thể mất cả phút); Cloudinary lỗi thì buổi vẫn chờ để chủ kênh Thử lại.
-     * {@code reportedSeconds}: thời lượng trình duyệt đo, chỉ dùng khi Cloudinary không trả thời lượng.
+     * {@code reportedSeconds}: thời lượng trình duyệt đo, chỉ dùng khi Cloudinary không trả thời lượng;
+     * {@code stopReason}: vì sao bộ ghi dừng, chỉ để ghi log.
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public LiveView uploadReplay(UUID userId, UUID id, MultipartFile file, Double reportedSeconds) {
+    public LiveView uploadReplay(UUID userId, UUID id, MultipartFile file, Double reportedSeconds, String stopReason) {
         tx.executeWithoutResult(status -> requireAwaitingUpload(owned(userId, id)));
         if (file == null || file.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bản ghi rỗng");
@@ -626,6 +627,9 @@ public class LiveStreamService {
                 log.warn("[Live] Không tải được bản ghi của buổi {} lên Cloudinary: {}", id, e.getMessage());
                 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Không tải được bản ghi lên, hãy thử lại");
             }
+            log.info("[Live] Nhận bản ghi buổi {}: {} KB {}, Cloudinary đo {} giây, trình duyệt báo {} giây, dừng vì {}",
+                    id, file.getSize() / 1024, file.getContentType(), uploaded.duration(), reportedSeconds,
+                    stopReason == null ? "?" : stopReason.substring(0, Math.min(stopReason.length(), 20)));
             return tx.execute(status -> publishReplay(find(id), uploaded, reportedSeconds));
         } finally {
             uploading.remove(id);

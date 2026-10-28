@@ -57,12 +57,14 @@ function PublisherStage({
   ]).filter((t) => t.participant.isLocal && t.publication);
   const camera = tracks.find((t) => t.source === Track.Source.Camera);
   const screen = tracks.find((t) => t.source === Track.Source.ScreenShare);
-  const recordedVideo = (hasScreen(mode) ? screen : camera)?.publication?.track?.mediaStreamTrack;
-  const recordedAudio = tracks
-    .filter((t) => t.source === Track.Source.Microphone || t.source === Track.Source.ScreenShareAudio)
-    .map((t) => t.publication?.track?.mediaStreamTrack)
-    .filter((t): t is MediaStreamTrack => !!t);
-  useRecordLive(liveId, record, recordedVideo, recordedAudio);
+  useRecordLive(
+    liveId,
+    record,
+    (hasScreen(mode) ? screen : camera)?.publication,
+    tracks
+      .filter((t) => t.source === Track.Source.Microphone || t.source === Track.Source.ScreenShareAudio)
+      .map((t) => t.publication)
+  );
   const screenShare = useScreenShare();
   const reported = useRef(false);
   const screenSeen = useRef(false);
