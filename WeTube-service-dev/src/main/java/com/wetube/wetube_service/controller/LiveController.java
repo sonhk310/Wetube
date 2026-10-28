@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.wetube.wetube_service.dto.live.ChannelLivesResponse;
@@ -68,6 +69,12 @@ public class LiveController {
     @PatchMapping("/{id}")
     public LiveView update(@PathVariable UUID id, @RequestBody UpdateLiveRequest body, @AuthenticationPrincipal Jwt jwt) {
         return service.update(CurrentUser.id(jwt), id, body);
+    }
+
+    @PostMapping("/{id}/thumbnail")
+    public LiveView thumbnail(@PathVariable UUID id, @RequestParam("file") MultipartFile file,
+                              @AuthenticationPrincipal Jwt jwt) {
+        return service.uploadThumbnail(CurrentUser.id(jwt), id, file);
     }
 
     @PostMapping("/{id}/started")

@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.wetube.wetube_service.dto.live.CreateLiveRequest;
@@ -41,6 +42,8 @@ import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.security.RateLimiter;
+import com.wetube.wetube_service.security.RateLimiter.Limit;
+import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.live.LiveKitGateway.IngressDetails;
 import com.wetube.wetube_service.service.notification.NotificationService;
 
@@ -54,6 +57,7 @@ class LiveStreamServiceTest {
     private final LiveEventPublisher publisher = mock(LiveEventPublisher.class);
     private final LiveCleanup cleanup = mock(LiveCleanup.class);
     private final LivePollService polls = mock(LivePollService.class);
+    private final CloudinaryService cloudinary = mock(CloudinaryService.class);
     private final TrackingTransactionManager tm = new TrackingTransactionManager();
 
     private final UUID owner = UUID.randomUUID();
@@ -93,7 +97,7 @@ class LiveStreamServiceTest {
     @BeforeEach
     void setUp() {
         service = new LiveStreamService(repo, userRepo, channelRepo, gateway, rateLimiter, publisher,
-                mock(NotificationService.class), polls, List.of(cleanup), tm);
+                mock(NotificationService.class), polls, cloudinary, List.of(cleanup), tm);
         when(repo.save(any(LiveStream.class))).thenAnswer(inv -> {
             LiveStream s = inv.getArgument(0);
             if (s.getId() == null) {
@@ -393,6 +397,88 @@ class LiveStreamServiceTest {
         assertThat(cards).extracting(LiveCard::viewers).containsExactly(30, 2);
         assertThat(cards.get(0).channelName()).isEqualTo("Kênh Sơn");
         assertThat(cards.get(0).channelBackground()).isEqualTo("banner.png");
+    }
+
+    private static MockMultipartFile image(String type, int bytes) {
+        return new MockMultipartFile("file", "a", type, new byte[bytes]);
+    }
+
+    @Test
+    void thumbnailIsStoredShownOnViewAndCardsAndReplacesTheOldOne() {
+        givenOwnerWithChannel(ActiveStatus.ACTIVE);
+        LiveStream s = stored(LiveStatus.CREATED);
+        s.setThumbnailUrl("https://res.cloudinary.com/x/image/upload/old.jpg");
+        MockMultipartFile file = image("image/png", 100);
+        when(cloudinary.uploadThumbnail(file, false)).thenReturn("https://res.cloudinary.com/x/image/upload/new.jpg");
+
+        LiveView view = service.uploadThumbnail(owner, s.getId(), file);
+
+        assertThat(view.thumbnailUrl()).isEqualTo("https://res.cloudinary.com/x/image/upload/new.jpg");
+        assertThat(s.getThumbnailUrl()).isEqualTo("https://res.cloudinary.com/x/image/upload/new.jpg");
+        verify(repo).save(s);
+        verify(cloudinary).deleteImage("https://res.cloudinary.com/x/image/upload/old.jpg");
+        verify(rateLimiter).check(Limit.LIVE_THUMBNAIL, owner);
+
+        when(repo.findByStatusOrderByCurrentViewersDesc(LiveStatus.LIVE)).thenReturn(List.of(s));
+        assertThat(service.listLive().get(0).thumbnailUrl()).isEqualTo("https://res.cloudinary.com/x/image/upload/new.jpg");
+    }
+
+    @Test
+    void firstThumbnailDeletesNothing() {
+        givenOwnerWithChannel(ActiveStatus.ACTIVE);
+        LiveStream s = stored(LiveStatus.LIVE);
+        MockMultipartFile file = image("image/jpeg", 100);
+        when(cloudinary.uploadThumbnail(file, false)).thenReturn("https://res.cloudinary.com/x/image/upload/new.jpg");
+
+        service.uploadThumbnail(owner, s.getId(), file);
+
+        verify(cloudinary, never()).deleteImage(any());
+    }
+
+    @Test
+    void thumbnailFromAnotherUserIsForbiddenAndNothingIsUploaded() {
+        givenOwnerWithChannel(ActiveStatus.ACTIVE);
+        LiveStream s = stored(LiveStatus.LIVE);
+
+        assertThatThrownBy(() -> service.uploadThumbnail(UUID.randomUUID(), s.getId(), image("image/png", 10)))
+                .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.FORBIDDEN));
+        verifyNoInteractions(cloudinary);
+    }
+
+    @Test
+    void thumbnailOfFinishedStreamIsConflict() {
+        givenOwnerWithChannel(ActiveStatus.ACTIVE);
+        LiveStream ended = stored(LiveStatus.ENDED);
+
+        assertThatThrownBy(() -> service.uploadThumbnail(owner, ended.getId(), image("image/png", 10)))
+                .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.CONFLICT));
+        verifyNoInteractions(cloudinary);
+    }
+
+    @Test
+    void thumbnailMustBePngOrJpegUnderTwoMegabytes() {
+        givenOwnerWithChannel(ActiveStatus.ACTIVE);
+        LiveStream s = stored(LiveStatus.LIVE);
+
+        for (MockMultipartFile bad : List.of(image("image/gif", 10), image("text/plain", 10),
+                image("image/png", 2 * 1024 * 1024 + 1), image("image/png", 0))) {
+            assertThatThrownBy(() -> service.uploadThumbnail(owner, s.getId(), bad))
+                    .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.BAD_REQUEST));
+        }
+        assertThatThrownBy(() -> service.uploadThumbnail(owner, s.getId(), null))
+                .satisfies(e -> assertThat(statusOf(e)).isEqualTo(HttpStatus.BAD_REQUEST));
+        verifyNoInteractions(cloudinary);
+        assertThat(s.getThumbnailUrl()).isNull();
+    }
+
+    @Test
+    void thumbnailOfexactlyTwoMegabytesIsAccepted() {
+        givenOwnerWithChannel(ActiveStatus.ACTIVE);
+        LiveStream s = stored(LiveStatus.LIVE);
+        MockMultipartFile file = image("image/png", 2 * 1024 * 1024);
+        when(cloudinary.uploadThumbnail(file, false)).thenReturn("https://res.cloudinary.com/x/image/upload/ok.jpg");
+
+        assertThat(service.uploadThumbnail(owner, s.getId(), file).thumbnailUrl()).endsWith("ok.jpg");
     }
 
     @Test

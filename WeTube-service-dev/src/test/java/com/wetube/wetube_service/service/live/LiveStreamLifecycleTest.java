@@ -35,6 +35,7 @@ import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.security.RateLimiter;
+import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.live.LiveKitGateway.Participant;
 import com.wetube.wetube_service.service.notification.NotificationService;
 
@@ -47,6 +48,7 @@ class LiveStreamLifecycleTest {
     private final LiveEventPublisher publisher = mock(LiveEventPublisher.class);
     private final NotificationService notifications = mock(NotificationService.class);
     private final LiveCleanup cleanup = mock(LiveCleanup.class);
+    private final CloudinaryService cloudinary = mock(CloudinaryService.class);
     private final TrackingTransactionManager tm = new TrackingTransactionManager();
 
     private final UUID owner = UUID.randomUUID();
@@ -58,7 +60,8 @@ class LiveStreamLifecycleTest {
     @BeforeEach
     void setUp() {
         service = new LiveStreamService(repo, mock(UserRepository.class), channelRepo, gateway,
-                mock(RateLimiter.class), publisher, notifications, mock(LivePollService.class), List.of(cleanup), tm);
+                mock(RateLimiter.class), publisher, notifications, mock(LivePollService.class), cloudinary,
+                List.of(cleanup), tm);
         when(repo.findByStatusIn(any())).thenAnswer(inv -> List.copyOf(unfinished));
         when(repo.save(any(LiveStream.class))).thenAnswer(inv -> inv.getArgument(0));
         when(gateway.wsUrl()).thenReturn("wss://livekit.test");
@@ -194,6 +197,25 @@ class LiveStreamLifecycleTest {
         assertThat(young.getStatus()).isEqualTo(LiveStatus.CREATED);
         assertThat(old.getStatus()).isEqualTo(LiveStatus.CANCELED);
         verify(gateway).deleteRoom(old.getLivekitRoom());
+    }
+
+    @Test
+    void canceledStreamDropsItsThumbnailButEndedStreamKeepsIt() {
+        LiveStream canceled = stream(LiveStatus.CREATED, LiveSource.BROWSER, now.minusMinutes(61), null, null);
+        canceled.setThumbnailUrl("https://res.cloudinary.com/x/image/upload/canceled.jpg");
+        LiveStream ended = stream(LiveStatus.LIVE, LiveSource.BROWSER, now.minusHours(1), now.minusMinutes(50),
+                now.minusMinutes(3));
+        ended.setThumbnailUrl("https://res.cloudinary.com/x/image/upload/ended.jpg");
+        when(gateway.participants(any())).thenReturn(List.of());
+
+        service.refreshAll(now);
+
+        assertThat(canceled.getStatus()).isEqualTo(LiveStatus.CANCELED);
+        assertThat(canceled.getThumbnailUrl()).isNull();
+        verify(cloudinary).deleteImage("https://res.cloudinary.com/x/image/upload/canceled.jpg");
+        assertThat(ended.getStatus()).isEqualTo(LiveStatus.ENDED);
+        assertThat(ended.getThumbnailUrl()).isEqualTo("https://res.cloudinary.com/x/image/upload/ended.jpg");
+        verify(cloudinary, never()).deleteImage("https://res.cloudinary.com/x/image/upload/ended.jpg");
     }
 
     @Test

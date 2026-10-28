@@ -27,6 +27,7 @@ public record LiveView(
         LiveStatus status,
         LiveSource source,
         LiveProtocol protocol,
+        String thumbnailUrl,
         boolean chatEnabled,
         int currentViewers,
         int peakViewers,

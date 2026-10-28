@@ -13,6 +13,7 @@ public record LiveCard(
         String channelName,
         String channelPicture,
         String channelBackground,
+        String thumbnailUrl,
         int viewers,
         int peakViewers,
         LocalDateTime startedAt,

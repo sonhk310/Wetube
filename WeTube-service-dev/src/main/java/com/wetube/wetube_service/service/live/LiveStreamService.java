@@ -20,7 +20,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.wetube.wetube_service.dto.live.ChannelLivesResponse;
@@ -44,6 +47,7 @@ import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.RateLimiter.Limit;
+import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.live.LiveKitGateway.IngressDetails;
 import com.wetube.wetube_service.service.live.LiveKitGateway.Participant;
 import com.wetube.wetube_service.service.notification.NotificationService;
@@ -61,6 +65,7 @@ public class LiveStreamService {
 
     static final int TITLE_MAX = 100;
     static final int DESCRIPTION_MAX = 5000;
+    static final long THUMBNAIL_MAX_BYTES = 2L * 1024 * 1024;
     static final int VIEWER_CAP = 40;
     /** Trần cứng của phòng LiveKit: người xem + chủ kênh (webcam hoặc OBS) + chỗ dự phòng. */
     static final int ROOM_PARTICIPANT_CAP = VIEWER_CAP + 5;
@@ -77,6 +82,7 @@ public class LiveStreamService {
     private final LiveEventPublisher publisher;
     private final NotificationService notifications;
     private final LivePollService polls;
+    private final CloudinaryService cloudinary;
     private final List<LiveCleanup> cleanups;
     /** Mỗi buổi được làm mới trong một transaction ngắn riêng (job 15 giây). */
     private final TransactionTemplate tx;
@@ -88,8 +94,8 @@ public class LiveStreamService {
 
     public LiveStreamService(LiveStreamRepository repo, UserRepository userRepo, ChannelRepository channelRepo,
                              LiveKitGateway gateway, RateLimiter rateLimiter, LiveEventPublisher publisher,
-                             NotificationService notifications, LivePollService polls, List<LiveCleanup> cleanups,
-                             PlatformTransactionManager transactionManager) {
+                             NotificationService notifications, LivePollService polls, CloudinaryService cloudinary,
+                             List<LiveCleanup> cleanups, PlatformTransactionManager transactionManager) {
         this.repo = repo;
         this.userRepo = userRepo;
         this.channelRepo = channelRepo;
@@ -98,6 +104,7 @@ public class LiveStreamService {
         this.publisher = publisher;
         this.notifications = notifications;
         this.polls = polls;
+        this.cloudinary = cloudinary;
         this.cleanups = cleanups;
         this.tx = new TransactionTemplate(transactionManager);
         this.txNew = new TransactionTemplate(transactionManager);
@@ -189,6 +196,32 @@ public class LiveStreamService {
         return view(stream, channelOf(stream.getChannelId()), true);
     }
 
+    /** Chủ kênh đặt / đổi ảnh thu nhỏ khi buổi chưa kết thúc; ảnh cũ bị xoá trên Cloudinary sau khi lưu xong. */
+    public LiveView uploadThumbnail(UUID userId, UUID id, MultipartFile file) {
+        LiveStream stream = owned(userId, id);
+        if (isFinished(stream)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Buổi phát đã kết thúc");
+        }
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hãy chọn một ảnh");
+        }
+        String type = file.getContentType();
+        if (!"image/png".equals(type) && !"image/jpeg".equals(type)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ảnh thu nhỏ phải là PNG hoặc JPEG");
+        }
+        if (file.getSize() > THUMBNAIL_MAX_BYTES) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Ảnh quá lớn (tối đa " + (THUMBNAIL_MAX_BYTES / 1024 / 1024) + " MB)");
+        }
+        rateLimiter.check(Limit.LIVE_THUMBNAIL, userId);
+
+        String replaced = stream.getThumbnailUrl();
+        stream.setThumbnailUrl(cloudinary.uploadThumbnail(file, false));
+        repo.save(stream);
+        deleteImageAfterCommit(replaced);
+        return view(stream, channelOf(stream.getChannelId()), true);
+    }
+
     /** Chủ kênh hoặc admin kết thúc buổi phát; gọi lại khi đã kết thúc thì không làm gì. */
     public void end(UUID userId, boolean admin, UUID id) {
         LiveStream stream = find(id);
@@ -222,7 +255,13 @@ public class LiveStreamService {
         stream.setIngressId(null);
         stream.setIngressUrl(null);
         stream.setIngressKey(null);
+        // Buổi bị huỷ không vào lịch sử nên không cần giữ ảnh thu nhỏ; buổi đã phát thì giữ
+        String canceledThumbnail = status == LiveStatus.CANCELED ? stream.getThumbnailUrl() : null;
+        if (canceledThumbnail != null) {
+            stream.setThumbnailUrl(null);
+        }
         repo.save(stream);
+        deleteImageAfterCommit(canceledThumbnail);
         publisher.toStream(stream.getId(), LiveEvent.builder().type("STATUS").status(status.name()).build());
         for (LiveCleanup cleanup : cleanups) {
             try {
@@ -284,7 +323,7 @@ public class LiveStreamService {
             return;
         }
         try {
-            if (gateway.participants(stream.getLivekitRoom()).stream().anyMatch(Participant::publishingVideo)) {
+            if (gateway.participants(stream.getLivekitRoom()).stream().anyMatch(Participant::publishing)) {
                 promote(stream, LocalDateTime.now());
             }
         } catch (LiveKitUnavailableException e) {
@@ -324,7 +363,7 @@ public class LiveStreamService {
         }
         // LiveKit lỗi thì ném ra ngoài: không được coi là "mất người phát"
         List<Participant> participants = gateway.participants(stream.getLivekitRoom());
-        boolean publisherPresent = participants.stream().anyMatch(Participant::publishingVideo);
+        boolean publisherPresent = participants.stream().anyMatch(Participant::publishing);
         int viewers = (int) countViewers(participants);
 
         if (stream.getStatus() == LiveStatus.CREATED) {
@@ -416,7 +455,8 @@ public class LiveStreamService {
         return LiveView.builder()
                 .id(base.id()).channelId(base.channelId()).channelName(base.channelName())
                 .channelPicture(base.channelPicture()).channelHandle(base.channelHandle()).ownerId(base.ownerId())
-                .title(base.title()).description(base.description()).status(base.status()).source(base.source())
+                .title(base.title()).description(base.description()).thumbnailUrl(base.thumbnailUrl())
+                .status(base.status()).source(base.source())
                 .protocol(base.protocol()).chatEnabled(base.chatEnabled()).currentViewers(base.currentViewers())
                 .peakViewers(base.peakViewers()).createdAt(base.createdAt()).startedAt(base.startedAt())
                 .endedAt(base.endedAt()).ingress(base.ingress()).poll(poll).polls(history)
@@ -471,7 +511,7 @@ public class LiveStreamService {
             Channel c = channels.get(s.getChannelId());
             return new LiveCard(s.getId(), s.getTitle(), s.getChannelId(),
                     c == null ? null : c.getName(), c == null ? null : c.getPicture(),
-                    c == null ? null : c.getBackgroundImgUrl(),
+                    c == null ? null : c.getBackgroundImgUrl(), s.getThumbnailUrl(),
                     s.getCurrentViewers(), s.getPeakViewers(), s.getStartedAt(), s.getEndedAt(), s.getStatus());
         }).toList();
     }
@@ -487,6 +527,7 @@ public class LiveStreamService {
                 .ownerId(s.getOwnerId())
                 .title(s.getTitle())
                 .description(s.getDescription())
+                .thumbnailUrl(s.getThumbnailUrl())
                 .status(s.getStatus())
                 .source(s.getSource())
                 .protocol(s.getProtocol())
@@ -498,6 +539,23 @@ public class LiveStreamService {
                 .endedAt(s.getEndedAt())
                 .ingress(hasIngress ? new IngressView(s.getIngressUrl(), s.getIngressKey()) : null)
                 .build();
+    }
+
+    /** Xoá ảnh trên Cloudinary sau khi DB lưu xong, để lỗi lưu không làm mất ảnh đang dùng. */
+    private void deleteImageAfterCommit(String url) {
+        if (url == null || url.isBlank()) {
+            return;
+        }
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    cloudinary.deleteImage(url);
+                }
+            });
+        } else {
+            cloudinary.deleteImage(url);
+        }
     }
 
     private void deleteRoomQuietly(String room) {

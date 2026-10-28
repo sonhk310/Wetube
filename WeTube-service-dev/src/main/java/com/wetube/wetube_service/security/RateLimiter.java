@@ -40,6 +40,7 @@ public class RateLimiter {
         LIVE_TOKEN(30, Duration.ofMinutes(1), "Quá nhiều yêu cầu, vui lòng thử lại sau."),
         LIVE_VOTE(10, Duration.ofMinutes(1), "Bạn bình chọn quá nhanh."),
         LIVE_CHAT(5, Duration.ofSeconds(10), "Bạn nhắn quá nhanh."),
+        LIVE_THUMBNAIL(20, Duration.ofHours(1), "Bạn đổi ảnh thu nhỏ quá nhiều trong giờ này, vui lòng thử lại sau."),
         /** Tải ảnh bìa / ảnh đại diện kênh lên Cloudinary. */
         CHANNEL_IMAGE(20, Duration.ofHours(1), "Bạn tải ảnh lên quá nhiều trong giờ này, vui lòng thử lại sau.");
 

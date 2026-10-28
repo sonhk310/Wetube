@@ -41,6 +41,7 @@ public class LiveSchemaInitializer implements CommandLineRunner {
                     source VARCHAR(20) NOT NULL,
                     protocol VARCHAR(20),
                     status VARCHAR(20) NOT NULL,
+                    thumbnail_url VARCHAR(500),
                     chat_enabled BIT(1) NOT NULL,
                     livekit_room VARCHAR(100),
                     ingress_id VARCHAR(100),
@@ -72,6 +73,29 @@ public class LiveSchemaInitializer implements CommandLineRunner {
                     created_at DATETIME(6) NOT NULL,
                     PRIMARY KEY (poll_id, user_id)
                 )""");
+        // Bảng live_streams đã có trên production từ L1: CREATE TABLE IF NOT EXISTS không thêm cột cho nó
+        addColumn("live_streams", "thumbnail_url", "VARCHAR(500) NULL");
+    }
+
+    /** Thêm cột nếu chưa có (cột có từ CREATE TABLE ở trên thì bỏ qua). */
+    private void addColumn(String table, String column, String definition) {
+        try {
+            Number existing = tx.execute(s -> (Number) em.createNativeQuery("""
+                    SELECT COUNT(*) FROM information_schema.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column
+                    """)
+                    .setParameter("table", table)
+                    .setParameter("column", column)
+                    .getSingleResult());
+            if (existing == null || existing.intValue() > 0) {
+                return;
+            }
+            tx.executeWithoutResult(s -> em.createNativeQuery(
+                    "ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition).executeUpdate());
+            log.info("Đã thêm cột {}.{}", table, column);
+        } catch (Exception e) {
+            log.error("Không thêm được cột {}.{}: {}", table, column, e.getMessage());
+        }
     }
 
     private void create(String table, String ddl) {

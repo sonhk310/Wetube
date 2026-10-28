@@ -74,6 +74,10 @@ public class LiveStream {
     @Column(nullable = false, length = 20)
     private LiveStatus status;
 
+    /** Ảnh thu nhỏ do chủ kênh tải lên; null thì thẻ dùng banner / ảnh đại diện kênh. */
+    @Column(name = "thumbnail_url", length = 500)
+    private String thumbnailUrl;
+
     @Column(name = "chat_enabled", nullable = false)
     private boolean chatEnabled;
 

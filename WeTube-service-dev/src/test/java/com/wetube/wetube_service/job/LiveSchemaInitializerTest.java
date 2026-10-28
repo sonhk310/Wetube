@@ -108,6 +108,23 @@ class LiveSchemaInitializerTest {
     }
 
     @Test
+    void addsTheThumbnailColumnToAnL1TableThatLacksIt() {
+        runInitializer();
+        // Bảng như trên production sau L1: có đủ cột trừ thumbnail_url
+        jdbc.execute("ALTER TABLE live_streams DROP COLUMN thumbnail_url");
+
+        runInitializer();
+
+        LiveStream saved = streams.save(LiveStream.builder()
+                .channelId(UUID.randomUUID()).ownerId(UUID.randomUUID()).title("Có ảnh")
+                .source(LiveSource.BROWSER).status(LiveStatus.CREATED).chatEnabled(true)
+                .thumbnailUrl("https://res.cloudinary.com/x/image/upload/t.jpg")
+                .createdAt(LocalDateTime.now()).build());
+        assertThat(streams.findById(saved.getId()).orElseThrow().getThumbnailUrl())
+                .isEqualTo("https://res.cloudinary.com/x/image/upload/t.jpg");
+    }
+
+    @Test
     void runningItTwiceIsHarmless() {
         runInitializer();
         assertThatCode(this::runInitializer).doesNotThrowAnyException();

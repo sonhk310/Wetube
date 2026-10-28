@@ -94,6 +94,21 @@ class LiveKitGatewayImplTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    void participantPublishesWhenItHasAnyTrackIncludingAudioOnly() throws Exception {
+        Call<List<LivekitModels.ParticipantInfo>> call = mock(Call.class);
+        LivekitModels.ParticipantInfo audioOnly = LivekitModels.ParticipantInfo.newBuilder().setIdentity("u:a")
+                .addTracks(LivekitModels.TrackInfo.newBuilder().setType(LivekitModels.TrackType.AUDIO)).build();
+        LivekitModels.ParticipantInfo viewer = LivekitModels.ParticipantInfo.newBuilder().setIdentity("v:b").build();
+        when(call.execute()).thenReturn(Response.success(List.of(audioOnly, viewer)));
+
+        List<LiveKitGateway.Participant> participants = gatewayListing(call).participants("live-x");
+
+        assertThat(participants).containsExactly(new LiveKitGateway.Participant("u:a", true),
+                new LiveKitGateway.Participant("v:b", false));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void roomIsCreatedWithAHardParticipantCapAndAnHourOfEmptyTimeout() throws Exception {
         RoomServiceClient rooms = mock(RoomServiceClient.class);
         Call<LivekitModels.Room> call = mock(Call.class);

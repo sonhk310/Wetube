@@ -66,8 +66,7 @@ public class LiveKitGatewayImpl implements LiveKitGateway {
             return List.of();
         }
         return body.stream()
-                .map(p -> new Participant(p.getIdentity(), p.getTracksList().stream()
-                        .anyMatch(t -> t.getType() == LivekitModels.TrackType.VIDEO)))
+                .map(p -> new Participant(p.getIdentity(), p.getTracksCount() > 0))
                 .toList();
     }
 

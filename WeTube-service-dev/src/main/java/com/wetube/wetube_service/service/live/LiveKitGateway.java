@@ -11,8 +11,8 @@ import com.wetube.wetube_service.enumeration.LiveProtocol;
  */
 public interface LiveKitGateway {
 
-    /** Người đang ở trong phòng; publishingVideo = có luồng hình (người phát). */
-    record Participant(String identity, boolean publishingVideo) {
+    /** Người đang ở trong phòng; publishing = đang đăng bất kỳ luồng nào, hình hoặc tiếng (người phát). */
+    record Participant(String identity, boolean publishing) {
     }
 
     record IngressDetails(String ingressId, String url, String streamKey) {
