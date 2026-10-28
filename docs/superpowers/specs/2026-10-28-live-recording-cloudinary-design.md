@@ -1,6 +1,6 @@
 # Thiết kế: ghi hình trên trình duyệt người phát, lưu ở Cloudinary (L2b)
 
-Ngày: 2026-10-28. Trạng thái: **chờ anh duyệt**. Thay cho cách lưu của L2 (`2026-10-28-live-recording-design.md`).
+Ngày: 2026-10-28. Trạng thái: **anh đã duyệt 28/10** (cả 4 điểm ở mục 4 theo đề xuất), đã code. Thay cho cách lưu của L2 (`2026-10-28-live-recording-design.md`).
 
 ## 1. Vì sao đổi
 - L2 dùng LiveKit ghi hình rồi đẩy vào kho kiểu S3. Mọi kho em tra đều vướng: R2 và Backblaze cần thẻ (R2 không có trần chi tiêu), MinIO đã dừng bản cộng đồng, tự chạy kho trên Vibe Host anh không muốn, Supabase free chặn 50 MB mỗi file và dừng dự án sau 1 tuần không hoạt động.
@@ -73,8 +73,15 @@ Ngày: 2026-10-28. Trạng thái: **chờ anh duyệt**. Thay cho cách lưu c�
 
 Cỡ ước tính: khoảng 1–1,5 ngày làm.
 
-## 4. Điểm anh cần chốt
-1. **Gỡ phần LiveKit ghi hình của L2** (để code gọn, lấy lại từ git được): đồng ý?
-2. **Màn hình + camera chỉ ghi màn hình** (không có khung camera nhỏ trong bản ghi): đồng ý?
-3. **Đổi nguồn giữa chừng thì ngừng ghi** (giữ phần đã ghi): đồng ý? (Muốn đi theo nguồn mới thì cần cách chỉ chạy trên Chrome / Edge, phức tạp hơn nhiều.)
-4. **Bật sẵn** không cần biến môi trường, trần **15 phút / kênh, 55 phút chung** mỗi tháng: giữ hay đổi số?
+## 4. Anh đã chốt (28/10)
+1. **Gỡ phần LiveKit ghi hình của L2**: đồng ý.
+2. **Màn hình + camera chỉ ghi màn hình**: đồng ý.
+3. **Đổi nguồn giữa chừng thì ngừng ghi** (giữ phần đã ghi): đồng ý.
+4. **Bật sẵn**, trần **15 phút / kênh, 55 phút chung** mỗi tháng: giữ như đề xuất. (Anh hỏi thêm cách LiveKit egress → RTMP → Cloudinary Live Streaming; em so sánh, anh chọn L2b. Cách đó để sau nếu cần ghi buổi OBS / ghi dài.)
+
+## 5. Khác với bản thiết kế khi code
+- Bản ghi **luôn được Cloudinary chuyển mã** (`CloudinaryService.uploadLiveRecording`), kể cả khi đã là MP4 H.264: tệp của MediaRecorder thường không ghi thời lượng / chỉ mục nên phát file gốc thì khó tua.
+- Trình duyệt gửi kèm thời lượng tự đo (`duration`); máy chủ dùng thời lượng Cloudinary đo, không có mới dùng số này, và **không bao giờ vượt số giây đã ghi theo đồng hồ của máy chủ** (hạn mức không tính theo số trình duyệt tự gửi).
+- Hết 6 giờ không nhận được bản ghi thì `FAILED` và **trả lại số phút** (đặt `recording_seconds = 0`), vì không có gì nằm trên Cloudinary.
+- Trình duyệt bắt đầu ghi khi máy chủ báo `RECORDING` **và** nguồn hình đã có (kiểu màn hình: sau khi chọn màn hình). Tải lại trang giữa buổi thì ghi lại từ lúc đó (phần trước mất).
+- Cột `egress_id` không còn dùng: bỏ khỏi entity và runner; cột cũ trên production vẫn nằm đó, không ảnh hưởng.

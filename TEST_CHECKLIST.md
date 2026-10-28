@@ -451,22 +451,23 @@ Bản thiết kế: `docs/superpowers/specs/2026-10-28-live-sources-thumbnail-de
 | 28.38 | Đang phát: ở bảng đang phát bấm vào ảnh thu nhỏ, chọn ảnh khác | Ảnh đổi ngay; thẻ ở `/live` đổi theo | |
 | 28.39 | Kết thúc buổi, mở tab **Trực tiếp** của kênh | Thẻ buổi đã phát **vẫn giữ ảnh thu nhỏ** | |
 
-### 28c. Ghi hình buổi phát để xem lại (L2)
+### 28c. Ghi hình buổi phát để xem lại (L2b: ghi trên trình duyệt, lưu ở Cloudinary)
 
-Bản thiết kế: `docs/superpowers/specs/2026-10-28-live-recording-design.md`. **Làm các bước ở mục 3.5 của thiết kế trước** (tạo bucket R2, đặt biến môi trường `LIVE_RECORDING_*` trên Vibe Host cho backend, redeploy backend). Chưa đặt biến thì ô ghi hình không hiện (kết quả đúng của 28.40). Chỉ thử buổi ngắn 2–3 phút: hạn mức ghi hình của LiveKit gói free là 60 phút mỗi tháng cho cả WeTube.
+Bản thiết kế: `docs/superpowers/specs/2026-10-28-live-recording-cloudinary-design.md`. Ghi hình **bật sẵn**, không cần đặt biến môi trường (tắt bằng `LIVE_RECORDING_ENABLED=false` cho backend). Trình duyệt của anh ghi rồi tải lên khi kết thúc, nên **đừng đóng tab cho tới khi tải xong**. Dùng Chrome hoặc Edge trên máy tính. Thử buổi ngắn 1–3 phút: mỗi kênh có 15 phút mỗi tháng, cả WeTube 55 phút, và bản ghi tốn credit Cloudinary.
 
 | # | Việc cần làm | Kết quả mong đợi | Kết quả |
 |---|---|---|---|
-| 28.40 | **Chưa** đặt biến môi trường, mở `/studio/live` | Không có ô "Ghi hình để xem lại"; mọi thứ khác như cũ | |
-| 28.41 | Đã đặt biến, mở `/studio/live`, chọn Phát từ trình duyệt | Có ô "Ghi hình để xem lại" (tắt sẵn) kèm "Kênh còn 15 phút ghi hình trong tháng này" | |
+| 28.40 | Mở `/studio/live`, chọn Phát từ trình duyệt | Có ô "Ghi hình để xem lại" (tắt sẵn) kèm "Kênh còn 15 phút ghi hình trong tháng này" và nhắc đừng đóng tab | |
+| 28.41 | Chọn kiểu **Chỉ âm thanh**, rồi **Phần mềm phát (OBS)** | Cả hai đều không có ô ghi hình; OBS có dòng nhắc dùng Record của OBS | |
 | 28.42 | Bật ô ghi hình, chưa chọn chủ đề | Hiện Chủ đề (bắt buộc); nút Bắt đầu bị khoá kèm dòng nhắc; "Gợi ý chủ đề" điền sẵn được | |
-| 28.43 | Chọn kiểu **Camera**, bật ghi hình, chọn chủ đề, Bắt đầu, phát khoảng 1 phút rồi bấm **Kết thúc buổi phát** | Trong lúc phát có dòng đỏ "● Đang ghi hình để xem lại"; kết thúc thì thông báo "Bản ghi sẽ thành video của kênh sau ít phút" | |
-| 28.44 | Mở `/live/{id}` của buổi vừa kết thúc, đợi tối đa vài phút | Lúc đầu "Đang xử lý bản ghi…", sau đó hiện nút **Xem lại** | |
-| 28.45 | Bấm **Xem lại** | Mở trang xem video: phát được, **tua được** (kéo thanh thời gian), có tiếng; có thời lượng đúng; tiêu đề, ảnh thu nhỏ đúng; mô tả bắt đầu bằng "Đã phát trực tiếp ngày …" | |
-| 28.46 | Vào trang kênh, tab **Video**, trang chủ, ô tìm kiếm | Video xem lại xuất hiện như video thường (công khai), có bình luận / thích | |
-| 28.47 | Người đăng ký kênh (chuông Tất cả) | **Không** có thông báo "video mới" thứ hai (chỉ có thông báo lúc lên sóng) | |
-| 28.48 | Buổi mới kiểu **Màn hình + camera** (chia sẻ một tab có tiếng), ghi 1–2 phút | Bản ghi thấy màn hình là hình chính và camera nhỏ ở góc, có tiếng micro và tiếng tab. **Đây là điểm em chưa chắc** (bố cục "speaker" của LiveKit): nếu sai hình hoặc thiếu tiếng thì báo em | |
-| 28.49 | Vào LiveKit Cloud → Usage sau các buổi thử | Số phút transcode đã dùng xấp xỉ tổng thời gian đã ghi (để biết hạn mức 60 phút bị trừ thế nào) | |
-| 28.50 | Chọn **Phần mềm phát (OBS)** | Không có ô ghi hình, có dòng nhắc dùng Record của OBS rồi tải tệp lên | |
-| 28.51 | Buổi bật ghi hình nhưng kết thúc sau chưa tới 30 giây | Không có video xem lại; chủ kênh thấy "Bản ghi dưới 30 giây nên không đăng thành video" ở trang `/live/{id}` | |
-| 28.52 | Đặt `LIVE_RECORDING_CHANNEL_MINUTES=2` (tạm), ghi một buổi dài hơn 2 phút | Sau khoảng 2 phút bản ghi dừng, chủ kênh thấy "Đã ghi đủ phần ghi hình của tháng…", buổi vẫn phát; bản ghi 2 phút vẫn thành video. Tạo buổi mới bật ghi hình thì ô bị khoá kèm lý do. Nhớ đặt lại 15 | |
+| 28.43 | Kiểu **Camera**, bật ghi hình, chọn chủ đề, Bắt đầu, phát khoảng 1 phút rồi bấm **Kết thúc buổi phát** | Lúc lên sóng có dòng đỏ "● Đang ghi hình để xem lại"; kết thúc thì báo "Đang tải bản ghi lên, đừng đóng tab", trang Studio hiện thanh "Đang tải bản ghi lên… N%", xong thì "Bản ghi … đã thành video công khai của kênh" + nút **Xem video** | |
+| 28.44 | Trong lúc thanh tải lên đang chạy, thử đóng tab | Trình duyệt hỏi lại có rời trang không (bấm Ở lại) | |
+| 28.45 | Bấm **Xem video** (có thể phải đợi vài phút để Cloudinary chuyển mã) | Phát được, **tua được** (kéo thanh thời gian), có tiếng; thời lượng đúng; tiêu đề, ảnh thu nhỏ đúng; mô tả bắt đầu bằng "Đã phát trực tiếp ngày …" | |
+| 28.46 | Mở `/live/{id}` của buổi vừa kết thúc | Có nút **Xem lại** | |
+| 28.47 | Vào trang kênh, tab **Video**, trang chủ, ô tìm kiếm | Video xem lại xuất hiện như video thường (công khai), có bình luận / thích | |
+| 28.48 | Người đăng ký kênh (chuông Tất cả) | **Không** có thông báo "video mới" thứ hai (chỉ có thông báo lúc lên sóng) | |
+| 28.49 | Buổi mới kiểu **Màn hình + camera** (chia sẻ một tab có tiếng), ghi 1–2 phút | Bản ghi **chỉ có màn hình** (không có khung camera nhỏ, đúng như anh chốt), có tiếng micro và tiếng tab | |
+| 28.50 | Buổi kiểu **Màn hình** có ghi hình, giữa chừng bấm "Dừng chia sẻ" của trình duyệt | Bảng đang phát báo "Ghi hình đã dừng vì nguồn hình đã tắt. Phần đã ghi sẽ được tải lên khi kết thúc buổi phát."; kết thúc thì phần đã ghi thành video | |
+| 28.51 | Buổi bật ghi hình nhưng kết thúc sau chưa tới 30 giây | Không có video; trang Studio báo "Bản ghi dưới 30 giây nên không đăng thành video." | |
+| 28.52 | Đặt `LIVE_RECORDING_CHANNEL_MINUTES=2` (tạm) cho backend, ghi một buổi dài hơn 2 phút | Sau khoảng 2 phút bản ghi dừng (bảng đang phát báo đã ghi đủ phần của tháng), buổi vẫn phát; kết thúc thì bản ghi khoảng 2 phút thành video. Tạo buổi mới bật ghi hình thì ô bị khoá kèm lý do. Nhớ xoá biến (về 15) | |
+| 28.53 | Sau các buổi thử, mở Cloudinary → Usage | Credit tăng thêm bao nhiêu (để biết một phút ghi tốn bao nhiêu); báo em con số | |
