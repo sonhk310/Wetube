@@ -58,10 +58,21 @@ export default function LiveEncoderPanel({ live }: { live: LiveView }) {
         </li>
         <li>Dán Server và {whip ? "Bearer Token" : "Khoá luồng"} ở trên, rồi bấm Áp dụng.</li>
         <li>
+          Ở ô <b>Nguồn (Sources)</b> của OBS, bấm dấu <b>+</b> và thêm nguồn hình (vd. <b>Chụp màn hình</b>). Chưa có
+          nguồn thì OBS phát màn hình đen.
+        </li>
+        <li>
           Bấm <b>Bắt đầu phát (Start Streaming)</b>. Khi có hình, buổi phát tự chuyển sang trực tiếp.
         </li>
       </ol>
-      {whip ? <p className="text-xs text-gray-500">WHIP cần OBS phiên bản 30 trở lên.</p> : null}
+      <p className="text-xs text-gray-500">
+        {whip ? "WHIP cần OBS phiên bản 30 trở lên. " : null}
+        Chưa có OBS?{" "}
+        <a href="https://obsproject.com/download" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+          Tải OBS miễn phí
+        </a>
+        .
+      </p>
     </div>
   );
 }
