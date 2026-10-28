@@ -7,14 +7,16 @@ import java.util.UUID;
 import com.wetube.wetube_service.enumeration.LiveProtocol;
 import com.wetube.wetube_service.enumeration.LiveSource;
 import com.wetube.wetube_service.enumeration.LiveStatus;
+import com.wetube.wetube_service.enumeration.RecordingStatus;
 
 import lombok.Builder;
 
 /**
  * Một buổi phát. ingress chỉ có khi người gọi là chủ kênh; poll là Poll đang mở (hoặc vừa đóng trong 60 giây);
- * polls là mọi Poll của buổi, chỉ khi buổi đã kết thúc.
+ * polls là mọi Poll của buổi, chỉ khi buổi đã kết thúc. recordingMessage (lý do không có video xem lại) chỉ có khi
+ * người gọi là chủ kênh; replayVideoId có khi bản ghi đã thành video.
  */
-@Builder
+@Builder(toBuilder = true)
 public record LiveView(
         UUID id,
         UUID channelId,
@@ -29,6 +31,10 @@ public record LiveView(
         LiveProtocol protocol,
         String thumbnailUrl,
         boolean chatEnabled,
+        boolean recordingEnabled,
+        RecordingStatus recordingStatus,
+        String recordingMessage,
+        UUID replayVideoId,
         int currentViewers,
         int peakViewers,
         LocalDateTime createdAt,

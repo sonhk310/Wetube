@@ -23,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.wetube.wetube_service.dto.live.CreateLiveRequest;
 import com.wetube.wetube_service.dto.live.LiveChatMessage;
+import com.wetube.wetube_service.dto.live.LiveRecordingInfo;
 import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
 import com.wetube.wetube_service.dto.live.OpenPollRequest;
@@ -53,7 +54,7 @@ class LiveControllerTest {
     @Test
     void createUsesTheLoggedInUserNotAnythingFromTheBody() {
         UUID me = UUID.randomUUID();
-        CreateLiveRequest body = new CreateLiveRequest("Tiêu đề", null, LiveSource.BROWSER, null, true);
+        CreateLiveRequest body = new CreateLiveRequest("Tiêu đề", null, LiveSource.BROWSER, null, true, null, null);
         LiveView created = LiveView.builder().id(UUID.randomUUID()).build();
         when(service.create(me, body)).thenReturn(created);
 
@@ -61,8 +62,20 @@ class LiveControllerTest {
     }
 
     @Test
+    void recordingQuotaIsForTheLoggedInUserAndIs401Otherwise() {
+        UUID me = UUID.randomUUID();
+        LiveRecordingInfo info = new LiveRecordingInfo(true, 600, null);
+        when(service.recordingInfo(me)).thenReturn(info);
+
+        assertThat(controller.recording(jwtOf(me))).isSameAs(info);
+        assertThatThrownBy(() -> controller.recording(null))
+                .isInstanceOfSatisfying(ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+    }
+
+    @Test
     void createWithoutLoginIs401() {
-        assertThatThrownBy(() -> controller.create(new CreateLiveRequest("a", null, null, null, null), null))
+        assertThatThrownBy(() -> controller.create(new CreateLiveRequest("a", null, null, null, null, null, null), null))
                 .isInstanceOfSatisfying(ResponseStatusException.class,
                         e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
         verify(service, never()).create(any(), any());

@@ -19,6 +19,9 @@ import com.wetube.wetube_service.enumeration.ActiveStatus;
 
 public interface VideoRepository extends JpaRepository<Video, UUID> {
 
+    /** Video đã tạo từ một link (bản ghi buổi phát: tạo lại cùng link thì không nhân đôi video). */
+    Optional<Video> findFirstByVideoUrl(String videoUrl);
+
     /** Bảng tin Đăng ký: video công khai mới nhất của các kênh. */
     @Query("""
             SELECT v FROM Video v

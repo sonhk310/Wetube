@@ -35,7 +35,10 @@ import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.security.RateLimiter;
+import com.wetube.wetube_service.dto.LiveRecordingProperties;
 import com.wetube.wetube_service.service.CloudinaryService;
+import com.wetube.wetube_service.service.video.TopicCatalog;
+import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.live.LiveKitGateway.Participant;
 import com.wetube.wetube_service.service.notification.NotificationService;
 
@@ -61,6 +64,7 @@ class LiveStreamLifecycleTest {
     void setUp() {
         service = new LiveStreamService(repo, mock(UserRepository.class), channelRepo, gateway,
                 mock(RateLimiter.class), publisher, notifications, mock(LivePollService.class), cloudinary,
+                new LiveRecordingProperties(), mock(TopicCatalog.class), mock(VideoService.class),
                 List.of(cleanup), tm);
         when(repo.findByStatusIn(any())).thenAnswer(inv -> List.copyOf(unfinished));
         when(repo.save(any(LiveStream.class))).thenAnswer(inv -> inv.getArgument(0));

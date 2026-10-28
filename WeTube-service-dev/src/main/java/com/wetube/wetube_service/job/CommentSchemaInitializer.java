@@ -65,6 +65,8 @@ public class CommentSchemaInitializer implements CommandLineRunner {
         addColumn("notifications", "live_id", "VARCHAR(36) NULL");
         addIndex("live_streams", "idx_live_streams_status", "status");
         addIndex("live_streams", "idx_live_streams_channel", "channel_id");
+        // Ghi hình (L2): cộng dồn số phút đã ghi theo kênh và theo tháng
+        addIndex("live_streams", "idx_live_streams_recording", "channel_id, recording_started_at");
         addIndex("live_polls", "idx_live_polls_stream", "stream_id");
         // Báo cáo kênh: có channel_id, không có video_id
         if (addColumn("reports", "channel_id", "VARCHAR(36) NULL")) {

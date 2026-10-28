@@ -43,7 +43,10 @@ import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.RateLimiter.Limit;
+import com.wetube.wetube_service.dto.LiveRecordingProperties;
 import com.wetube.wetube_service.service.CloudinaryService;
+import com.wetube.wetube_service.service.video.TopicCatalog;
+import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.live.LiveKitGateway.IngressDetails;
 import com.wetube.wetube_service.service.notification.NotificationService;
 
@@ -87,7 +90,7 @@ class LiveStreamServiceTest {
     }
 
     private static CreateLiveRequest request(LiveSource source, String title) {
-        return new CreateLiveRequest(title, "mô tả", source, null, true);
+        return new CreateLiveRequest(title, "mô tả", source, null, true, null, null);
     }
 
     private static HttpStatus statusOf(Throwable t) {
@@ -97,7 +100,8 @@ class LiveStreamServiceTest {
     @BeforeEach
     void setUp() {
         service = new LiveStreamService(repo, userRepo, channelRepo, gateway, rateLimiter, publisher,
-                mock(NotificationService.class), polls, cloudinary, List.of(cleanup), tm);
+                mock(NotificationService.class), polls, cloudinary, new LiveRecordingProperties(),
+                mock(TopicCatalog.class), mock(VideoService.class), List.of(cleanup), tm);
         when(repo.save(any(LiveStream.class))).thenAnswer(inv -> {
             LiveStream s = inv.getArgument(0);
             if (s.getId() == null) {

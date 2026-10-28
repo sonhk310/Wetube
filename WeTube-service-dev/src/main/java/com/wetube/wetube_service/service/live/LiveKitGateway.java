@@ -40,6 +40,25 @@ public interface LiveKitGateway {
     /** Xoá Ingress không hoạt động / lỗi, trừ các id trong keepIngressIds; trả số đã xoá. */
     int deleteInactiveIngress(Collection<String> keepIngressIds);
 
+    /**
+     * Bắt đầu ghi cả phòng (bố cục "speaker": màn hình là hình chính, camera nhỏ) ra MP4 vào kho tương thích S3;
+     * trả id phiên ghi. {@code filepath} là đường dẫn file trong bucket.
+     */
+    String startRecording(String room, String filepath);
+
+    /** Báo dừng ghi; LiveKit còn vài giây để hoàn tất file nên kết quả lấy bằng {@link #recording}. */
+    void stopRecording(String egressId);
+
+    /** Trạng thái phiên ghi; null nếu LiveKit không biết id này. */
+    RecordingInfo recording(String egressId);
+
+    /**
+     * finished = đã kết thúc (xong, lỗi hay chạm giới hạn thời gian); hasFile = có file trong kho; seconds = thời lượng
+     * file; error = lý do lỗi của LiveKit (rỗng nếu không).
+     */
+    record RecordingInfo(boolean finished, boolean hasFile, long seconds, String error) {
+    }
+
     /** Địa chỉ WebSocket của LiveKit cho trình duyệt. */
     String wsUrl();
 }

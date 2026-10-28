@@ -43,6 +43,16 @@ public class LiveSchemaInitializer implements CommandLineRunner {
                     status VARCHAR(20) NOT NULL,
                     thumbnail_url VARCHAR(500),
                     chat_enabled BIT(1) NOT NULL,
+                    recording_enabled BIT(1) NOT NULL DEFAULT 0,
+                    topic_id VARCHAR(100),
+                    recording_status VARCHAR(20),
+                    egress_id VARCHAR(100),
+                    recording_started_at DATETIME(6),
+                    recording_stopped_at DATETIME(6),
+                    recording_seconds INT NOT NULL DEFAULT 0,
+                    recording_url VARCHAR(500),
+                    recording_message VARCHAR(200),
+                    replay_video_id VARCHAR(36),
                     livekit_room VARCHAR(100),
                     ingress_id VARCHAR(100),
                     ingress_url VARCHAR(500),
@@ -75,6 +85,17 @@ public class LiveSchemaInitializer implements CommandLineRunner {
                 )""");
         // Bảng live_streams đã có trên production từ L1: CREATE TABLE IF NOT EXISTS không thêm cột cho nó
         addColumn("live_streams", "thumbnail_url", "VARCHAR(500) NULL");
+        // Ghi hình (L2): cột mới cho bảng đã có
+        addColumn("live_streams", "recording_enabled", "BIT(1) NOT NULL DEFAULT 0");
+        addColumn("live_streams", "topic_id", "VARCHAR(100) NULL");
+        addColumn("live_streams", "recording_status", "VARCHAR(20) NULL");
+        addColumn("live_streams", "egress_id", "VARCHAR(100) NULL");
+        addColumn("live_streams", "recording_started_at", "DATETIME(6) NULL");
+        addColumn("live_streams", "recording_stopped_at", "DATETIME(6) NULL");
+        addColumn("live_streams", "recording_seconds", "INT NOT NULL DEFAULT 0");
+        addColumn("live_streams", "recording_url", "VARCHAR(500) NULL");
+        addColumn("live_streams", "recording_message", "VARCHAR(200) NULL");
+        addColumn("live_streams", "replay_video_id", "VARCHAR(36) NULL");
     }
 
     /** Thêm cột nếu chưa có (cột có từ CREATE TABLE ở trên thì bỏ qua). */

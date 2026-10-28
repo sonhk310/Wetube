@@ -23,6 +23,7 @@ import com.wetube.wetube_service.dto.live.ChannelLivesResponse;
 import com.wetube.wetube_service.dto.live.CreateLiveRequest;
 import com.wetube.wetube_service.dto.live.LiveCard;
 import com.wetube.wetube_service.dto.live.LiveChatMessage;
+import com.wetube.wetube_service.dto.live.LiveRecordingInfo;
 import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
 import com.wetube.wetube_service.dto.live.OpenPollRequest;
@@ -64,6 +65,12 @@ public class LiveController {
     @GetMapping("/me")
     public ResponseEntity<LiveView> mine(@AuthenticationPrincipal Jwt jwt) {
         return service.mine(CurrentUser.id(jwt)).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    /** Form chuẩn bị hỏi: máy chủ có bật ghi hình không và kênh còn bao nhiêu giây ghi trong tháng. */
+    @GetMapping("/recording")
+    public LiveRecordingInfo recording(@AuthenticationPrincipal Jwt jwt) {
+        return service.recordingInfo(CurrentUser.id(jwt));
     }
 
     @PatchMapping("/{id}")

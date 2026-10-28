@@ -9,6 +9,7 @@ import org.hibernate.type.SqlTypes;
 import com.wetube.wetube_service.enumeration.LiveProtocol;
 import com.wetube.wetube_service.enumeration.LiveSource;
 import com.wetube.wetube_service.enumeration.LiveStatus;
+import com.wetube.wetube_service.enumeration.RecordingStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -80,6 +81,44 @@ public class LiveStream {
 
     @Column(name = "chat_enabled", nullable = false)
     private boolean chatEnabled;
+
+    /** Chủ kênh bật "Ghi hình để xem lại" (chỉ buổi phát từ trình duyệt). */
+    @Column(name = "recording_enabled", nullable = false, columnDefinition = "BIT(1) NOT NULL DEFAULT 0")
+    private boolean recordingEnabled;
+
+    /** Chủ đề của video xem lại; chỉ có khi bật ghi hình. */
+    @Column(name = "topic_id", length = 100)
+    private String topicId;
+
+    /** Null coi như NONE (hàng cũ từ trước khi có ghi hình). */
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "recording_status", length = 20)
+    private RecordingStatus recordingStatus;
+
+    @Column(name = "egress_id", length = 100)
+    private String egressId;
+
+    @Column(name = "recording_started_at")
+    private LocalDateTime recordingStartedAt;
+
+    @Column(name = "recording_stopped_at")
+    private LocalDateTime recordingStoppedAt;
+
+    /** Thời lượng đã ghi: ước tính theo đồng hồ khi dừng, thay bằng thời lượng thật của file khi LiveKit trả về. */
+    @Column(name = "recording_seconds", nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
+    private int recordingSeconds;
+
+    @Column(name = "recording_url", length = 500)
+    private String recordingUrl;
+
+    /** Lý do bằng tiếng Việt khi không có video (hết hạn mức, lỗi...); chỉ chủ kênh thấy. */
+    @Column(name = "recording_message", length = 200)
+    private String recordingMessage;
+
+    @Column(name = "replay_video_id", columnDefinition = "VARCHAR(36)")
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    private UUID replayVideoId;
 
     @Column(name = "livekit_room", length = 100)
     private String livekitRoom;

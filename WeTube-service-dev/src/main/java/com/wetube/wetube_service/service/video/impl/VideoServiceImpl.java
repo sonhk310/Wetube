@@ -259,6 +259,47 @@ private static String draftTitle(String fileName) {
     return name.isEmpty() ? "Video không có tiêu đề" : name;
 }
 
+    /**
+     * REQUIRES_NEW: lỗi ở đây chỉ huỷ video này, không đánh dấu rollback cho giao dịch của job buổi phát đang gọi
+     * (job cần ghi lại lý do lỗi vào buổi phát).
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class, propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public UUID createLiveReplay(LiveReplay replay) {
+        var existing = videoRepository.findFirstByVideoUrl(replay.videoUrl());
+        if (existing.isPresent()) {
+            return existing.get().getId();
+        }
+        AppUser user = userRepository.findById(replay.ownerId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + replay.ownerId()));
+        requireChannelNotHidden(user);
+
+        LocalDateTime now = LocalDateTime.now();
+        Video saved = videoRepository.save(Video.builder()
+                .user(user)
+                .title(replay.title())
+                .description(replay.description())
+                .topicId(replay.topicId())
+                .videoUrl(replay.videoUrl())
+                .thumbnailUrl(replay.thumbnailUrl())
+                .videosStatus(ActiveStatus.ACTIVE)
+                .duration(replay.durationSeconds())
+                .isShort(false)
+                .createdAt(now)
+                .updatedAt(now)
+                .build());
+        videoRepository.flush();
+        addVideoToUserUploadedPlaylist(saved);
+
+        String tags = Hashtags.mergeWithTagsInput(null, replay.title(), replay.description());
+        if (tags != null && !tags.isBlank()) {
+            addTags(saved.getId(), tags); // đã đánh chỉ mục tìm kiếm sau khi gắn thẻ
+        } else {
+            indexToElasticsearch(saved);
+        }
+        return saved.getId();
+    }
+
     private void indexToElasticsearch(Video video) {
         videoIndexer.index(video);
     }

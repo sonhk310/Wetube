@@ -8,6 +8,7 @@ import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 
+import com.wetube.wetube_service.dto.LiveRecordingProperties;
 import com.wetube.wetube_service.dto.LivekitProperties;
 import com.wetube.wetube_service.enumeration.LiveProtocol;
 
@@ -15,10 +16,12 @@ import io.livekit.server.AccessToken;
 import io.livekit.server.CanPublish;
 import io.livekit.server.CanPublishData;
 import io.livekit.server.CanSubscribe;
+import io.livekit.server.EgressServiceClient;
 import io.livekit.server.IngressServiceClient;
 import io.livekit.server.RoomJoin;
 import io.livekit.server.RoomName;
 import io.livekit.server.RoomServiceClient;
+import livekit.LivekitEgress;
 import livekit.LivekitIngress;
 import livekit.LivekitModels;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +40,19 @@ public class LiveKitGatewayImpl implements LiveKitGateway {
     /** Phòng chưa có ai (chờ OBS nối) được giữ chừng này giây; buổi CREATED bị huỷ sau 1 giờ nên không cần lâu hơn. */
     private static final int EMPTY_TIMEOUT_SECONDS = (int) Duration.ofHours(1).toSeconds();
 
+    /** Bản ghi: 720p 30 khung / giây, khoảng 1,5 Mb/giây hình + 96 kb/giây tiếng (≈ 0,7 GB một giờ). */
+    private static final int RECORD_WIDTH = 1280;
+    private static final int RECORD_HEIGHT = 720;
+    private static final int RECORD_FPS = 30;
+    private static final int RECORD_VIDEO_KBPS = 1500;
+    private static final int RECORD_AUDIO_KBPS = 96;
+    private static final long NANOS_PER_SECOND = 1_000_000_000L;
+
     private final RoomServiceClient roomClient;
     private final IngressServiceClient ingressClient;
+    private final EgressServiceClient egressClient;
     private final LivekitProperties props;
+    private final LiveRecordingProperties recording;
 
     @Override
     public void createRoom(String room, String metadataJson, int maxParticipants) {
@@ -137,6 +150,64 @@ public class LiveKitGatewayImpl implements LiveKitGateway {
             }
         }
         return deleted;
+    }
+
+    @Override
+    public String startRecording(String room, String filepath) {
+        LivekitEgress.S3Upload s3 = LivekitEgress.S3Upload.newBuilder()
+                .setAccessKey(recording.getS3AccessKey())
+                .setSecret(recording.getS3Secret())
+                .setBucket(recording.getS3Bucket())
+                .setEndpoint(recording.getS3Endpoint())
+                .setRegion("auto")
+                .setForcePathStyle(true)
+                .build();
+        LivekitEgress.EncodedFileOutput output = LivekitEgress.EncodedFileOutput.newBuilder()
+                .setFileType(LivekitEgress.EncodedFileType.MP4)
+                .setFilepath(filepath)
+                .setS3(s3)
+                .build();
+        LivekitEgress.EncodingOptions encoding = LivekitEgress.EncodingOptions.newBuilder()
+                .setWidth(RECORD_WIDTH)
+                .setHeight(RECORD_HEIGHT)
+                .setFramerate(RECORD_FPS)
+                .setVideoCodec(LivekitModels.VideoCodec.H264_MAIN)
+                .setVideoBitrate(RECORD_VIDEO_KBPS)
+                .setAudioCodec(LivekitModels.AudioCodec.AAC)
+                .setAudioBitrate(RECORD_AUDIO_KBPS)
+                .build();
+        LivekitEgress.EgressInfo info = ok(send(egressClient.startRoomCompositeEgress(room, output, "speaker", null,
+                encoding, false, false, null, null)));
+        return info.getEgressId();
+    }
+
+    @Override
+    public void stopRecording(String egressId) {
+        Response<LivekitEgress.EgressInfo> resp = send(egressClient.stopEgress(egressId));
+        // 404: phiên ghi đã tự kết thúc (vd. phòng bị xoá) nên không còn gì để dừng
+        if (resp.code() != 404) {
+            ok(resp);
+        }
+    }
+
+    @Override
+    public RecordingInfo recording(String egressId) {
+        List<LivekitEgress.EgressInfo> found = ok(send(egressClient.listEgress(null, egressId)));
+        if (found == null || found.isEmpty()) {
+            return null;
+        }
+        LivekitEgress.EgressInfo info = found.get(0);
+        LivekitEgress.EgressStatus status = info.getStatus();
+        boolean finished = status == LivekitEgress.EgressStatus.EGRESS_COMPLETE
+                || status == LivekitEgress.EgressStatus.EGRESS_FAILED
+                || status == LivekitEgress.EgressStatus.EGRESS_ABORTED
+                || status == LivekitEgress.EgressStatus.EGRESS_LIMIT_REACHED;
+        // LIMIT_REACHED (file MP4 tối đa 3 giờ) vẫn giao phần đã ghi
+        boolean hasFile = info.getFileResultsCount() > 0 && !info.getFileResults(0).getFilename().isEmpty()
+                && (status == LivekitEgress.EgressStatus.EGRESS_COMPLETE
+                || status == LivekitEgress.EgressStatus.EGRESS_LIMIT_REACHED);
+        long seconds = hasFile ? info.getFileResults(0).getDuration() / NANOS_PER_SECOND : 0;
+        return new RecordingInfo(finished, hasFile, seconds, info.getError());
     }
 
     @Override

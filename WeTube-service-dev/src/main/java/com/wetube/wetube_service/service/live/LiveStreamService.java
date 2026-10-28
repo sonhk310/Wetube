@@ -2,6 +2,9 @@ package com.wetube.wetube_service.service.live;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,11 +29,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.wetube.wetube_service.dto.LiveRecordingProperties;
 import com.wetube.wetube_service.dto.live.ChannelLivesResponse;
 import com.wetube.wetube_service.dto.live.CreateLiveRequest;
 import com.wetube.wetube_service.dto.live.IngressView;
 import com.wetube.wetube_service.dto.live.LiveCard;
 import com.wetube.wetube_service.dto.live.LiveEvent;
+import com.wetube.wetube_service.dto.live.LiveRecordingInfo;
 import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
 import com.wetube.wetube_service.dto.live.PollView;
@@ -42,6 +47,7 @@ import com.wetube.wetube_service.enumeration.ActiveStatus;
 import com.wetube.wetube_service.enumeration.LiveProtocol;
 import com.wetube.wetube_service.enumeration.LiveSource;
 import com.wetube.wetube_service.enumeration.LiveStatus;
+import com.wetube.wetube_service.enumeration.RecordingStatus;
 import com.wetube.wetube_service.repository.UserRepository;
 import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.live.LiveStreamRepository;
@@ -50,7 +56,11 @@ import com.wetube.wetube_service.security.RateLimiter.Limit;
 import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.live.LiveKitGateway.IngressDetails;
 import com.wetube.wetube_service.service.live.LiveKitGateway.Participant;
+import com.wetube.wetube_service.service.live.LiveKitGateway.RecordingInfo;
 import com.wetube.wetube_service.service.notification.NotificationService;
+import com.wetube.wetube_service.service.video.TopicCatalog;
+import com.wetube.wetube_service.service.video.VideoService;
+import com.wetube.wetube_service.service.video.VideoService.LiveReplay;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,6 +79,13 @@ public class LiveStreamService {
     static final int VIEWER_CAP = 40;
     /** Trần cứng của phòng LiveKit: người xem + chủ kênh (webcam hoặc OBS) + chỗ dự phòng. */
     static final int ROOM_PARTICIPANT_CAP = VIEWER_CAP + 5;
+    /** Bản ghi ngắn hơn mức này không đăng thành video. */
+    static final int MIN_REPLAY_SECONDS = 30;
+    /** Dừng ghi rồi mà LiveKit chưa trả file sau chừng này phút thì thôi, đánh dấu lỗi. */
+    static final int RECORDING_RESULT_WAIT_MINUTES = 30;
+    private static final int MESSAGE_MAX = 200;
+    private static final ZoneId VIETNAM = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final DateTimeFormatter REPLAY_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final Duration GRACE = Duration.ofMinutes(2);
     private static final Duration CREATED_TTL = Duration.ofHours(1);
     private static final Duration MAX_LIFE = Duration.ofHours(12);
@@ -83,6 +100,9 @@ public class LiveStreamService {
     private final NotificationService notifications;
     private final LivePollService polls;
     private final CloudinaryService cloudinary;
+    private final LiveRecordingProperties recording;
+    private final TopicCatalog topicCatalog;
+    private final VideoService videos;
     private final List<LiveCleanup> cleanups;
     /** Mỗi buổi được làm mới trong một transaction ngắn riêng (job 15 giây). */
     private final TransactionTemplate tx;
@@ -95,6 +115,7 @@ public class LiveStreamService {
     public LiveStreamService(LiveStreamRepository repo, UserRepository userRepo, ChannelRepository channelRepo,
                              LiveKitGateway gateway, RateLimiter rateLimiter, LiveEventPublisher publisher,
                              NotificationService notifications, LivePollService polls, CloudinaryService cloudinary,
+                             LiveRecordingProperties recording, TopicCatalog topicCatalog, VideoService videos,
                              List<LiveCleanup> cleanups, PlatformTransactionManager transactionManager) {
         this.repo = repo;
         this.userRepo = userRepo;
@@ -105,6 +126,9 @@ public class LiveStreamService {
         this.notifications = notifications;
         this.polls = polls;
         this.cloudinary = cloudinary;
+        this.recording = recording;
+        this.topicCatalog = topicCatalog;
+        this.videos = videos;
         this.cleanups = cleanups;
         this.tx = new TransactionTemplate(transactionManager);
         this.txNew = new TransactionTemplate(transactionManager);
@@ -117,6 +141,8 @@ public class LiveStreamService {
         String title = cleanTitle(req.title());
         String description = cleanDescription(req.description());
         LiveSource source = req.source() == null ? LiveSource.BROWSER : req.source();
+        boolean wantsRecording = Boolean.TRUE.equals(req.recordingEnabled());
+        String recordingTopic = wantsRecording ? cleanRecordingTopic(source, req.topicId()) : null;
 
         AppUser user = userRepo.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Hãy đăng nhập để phát trực tiếp"));
@@ -127,6 +153,12 @@ public class LiveStreamService {
         if (channel.getStatus() == ActiveStatus.INACTIVE) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Kênh của bạn đang bị ẩn nên không thể phát trực tiếp");
+        }
+        if (wantsRecording) {
+            RecordingLeft left = recordingLeft(channel.getId(), LocalDateTime.now());
+            if (left.seconds() <= 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, exhaustedMessage(left));
+            }
         }
         rateLimiter.check(Limit.LIVE_CREATE, userId);
 
@@ -163,6 +195,9 @@ public class LiveStreamService {
                         .protocol(protocol)
                         .status(LiveStatus.CREATED)
                         .chatEnabled(req.chatEnabled() == null || req.chatEnabled())
+                        .recordingEnabled(wantsRecording)
+                        .topicId(recordingTopic)
+                        .recordingStatus(RecordingStatus.NONE)
                         .livekitRoom(room)
                         .ingressId(ingress == null ? null : ingress.ingressId())
                         .ingressUrl(ingress == null ? null : ingress.url())
@@ -239,6 +274,10 @@ public class LiveStreamService {
      * rồi cho các LiveCleanup (chat, Poll) dọn.
      */
     void finish(LiveStream stream, LiveStatus status, LocalDateTime now) {
+        // Báo dừng ghi trước khi xoá phòng; file do job lấy sau (buổi ENDED vẫn có recording_status STOPPING)
+        if (recStatus(stream) == RecordingStatus.RECORDING) {
+            stopRecording(stream, now, null);
+        }
         if (stream.getLivekitRoom() != null) {
             deleteRoomQuietly(stream.getLivekitRoom());
         }
@@ -349,6 +388,17 @@ public class LiveStreamService {
                 log.warn("[Live] Cập nhật buổi {} lỗi: {}", id, e.getMessage());
             }
         }
+        // Buổi đã báo dừng ghi (kể cả buổi đã kết thúc, không còn trong danh sách trên): chờ LiveKit trả file
+        for (LiveStream listed : repo.findByRecordingStatusIn(List.of(RecordingStatus.STOPPING))) {
+            UUID id = listed.getId();
+            try {
+                tx.executeWithoutResult(status -> repo.findById(id)
+                        .filter(current -> recStatus(current) == RecordingStatus.STOPPING)
+                        .ifPresent(current -> pollStoppedRecording(current, now)));
+            } catch (RuntimeException e) {
+                log.warn("[Live] Lấy bản ghi của buổi {} lỗi: {}", id, e.getMessage());
+            }
+        }
     }
 
     private void refresh(LiveStream stream, LocalDateTime now) {
@@ -380,6 +430,8 @@ public class LiveStreamService {
             }
         }
 
+        refreshRecording(stream, now);
+
         boolean viewersChanged = viewers != stream.getCurrentViewers();
         stream.setCurrentViewers(viewers);
         stream.setPeakViewers(Math.max(stream.getPeakViewers(), viewers));
@@ -395,6 +447,9 @@ public class LiveStreamService {
         stream.setStatus(LiveStatus.LIVE);
         stream.setStartedAt(now);
         stream.setLastPublisherAt(now);
+        if (stream.isRecordingEnabled()) {
+            startRecording(stream, now);
+        }
         repo.save(stream);
         publisher.toStream(stream.getId(), LiveEvent.builder().type("STATUS").status(LiveStatus.LIVE.name()).build());
         try {
@@ -417,6 +472,215 @@ public class LiveStreamService {
             log.warn("[Live] Không dọn được Ingress: {}", e.getMessage());
             return 0;
         }
+    }
+
+    // ------------------------------------------------------------------ ghi hình
+
+    /** Form chuẩn bị hỏi: máy chủ có bật ghi hình không và kênh của người gọi còn bao nhiêu giây trong tháng. */
+    @Transactional(readOnly = true)
+    public LiveRecordingInfo recordingInfo(UUID userId) {
+        if (!recording.isAvailable()) {
+            return new LiveRecordingInfo(false, 0, null);
+        }
+        Channel channel = userRepo.findById(userId).map(AppUser::getChannel).orElse(null);
+        if (channel == null) {
+            return new LiveRecordingInfo(false, 0, null);
+        }
+        RecordingLeft left = recordingLeft(channel.getId(), LocalDateTime.now());
+        return new LiveRecordingInfo(true, left.seconds(), left.limitedBy());
+    }
+
+    private static RecordingStatus recStatus(LiveStream stream) {
+        return stream.getRecordingStatus() == null ? RecordingStatus.NONE : stream.getRecordingStatus();
+    }
+
+    /** Hợp lệ khi tạo buổi: chỉ buổi từ trình duyệt, máy chủ đã bật ghi hình, có chủ đề hợp lệ. Trả chủ đề đã làm sạch. */
+    private String cleanRecordingTopic(LiveSource source, String raw) {
+        if (source != LiveSource.BROWSER) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Chỉ ghi hình được buổi phát từ trình duyệt; với OBS hãy dùng chức năng ghi hình của OBS");
+        }
+        if (!recording.isAvailable()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ghi hình chưa được bật trên máy chủ");
+        }
+        String topic = raw == null ? "" : raw.strip();
+        if (topic.isEmpty() || !topicCatalog.exists(topic)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hãy chọn chủ đề cho video xem lại");
+        }
+        return topic;
+    }
+
+    /** Số giây còn được ghi trong tháng (mức thấp hơn giữa phần của kênh và phần chung) và nơi bị giới hạn. */
+    private record RecordingLeft(long seconds, String limitedBy) {
+    }
+
+    private RecordingLeft recordingLeft(UUID channelId, LocalDateTime now) {
+        LocalDateTime from = now.toLocalDate().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime to = from.plusMonths(1);
+        List<LiveStream> running = repo.findByRecordingStatusIn(List.of(RecordingStatus.RECORDING));
+        long channelLeft = recording.getChannelMinutes() * 60L
+                - repo.sumRecordingSecondsByChannel(channelId, from, to) - runningSeconds(running, channelId, from, now);
+        long totalLeft = recording.getTotalMinutes() * 60L
+                - repo.sumRecordingSeconds(from, to) - runningSeconds(running, null, from, now);
+        long left = Math.min(channelLeft, totalLeft);
+        return new RecordingLeft(Math.max(0, left), left > 0 ? null : (channelLeft <= 0 ? "CHANNEL" : "TOTAL"));
+    }
+
+    /** Phần đang chạy của các buổi đang ghi (số giây của chúng chỉ chốt khi dừng); channelId null là mọi kênh. */
+    private static long runningSeconds(List<LiveStream> running, UUID channelId, LocalDateTime monthStart,
+                                       LocalDateTime now) {
+        long total = 0;
+        for (LiveStream s : running) {
+            if (s.getRecordingStartedAt() == null || (channelId != null && !channelId.equals(s.getChannelId()))) {
+                continue;
+            }
+            LocalDateTime since = s.getRecordingStartedAt().isBefore(monthStart) ? monthStart : s.getRecordingStartedAt();
+            total += Math.max(0, Duration.between(since, now).getSeconds());
+        }
+        return total;
+    }
+
+    private String exhaustedMessage(RecordingLeft left) {
+        return "CHANNEL".equals(left.limitedBy())
+                ? "Kênh đã dùng hết " + recording.getChannelMinutes()
+                        + " phút ghi hình của tháng này. Hãy tắt ghi hình hoặc thử lại vào tháng sau."
+                : "WeTube đã dùng hết hạn mức ghi hình của tháng này. Hãy tắt ghi hình hoặc thử lại vào tháng sau.";
+    }
+
+    private static String recordingPath(LiveStream stream) {
+        return "live/" + stream.getId() + ".mp4";
+    }
+
+    /** Lên sóng thì bắt đầu ghi. Lỗi hay hết hạn mức chỉ làm buổi này không có bản ghi, buổi vẫn phát. */
+    private void startRecording(LiveStream stream, LocalDateTime now) {
+        RecordingLeft left = recordingLeft(stream.getChannelId(), now);
+        if (!recording.isAvailable()) {
+            skipRecording(stream, RecordingStatus.SKIPPED, "Ghi hình chưa được bật trên máy chủ nên buổi này không có video xem lại.");
+        } else if (left.seconds() <= 0) {
+            skipRecording(stream, RecordingStatus.SKIPPED, exhaustedMessage(left) + " Buổi vẫn phát nhưng không có video xem lại.");
+        } else {
+            try {
+                stream.setEgressId(gateway.startRecording(stream.getLivekitRoom(), recordingPath(stream)));
+                stream.setRecordingStatus(RecordingStatus.RECORDING);
+                stream.setRecordingStartedAt(now);
+                stream.setRecordingSeconds(0);
+                stream.setRecordingMessage(null);
+            } catch (LiveKitUnavailableException e) {
+                log.warn("[Live] Không bắt đầu được ghi hình buổi {}: {}", stream.getId(), e.getMessage());
+                skipRecording(stream, RecordingStatus.FAILED, (e.isQuota()
+                        ? "Hết hạn mức ghi hình của LiveKit."
+                        : "Không bắt đầu được ghi hình.") + " Buổi vẫn phát nhưng không có video xem lại.");
+            }
+        }
+    }
+
+    private void skipRecording(LiveStream stream, RecordingStatus status, String message) {
+        stream.setRecordingStatus(status);
+        stream.setRecordingMessage(truncate(message));
+    }
+
+    /** Job 15 giây, buổi đang ghi: phiên ghi tự kết thúc (file tối đa 3 giờ, hoặc lỗi) thì chốt; chạm trần thì dừng. */
+    private void refreshRecording(LiveStream stream, LocalDateTime now) {
+        if (recStatus(stream) != RecordingStatus.RECORDING) {
+            return;
+        }
+        try {
+            RecordingInfo info = gateway.recording(stream.getEgressId());
+            if (info != null && info.finished()) {
+                finalizeRecording(stream, info, now);
+                return;
+            }
+        } catch (LiveKitUnavailableException e) {
+            // Không hỏi được lần này thì thôi; không để lỗi ghi hình làm hỏng việc theo dõi buổi phát
+            log.warn("[Live] Không hỏi được trạng thái ghi hình của buổi {}: {}", stream.getId(), e.getMessage());
+            return;
+        }
+        if (recordingLeft(stream.getChannelId(), now).seconds() <= 0) {
+            stopRecording(stream, now,
+                    "Đã ghi đủ phần ghi hình của tháng. Buổi vẫn đang phát nhưng không ghi tiếp.");
+        }
+    }
+
+    /** Báo LiveKit dừng ghi rồi chờ file (STOPPING). LiveKit lỗi thì vẫn chuyển STOPPING: phòng bị xoá cũng làm phiên ghi dừng. */
+    private void stopRecording(LiveStream stream, LocalDateTime now, String message) {
+        if (stream.getEgressId() != null) {
+            try {
+                gateway.stopRecording(stream.getEgressId());
+            } catch (LiveKitUnavailableException e) {
+                log.warn("[Live] Không báo dừng ghi hình buổi {}: {}", stream.getId(), e.getMessage());
+            }
+        }
+        stream.setRecordingStatus(RecordingStatus.STOPPING);
+        stream.setRecordingStoppedAt(now);
+        if (stream.getRecordingStartedAt() != null) {
+            stream.setRecordingSeconds((int) Math.max(0, Duration.between(stream.getRecordingStartedAt(), now).getSeconds()));
+        }
+        stream.setRecordingMessage(message == null ? null : truncate(message));
+        repo.save(stream);
+    }
+
+    /** Hỏi LiveKit xem file đã xong chưa; quá {@value #RECORDING_RESULT_WAIT_MINUTES} phút không có thì đánh dấu lỗi. */
+    private void pollStoppedRecording(LiveStream stream, LocalDateTime now) {
+        RecordingInfo info = stream.getEgressId() == null ? null : gateway.recording(stream.getEgressId());
+        if (info != null && info.finished()) {
+            finalizeRecording(stream, info, now);
+            return;
+        }
+        LocalDateTime stopped = stream.getRecordingStoppedAt() != null ? stream.getRecordingStoppedAt() : now;
+        if (stopped.plusMinutes(RECORDING_RESULT_WAIT_MINUTES).isBefore(now)) {
+            skipRecording(stream, RecordingStatus.FAILED,
+                    "Không nhận được bản ghi từ máy chủ phát trực tiếp nên buổi này không có video xem lại.");
+            repo.save(stream);
+        }
+    }
+
+    /** Phiên ghi đã kết thúc: có file thì tạo video công khai của kênh, không thì ghi lý do. */
+    private void finalizeRecording(LiveStream stream, RecordingInfo info, LocalDateTime now) {
+        if (stream.getRecordingStoppedAt() == null) {
+            stream.setRecordingStoppedAt(now);
+        }
+        if (!info.hasFile()) {
+            String error = info.error() == null ? "" : info.error().toLowerCase(java.util.Locale.ROOT);
+            skipRecording(stream, RecordingStatus.FAILED, (error.contains("quota") || error.contains("limit")
+                    ? "Hết hạn mức ghi hình của LiveKit."
+                    : "Ghi hình bị lỗi ở máy chủ phát trực tiếp.") + " Buổi này không có video xem lại.");
+            repo.save(stream);
+            return;
+        }
+        int seconds = (int) Math.min(info.seconds(), Integer.MAX_VALUE);
+        stream.setRecordingSeconds(seconds);
+        if (seconds < MIN_REPLAY_SECONDS) {
+            skipRecording(stream, RecordingStatus.SKIPPED, "Bản ghi dưới " + MIN_REPLAY_SECONDS
+                    + " giây nên không đăng thành video.");
+            repo.save(stream);
+            return;
+        }
+        String url = recording.getPublicUrl().replaceAll("/+$", "") + "/" + recordingPath(stream);
+        try {
+            stream.setReplayVideoId(videos.createLiveReplay(new LiveReplay(stream.getOwnerId(), stream.getTitle(),
+                    replayDescription(stream), stream.getTopicId(), url, stream.getThumbnailUrl(), seconds)));
+            stream.setRecordingUrl(url);
+            stream.setRecordingStatus(RecordingStatus.DONE);
+            // Giữ recordingMessage nếu có (vd. bản ghi bị cắt vì chạm trần) để chủ kênh biết
+        } catch (RuntimeException e) {
+            log.warn("[Live] Không tạo được video xem lại cho buổi {}: {}", stream.getId(), e.getMessage());
+            String reason = e instanceof ResponseStatusException rse && rse.getReason() != null
+                    ? rse.getReason() : "vui lòng thử lại sau";
+            skipRecording(stream, RecordingStatus.FAILED, "Không đăng được bản ghi thành video: " + reason);
+        }
+        repo.save(stream);
+    }
+
+    private static String replayDescription(LiveStream stream) {
+        LocalDateTime when = stream.getStartedAt() != null ? stream.getStartedAt() : stream.getCreatedAt();
+        String date = REPLAY_DATE.format(when.atZone(ZoneOffset.UTC).withZoneSameInstant(VIETNAM));
+        String head = "Đã phát trực tiếp ngày " + date;
+        String body = stream.getDescription();
+        return body == null || body.isBlank() ? head : head + "\n\n" + body;
+    }
+
+    private static String truncate(String message) {
+        return message.length() <= MESSAGE_MAX ? message : message.substring(0, MESSAGE_MAX - 1) + "…";
     }
 
     private static long countViewers(List<Participant> participants) {
@@ -452,15 +716,7 @@ public class LiveStreamService {
     }
 
     private static LiveView withPolls(LiveView base, PollView poll, List<PollView> history) {
-        return LiveView.builder()
-                .id(base.id()).channelId(base.channelId()).channelName(base.channelName())
-                .channelPicture(base.channelPicture()).channelHandle(base.channelHandle()).ownerId(base.ownerId())
-                .title(base.title()).description(base.description()).thumbnailUrl(base.thumbnailUrl())
-                .status(base.status()).source(base.source())
-                .protocol(base.protocol()).chatEnabled(base.chatEnabled()).currentViewers(base.currentViewers())
-                .peakViewers(base.peakViewers()).createdAt(base.createdAt()).startedAt(base.startedAt())
-                .endedAt(base.endedAt()).ingress(base.ingress()).poll(poll).polls(history)
-                .build();
+        return base.toBuilder().poll(poll).polls(history).build();
     }
 
     @Transactional(readOnly = true)
@@ -532,6 +788,10 @@ public class LiveStreamService {
                 .source(s.getSource())
                 .protocol(s.getProtocol())
                 .chatEnabled(s.isChatEnabled())
+                .recordingEnabled(s.isRecordingEnabled())
+                .recordingStatus(recStatus(s))
+                .recordingMessage(includeIngress ? s.getRecordingMessage() : null)
+                .replayVideoId(s.getReplayVideoId())
                 .currentViewers(s.getCurrentViewers())
                 .peakViewers(s.getPeakViewers())
                 .createdAt(s.getCreatedAt())

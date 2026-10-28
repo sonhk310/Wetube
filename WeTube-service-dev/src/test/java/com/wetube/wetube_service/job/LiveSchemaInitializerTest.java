@@ -26,6 +26,7 @@ import com.wetube.wetube_service.entity.live.LiveStream;
 import com.wetube.wetube_service.enumeration.LiveProtocol;
 import com.wetube.wetube_service.enumeration.LiveSource;
 import com.wetube.wetube_service.enumeration.LiveStatus;
+import com.wetube.wetube_service.enumeration.RecordingStatus;
 import com.wetube.wetube_service.repository.live.LivePollRepository;
 import com.wetube.wetube_service.repository.live.LivePollVoteRepository;
 import com.wetube.wetube_service.repository.live.LiveStreamRepository;
@@ -122,6 +123,60 @@ class LiveSchemaInitializerTest {
                 .createdAt(LocalDateTime.now()).build());
         assertThat(streams.findById(saved.getId()).orElseThrow().getThumbnailUrl())
                 .isEqualTo("https://res.cloudinary.com/x/image/upload/t.jpg");
+    }
+
+    @Test
+    void addsTheRecordingColumnsToAnL1TableThatLacksThem() {
+        runInitializer();
+        // Bảng như trên production sau L1.1: chưa có cột ghi hình
+        for (String column : List.of("recording_enabled", "topic_id", "recording_status", "egress_id",
+                "recording_started_at", "recording_stopped_at", "recording_seconds", "recording_url",
+                "recording_message", "replay_video_id")) {
+            jdbc.execute("ALTER TABLE live_streams DROP COLUMN " + column);
+        }
+
+        runInitializer();
+
+        UUID videoId = UUID.randomUUID();
+        LocalDateTime now = LocalDateTime.of(2026, 10, 28, 9, 0, 0);
+        LiveStream saved = streams.save(LiveStream.builder()
+                .channelId(UUID.randomUUID()).ownerId(UUID.randomUUID()).title("Có ghi hình")
+                .source(LiveSource.BROWSER).status(LiveStatus.ENDED).chatEnabled(true).createdAt(now)
+                .recordingEnabled(true).topicId("music").recordingStatus(RecordingStatus.DONE).egressId("EG_1")
+                .recordingStartedAt(now).recordingStoppedAt(now.plusMinutes(10)).recordingSeconds(600)
+                .recordingUrl("https://pub.example/live/a.mp4").recordingMessage("ghi chú").replayVideoId(videoId)
+                .build());
+
+        LiveStream read = streams.findById(saved.getId()).orElseThrow();
+        assertThat(read.isRecordingEnabled()).isTrue();
+        assertThat(read.getTopicId()).isEqualTo("music");
+        assertThat(read.getRecordingStatus()).isEqualTo(RecordingStatus.DONE);
+        assertThat(read.getEgressId()).isEqualTo("EG_1");
+        assertThat(read.getRecordingSeconds()).isEqualTo(600);
+        assertThat(read.getRecordingUrl()).isEqualTo("https://pub.example/live/a.mp4");
+        assertThat(read.getRecordingMessage()).isEqualTo("ghi chú");
+        assertThat(read.getReplayVideoId()).isEqualTo(videoId);
+        assertThat(streams.sumRecordingSecondsByChannel(saved.getChannelId(), now.minusDays(1), now.plusDays(1)))
+                .isEqualTo(600);
+        assertThat(streams.sumRecordingSeconds(now.minusDays(1), now.plusDays(1))).isGreaterThanOrEqualTo(600);
+        assertThat(streams.sumRecordingSecondsByChannel(saved.getChannelId(), now.plusDays(1), now.plusDays(2)))
+                .isZero();
+    }
+
+    @Test
+    void rowsFromBeforeRecordingGetTheDefaults() {
+        runInitializer();
+        UUID id = UUID.randomUUID();
+        jdbc.update("INSERT INTO live_streams (id, channel_id, owner_id, title, source, status, chat_enabled, "
+                + "created_at, current_viewers, peak_viewers) VALUES (?, ?, ?, 'cũ', 'BROWSER', 'ENDED', 1, "
+                + "CURRENT_TIMESTAMP, 0, 0)", id.toString(), UUID.randomUUID().toString(), UUID.randomUUID().toString());
+
+        LiveStream read = streams.findById(id).orElseThrow();
+
+        assertThat(read.isRecordingEnabled()).isFalse();
+        assertThat(read.getRecordingSeconds()).isZero();
+        assertThat(read.getRecordingStatus()).isNull();
+        assertThat(read.getReplayVideoId()).isNull();
     }
 
     @Test

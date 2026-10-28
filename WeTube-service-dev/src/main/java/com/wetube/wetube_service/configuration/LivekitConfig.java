@@ -1,4 +1,5 @@
 package com.wetube.wetube_service.configuration;
+import io.livekit.server.EgressServiceClient;
 import io.livekit.server.IngressServiceClient;
 import io.livekit.server.RoomServiceClient;
 import io.livekit.server.okhttp.OkHttpFactory;
@@ -24,6 +25,16 @@ public class LivekitConfig {
     @Bean
     public IngressServiceClient ingressServiceClient() {
         return IngressServiceClient.createClient(
+                normalizeHost(),
+                apiKey,
+                apiSecret,
+                new OkHttpFactory()
+        );
+    }
+
+    @Bean
+    public EgressServiceClient egressServiceClient() {
+        return EgressServiceClient.createClient(
                 normalizeHost(),
                 apiKey,
                 apiSecret,

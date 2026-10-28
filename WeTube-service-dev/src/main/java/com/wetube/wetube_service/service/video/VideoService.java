@@ -23,6 +23,17 @@ public interface VideoService {
      */
     VideoDto createDraft(MultipartFile videoFile, Float duration, Integer width, Integer height, UUID userId);
 
+    /** Bản ghi một buổi phát trực tiếp đã nằm sẵn trong kho: thành video công khai của chủ kênh. */
+    record LiveReplay(UUID ownerId, String title, String description, String topicId, String videoUrl,
+                      String thumbnailUrl, float durationSeconds) {
+    }
+
+    /**
+     * Tạo video công khai từ bản ghi buổi phát (không tải tệp lên, không báo người đăng ký vì họ đã được báo lúc lên
+     * sóng). Cùng videoUrl đã có video thì trả luôn video đó. Kênh đang bị ẩn thì 403. Trả id video.
+     */
+    UUID createLiveReplay(LiveReplay replay);
+
     List<VideoDto> getAllVideo();
 
     VideoDto addTags(UUID videoId, String hashtagText);
