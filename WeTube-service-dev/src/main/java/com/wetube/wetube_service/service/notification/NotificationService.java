@@ -1,6 +1,7 @@
 package com.wetube.wetube_service.service.notification;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,6 +38,9 @@ public interface NotificationService {
      * một lần, trừ chủ kênh.
      */
     void notifyLiveStarted(UUID liveId, UUID ownerId, UUID channelId, String title);
+
+    /** Xoá thông báo "đang phát trực tiếp" của các buổi phát bị xoá. */
+    void removeLiveNotifications(Collection<UUID> liveIds);
 
     /** Trả lời bình luận / bình luận video. Bỏ qua khi người nhận chính là người bình luận. */
     void notifyComment(Notification.Type type, UUID recipientId, UUID actorId, UUID videoId, UUID commentId, String text);

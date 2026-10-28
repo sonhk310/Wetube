@@ -1,6 +1,7 @@
 package com.wetube.wetube_service.service.notification.impl;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -88,6 +89,13 @@ public class NotificationServiceImpl implements NotificationService {
                 .toList();
         notificationRepo.saveAll(items);
         log.info("Thông báo phát trực tiếp {} tới {} người đăng ký", liveId, items.size());
+    }
+
+    @Override
+    public void removeLiveNotifications(Collection<UUID> liveIds) {
+        if (!liveIds.isEmpty()) {
+            notificationRepo.deleteByLiveIdIn(liveIds);
+        }
     }
 
     @Override

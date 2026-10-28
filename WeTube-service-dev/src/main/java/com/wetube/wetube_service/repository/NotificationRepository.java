@@ -1,5 +1,6 @@
 package com.wetube.wetube_service.repository;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +26,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     boolean existsByTypeAndCommentId(Notification.Type type, UUID commentId);
 
     boolean existsByTypeAndLiveId(Notification.Type type, UUID liveId);
+
+    /** Xoá thông báo trỏ tới các buổi phát bị xoá (bấm vào sẽ ra trang 404). */
+    void deleteByLiveIdIn(Collection<UUID> liveIds);
 
     @Modifying
     @Query("UPDATE Notification n SET n.read = true WHERE n.recipientId = :recipientId AND n.read = false")

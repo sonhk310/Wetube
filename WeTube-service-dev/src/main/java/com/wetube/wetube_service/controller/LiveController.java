@@ -21,11 +21,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.wetube.wetube_service.dto.live.ChannelLivesResponse;
 import com.wetube.wetube_service.dto.live.CreateLiveRequest;
+import com.wetube.wetube_service.dto.live.DeleteLivesRequest;
+import com.wetube.wetube_service.dto.live.DeleteLivesResponse;
 import com.wetube.wetube_service.dto.live.LiveCard;
 import com.wetube.wetube_service.dto.live.LiveChatMessage;
 import com.wetube.wetube_service.dto.live.LiveRecordingInfo;
 import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
+import com.wetube.wetube_service.dto.live.MyPastLivesResponse;
 import com.wetube.wetube_service.dto.live.OpenPollRequest;
 import com.wetube.wetube_service.dto.live.PollView;
 import com.wetube.wetube_service.dto.live.UpdateLiveRequest;
@@ -65,6 +68,20 @@ public class LiveController {
     @GetMapping("/me")
     public ResponseEntity<LiveView> mine(@AuthenticationPrincipal Jwt jwt) {
         return service.mine(CurrentUser.id(jwt)).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    /** Studio: các buổi đã phát của kênh người gọi (kể cả buổi không có video xem lại), mới nhất trước. */
+    @GetMapping("/me/past")
+    public MyPastLivesResponse myPast(@RequestParam(defaultValue = "0") int page,
+                                      @RequestParam(defaultValue = "20") int size, @AuthenticationPrincipal Jwt jwt) {
+        return service.myPast(CurrentUser.id(jwt),
+                PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE)));
+    }
+
+    /** Studio: xoá các buổi đã phát đã chọn; deleteVideos = xoá cả video xem lại. */
+    @PostMapping("/delete")
+    public DeleteLivesResponse delete(@RequestBody DeleteLivesRequest body, @AuthenticationPrincipal Jwt jwt) {
+        return service.deletePast(CurrentUser.id(jwt), body.ids(), body.deleteVideos());
     }
 
     /** Form chuẩn bị hỏi: máy chủ có bật ghi hình không và kênh còn bao nhiêu giây ghi trong tháng. */

@@ -88,6 +88,26 @@ class LiveControllerTest {
     }
 
     @Test
+    void managingPastLivesIsForTheLoggedInUserAndIs401Otherwise() {
+        UUID me = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+        var past = new com.wetube.wetube_service.dto.live.MyPastLivesResponse(List.of(), 0, false);
+        var deleted = new com.wetube.wetube_service.dto.live.DeleteLivesResponse(1, 1);
+        var body = new com.wetube.wetube_service.dto.live.DeleteLivesRequest(List.of(id), true);
+        when(service.myPast(me, PageRequest.of(0, 20))).thenReturn(past);
+        when(service.deletePast(me, List.of(id), true)).thenReturn(deleted);
+
+        assertThat(controller.myPast(0, 20, jwtOf(me))).isSameAs(past);
+        assertThat(controller.delete(body, jwtOf(me))).isSameAs(deleted);
+        assertThatThrownBy(() -> controller.myPast(0, 20, null))
+                .isInstanceOfSatisfying(ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+        assertThatThrownBy(() -> controller.delete(body, null))
+                .isInstanceOfSatisfying(ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+    }
+
+    @Test
     void createWithoutLoginIs401() {
         assertThatThrownBy(() -> controller.create(new CreateLiveRequest("a", null, null, null, null, null, null), null))
                 .isInstanceOfSatisfying(ResponseStatusException.class,

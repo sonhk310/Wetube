@@ -3,6 +3,7 @@ package com.wetube.wetube_service.service.live;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -164,6 +165,16 @@ public class LivePollService implements LiveCleanup {
             polls.save(poll);
         });
         dirty.values().removeIf(streamId::equals);
+    }
+
+    /** Xoá Poll và phiếu của các buổi phát bị xoá (gọi trong transaction của việc xoá buổi). */
+    public void deleteOf(Collection<UUID> streamIds) {
+        if (streamIds.isEmpty()) {
+            return;
+        }
+        votes.deleteByStreamIds(streamIds);
+        polls.deleteByStreamIds(streamIds);
+        dirty.values().removeIf(streamIds::contains);
     }
 
     /** Mỗi giây: phát kết quả mới của các Poll vừa có phiếu (gộp mọi phiếu trong giây đó thành một tin). */

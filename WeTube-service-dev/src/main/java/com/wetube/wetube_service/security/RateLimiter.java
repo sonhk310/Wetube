@@ -41,6 +41,8 @@ public class RateLimiter {
         LIVE_VOTE(10, Duration.ofMinutes(1), "Bạn bình chọn quá nhanh."),
         LIVE_CHAT(5, Duration.ofSeconds(10), "Bạn nhắn quá nhanh."),
         LIVE_THUMBNAIL(20, Duration.ofHours(1), "Bạn đổi ảnh thu nhỏ quá nhiều trong giờ này, vui lòng thử lại sau."),
+        /** Xoá các buổi đã phát ở Studio (mỗi lần có thể nhiều buổi). */
+        LIVE_DELETE(20, Duration.ofHours(1), "Bạn xoá buổi phát quá nhiều trong giờ này, vui lòng thử lại sau."),
         /** Trình duyệt tải bản ghi buổi phát lên (gồm các lần Thử lại). */
         LIVE_REPLAY(10, Duration.ofHours(1), "Bạn tải bản ghi lên quá nhiều trong giờ này, vui lòng thử lại sau."),
         /** Tải ảnh bìa / ảnh đại diện kênh lên Cloudinary. */

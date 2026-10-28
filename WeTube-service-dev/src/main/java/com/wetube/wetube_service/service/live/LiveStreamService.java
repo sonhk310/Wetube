@@ -32,12 +32,15 @@ import org.springframework.web.server.ResponseStatusException;
 import com.wetube.wetube_service.dto.LiveRecordingProperties;
 import com.wetube.wetube_service.dto.live.ChannelLivesResponse;
 import com.wetube.wetube_service.dto.live.CreateLiveRequest;
+import com.wetube.wetube_service.dto.live.DeleteLivesResponse;
 import com.wetube.wetube_service.dto.live.IngressView;
 import com.wetube.wetube_service.dto.live.LiveCard;
 import com.wetube.wetube_service.dto.live.LiveEvent;
 import com.wetube.wetube_service.dto.live.LiveRecordingInfo;
 import com.wetube.wetube_service.dto.live.LiveTokenResponse;
 import com.wetube.wetube_service.dto.live.LiveView;
+import com.wetube.wetube_service.dto.live.MyPastLive;
+import com.wetube.wetube_service.dto.live.MyPastLivesResponse;
 import com.wetube.wetube_service.dto.live.PollView;
 import com.wetube.wetube_service.dto.live.UpdateLiveRequest;
 import com.wetube.wetube_service.entity.AppUser;
@@ -53,6 +56,7 @@ import com.wetube.wetube_service.repository.channel.ChannelRepository;
 import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.RateLimiter.Limit;
+import com.wetube.wetube_service.security.VideoAccess;
 import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.CloudinaryService.UploadedVideo;
 import com.wetube.wetube_service.service.live.LiveKitGateway.IngressDetails;
@@ -77,6 +81,8 @@ public class LiveStreamService {
     static final int DESCRIPTION_MAX = 5000;
     static final long THUMBNAIL_MAX_BYTES = 2L * 1024 * 1024;
     static final int VIEWER_CAP = 40;
+    /** Số buổi tối đa xoá trong một lần. */
+    static final int DELETE_MAX = 50;
     /** Trần cứng của phòng LiveKit: người xem + chủ kênh (webcam hoặc OBS) + chỗ dự phòng. */
     static final int ROOM_PARTICIPANT_CAP = VIEWER_CAP + 5;
     /** Bản ghi ngắn hơn mức này không đăng thành video. */
@@ -750,8 +756,95 @@ public class LiveStreamService {
         LiveCard current = repo.findFirstByChannelIdAndStatusIn(channelId, List.of(LiveStatus.LIVE))
                 .map(s -> cards(List.of(s)).get(0))
                 .orElse(null);
-        Page<LiveStream> past = repo.findByChannelIdAndStatusOrderByEndedAtDesc(channelId, LiveStatus.ENDED, pageable);
+        Page<LiveStream> past = repo.findPublicReplays(channelId, LiveStatus.ENDED, VideoAccess.LISTED, pageable);
         return new ChannelLivesResponse(current, cards(past.getContent()), past.getTotalElements(), past.hasNext());
+    }
+
+    /** Các buổi đã phát của kênh người gọi (kể cả buổi không có video xem lại), mới nhất trước. */
+    @Transactional(readOnly = true)
+    public MyPastLivesResponse myPast(UUID userId, Pageable pageable) {
+        Channel channel = userRepo.findById(userId).map(AppUser::getChannel).orElse(null);
+        if (channel == null) {
+            return new MyPastLivesResponse(List.of(), 0, false);
+        }
+        Page<LiveStream> page = repo.findByChannelIdAndStatusOrderByEndedAtDesc(channel.getId(), LiveStatus.ENDED, pageable);
+        List<MyPastLive> items = page.getContent().stream()
+                .map(s -> new MyPastLive(s.getId(), s.getTitle(), s.getThumbnailUrl(), s.getStartedAt(), s.getEndedAt(),
+                        s.getPeakViewers(), s.isRecordingEnabled(), recStatus(s), s.getRecordingMessage(),
+                        s.getReplayVideoId()))
+                .toList();
+        return new MyPastLivesResponse(items, page.getTotalElements(), page.hasNext());
+    }
+
+    /** Dữ liệu cần giữ lại từ buổi sắp xoá (sau khi xoá không còn đọc được). */
+    private record DeleteTarget(UUID id, UUID replayVideoId, String thumbnailUrl) {
+    }
+
+    /**
+     * Chủ kênh xoá các buổi đã phát của mình. Kiểm tra hết trước khi xoá (không có buổi nào bị xoá nếu một buổi không
+     * hợp lệ): phải là chủ kênh, buổi đã kết thúc và không còn chờ bản ghi tải lên. Id không còn (đã xoá ở nơi khác) thì
+     * bỏ qua. {@code deleteVideos}: xoá cả video xem lại; không thì video vẫn nằm ở Nội dung và giữ ảnh thu nhỏ của nó.
+     * Số phút ghi hình của buổi bị xoá được trả lại hạn mức của tháng.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public DeleteLivesResponse deletePast(UUID userId, List<UUID> ids, boolean deleteVideos) {
+        if (ids == null || ids.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hãy chọn ít nhất một buổi phát");
+        }
+        List<UUID> wanted = ids.stream().filter(Objects::nonNull).distinct().toList();
+        if (wanted.size() > DELETE_MAX) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mỗi lần xoá tối đa " + DELETE_MAX + " buổi");
+        }
+        rateLimiter.check(Limit.LIVE_DELETE, userId);
+
+        List<DeleteTarget> targets = tx.execute(status -> repo.findAllById(wanted).stream().map(stream -> {
+            if (!stream.getOwnerId().equals(userId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Chỉ chủ kênh mới xoá được buổi phát");
+            }
+            if (!isFinished(stream)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Buổi phát \"" + stream.getTitle() + "\" chưa kết thúc");
+            }
+            if (recStatus(stream) == RecordingStatus.STOPPING || uploading.contains(stream.getId())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Buổi phát \"" + stream.getTitle()
+                        + "\" còn đang chờ bản ghi tải lên, hãy đợi tải xong rồi xoá");
+            }
+            return new DeleteTarget(stream.getId(), stream.getReplayVideoId(), stream.getThumbnailUrl());
+        }).toList());
+        if (targets == null || targets.isEmpty()) {
+            return new DeleteLivesResponse(0, 0);
+        }
+
+        int videosDeleted = 0;
+        if (deleteVideos) {
+            for (DeleteTarget target : targets) {
+                if (target.replayVideoId() == null) {
+                    continue;
+                }
+                try {
+                    // Transaction riêng: video đã bị xoá từ trước (không tìm thấy) không làm hỏng các việc còn lại
+                    txNew.executeWithoutResult(status -> videos.deleteVideo(target.replayVideoId()));
+                    videosDeleted++;
+                } catch (RuntimeException e) {
+                    log.info("[Live] Không xoá được video xem lại {} của buổi {}: {}", target.replayVideoId(),
+                            target.id(), e.getMessage());
+                }
+            }
+        }
+
+        List<UUID> targetIds = targets.stream().map(DeleteTarget::id).toList();
+        tx.executeWithoutResult(status -> {
+            polls.deleteOf(targetIds);
+            notifications.removeLiveNotifications(targetIds);
+            repo.deleteAllById(targetIds);
+            for (DeleteTarget target : targets) {
+                // Video xem lại còn (hoặc vừa bị xoá, kèm ảnh) thì ảnh thu nhỏ của buổi là ảnh của video, không xoá ở đây
+                if (target.replayVideoId() == null) {
+                    deleteImageAfterCommit(target.thumbnailUrl());
+                }
+            }
+        });
+        log.info("[Live] Chủ kênh {} xoá {} buổi phát ({} video xem lại)", userId, targetIds.size(), videosDeleted);
+        return new DeleteLivesResponse(targetIds.size(), videosDeleted);
     }
 
     // ------------------------------------------------------------ nội bộ
