@@ -175,7 +175,7 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
   };
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-8 p-6 lg:grid-cols-2">
+    <div className="grid gap-x-10 gap-y-6 px-6 pb-8 pt-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       <div className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="live-title">Tiêu đề (bắt buộc)</Label>
@@ -202,10 +202,10 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>Ảnh thu nhỏ</Label>
-          <LiveThumbnailPicker preview={thumbnailPreview} onPick={setThumbnail} />
-        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={chatEnabled} onChange={(e) => setChatEnabled(e.target.checked)} />
+          Bật trò chuyện trực tiếp
+        </label>
 
         <div className="space-y-2">
           <Label>Nguồn phát</Label>
@@ -270,26 +270,28 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
           </div>
         ) : null}
 
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={chatEnabled} onChange={(e) => setChatEnabled(e.target.checked)} />
-          Bật trò chuyện trực tiếp
-        </label>
-
         <Button className="rounded-full" size="lg" disabled={!title.trim() || isLoading} onClick={() => void submit()}>
           {isLoading ? <Spinner className="size-4" /> : "Bắt đầu"}
         </Button>
       </div>
 
-      <div>
-        {source === "BROWSER" && hasCamera(mode) ? (
-          <CameraPreview />
-        ) : source === "BROWSER" ? (
-          <NoCameraPreview mode={mode} thumbnail={thumbnailPreview} />
-        ) : (
-          <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-neutral-900 px-6 text-center text-sm text-neutral-300">
-            Sau khi bấm Bắt đầu, bạn sẽ nhận địa chỉ máy chủ và khoá luồng để dán vào phần mềm phát.
-          </div>
-        )}
+      <div className="space-y-5">
+        <div className="max-w-3xl">
+          {source === "BROWSER" && hasCamera(mode) ? (
+            <CameraPreview />
+          ) : source === "BROWSER" ? (
+            <NoCameraPreview mode={mode} thumbnail={thumbnailPreview} />
+          ) : (
+            <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-neutral-900 px-6 text-center text-sm text-neutral-300">
+              Sau khi bấm Bắt đầu, bạn sẽ nhận địa chỉ máy chủ và khoá luồng để dán vào phần mềm phát.
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Ảnh thu nhỏ</Label>
+          <LiveThumbnailPicker preview={thumbnailPreview} onPick={setThumbnail} />
+        </div>
       </div>
     </div>
   );
