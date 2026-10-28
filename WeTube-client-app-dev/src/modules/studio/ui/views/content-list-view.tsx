@@ -46,6 +46,7 @@ import { useUploadedVideos } from "../../hooks/use-uploaded-videos";
 import { STATUS } from "../components/content-card";
 import { DeleteVideoDialog } from "../components/delete-video-dialog";
 import { DraftEditDialog } from "../components/draft-edit-dialog";
+import LiveContentList from "./live-content-list";
 
 const PAGE_SIZE = 30;
 
@@ -58,14 +59,53 @@ const VISIBILITY_ACTIONS: { value: "PUBLIC" | "UNLISTED" | "PRIVATE"; label: str
 const TABS = [
   { value: "video", label: "Video" },
   { value: "shorts", label: "Shorts" },
+  { value: "live", label: "Trực tiếp" },
 ] as const;
+
+type ContentTab = (typeof TABS)[number]["value"];
 
 const checkboxClass = "size-4 cursor-pointer accent-black";
 
-/** "Xem tất cả" của trang Nội dung: bảng video / Shorts như YouTube Studio, chọn nhiều để đổi chế độ hoặc xoá. */
+const TAB_TITLES: Record<ContentTab, string> = { video: "Video", shorts: "Shorts", live: "Trực tiếp" };
+
+/** "Xem tất cả" của trang Nội dung: tiêu đề, các tab và bảng của tab đang chọn (video, Shorts hoặc buổi phát trực tiếp). */
 export default function ContentListView() {
   const searchParams = useSearchParams();
-  const tab = searchParams.get("tab") === "shorts" ? "shorts" : "video";
+  const param = searchParams.get("tab");
+  const tab: ContentTab = param === "shorts" ? "shorts" : param === "live" ? "live" : "video";
+
+  return (
+    <div className="flex flex-col pt-2.5">
+      <div className="flex items-center gap-3 px-4">
+        <Link href="/studio" aria-label="Quay lại Nội dung kênh" className="rounded-full p-2 hover:bg-gray-100">
+          <ArrowLeft className="size-6" />
+        </Link>
+        <h1 className="text-2xl font-bold">{TAB_TITLES[tab]}</h1>
+      </div>
+
+      <div className="flex gap-2 px-6 pb-3 pt-4">
+        {TABS.map((t) => (
+          <Link
+            key={t.value}
+            href={`/studio/content?tab=${t.value}`}
+            replace
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-sm font-medium",
+              tab === t.value ? "bg-black text-white" : "bg-gray-100 hover:bg-gray-200"
+            )}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </div>
+
+      {tab === "live" ? <LiveContentList /> : <VideoContentList tab={tab} />}
+    </div>
+  );
+}
+
+/** Bảng video / Shorts như YouTube Studio, chọn nhiều để đổi chế độ hoặc xoá. */
+function VideoContentList({ tab }: { tab: "video" | "shorts" }) {
   const isShortsTab = tab === "shorts";
   const dispatch = useDispatch();
   const [, copy] = useCopyToClipboard();
@@ -179,30 +219,7 @@ export default function ContentListView() {
   };
 
   return (
-    <div className="flex flex-col pt-2.5">
-      <div className="flex items-center gap-3 px-4">
-        <Link href="/studio" aria-label="Quay lại Nội dung kênh" className="rounded-full p-2 hover:bg-gray-100">
-          <ArrowLeft className="size-6" />
-        </Link>
-        <h1 className="text-2xl font-bold">{isShortsTab ? "Shorts" : "Video"}</h1>
-      </div>
-
-      <div className="flex gap-2 px-6 pb-3 pt-4">
-        {TABS.map((t) => (
-          <Link
-            key={t.value}
-            href={`/studio/content?tab=${t.value}`}
-            replace
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-medium",
-              tab === t.value ? "bg-black text-white" : "bg-gray-100 hover:bg-gray-200"
-            )}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </div>
-
+    <div className="flex flex-col">
       {/* Hàng lọc; khi đã chọn video thì thành hàng thao tác hàng loạt */}
       <div className="flex min-h-14 items-center gap-3 border-y px-6">
         {selected.size > 0 ? (

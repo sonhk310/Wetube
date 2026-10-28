@@ -1,4 +1,5 @@
 import React from "react";
+import LiveSection from "../sections/live-section";
 import VideosSection from "../sections/video-section";
 
 export default function StudioView() {
@@ -11,6 +12,7 @@ export default function StudioView() {
         </p>
       </div>
       <VideosSection />
+      <LiveSection />
     </div>
   );
 }

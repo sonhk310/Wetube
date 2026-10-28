@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,23 @@ interface ContentRowProps {
   onDelete: (video: VideoFromPlaylist) => void;
 }
 
-/** Một khu (Video hoặc Shorts): hàng cuộn ngang có nút mũi tên; "Xem tất cả" mở bảng /studio/content. */
-export function ContentRow({ title, videos, vertical, emptyText, onDelete }: ContentRowProps) {
+/**
+ * Vỏ một khu của trang Nội dung (Video, Shorts, Trực tiếp): tiêu đề, "Xem tất cả" (mở bảng /studio/content), hai nút
+ * mũi tên và hàng thẻ cuộn ngang. `count` là số thẻ (để bật / tắt mũi tên khi số thẻ đổi).
+ */
+export function ContentRowShell({
+  title,
+  viewAllHref,
+  count,
+  emptyText,
+  children,
+}: {
+  title: string;
+  viewAllHref: string;
+  count: number;
+  emptyText: string;
+  children: ReactNode;
+}) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   // Đã cuộn tới đầu / cuối hàng thì tắt mũi tên bên đó
   const [canLeft, setCanLeft] = useState(false);
@@ -40,7 +55,7 @@ export function ContentRow({ title, videos, vertical, emptyText, onDelete }: Con
       el.removeEventListener("scroll", updateArrows);
       observer.disconnect();
     };
-  }, [videos.length, updateArrows]);
+  }, [count, updateArrows]);
 
   const scroll = (dir: 1 | -1) =>
     scrollerRef.current?.scrollBy({ left: dir * scrollerRef.current.clientWidth * 0.8, behavior: "smooth" });
@@ -49,10 +64,10 @@ export function ContentRow({ title, videos, vertical, emptyText, onDelete }: Con
     <section className="px-6 py-4">
       <div className="mb-3 flex items-center gap-2">
         <h2 className="mr-auto text-xl font-semibold">{title}</h2>
-        {videos.length > 0 && (
+        {count > 0 && (
           <>
             <Button asChild variant="outline" className="rounded-full">
-              <Link href={`/studio/content?tab=${vertical ? "shorts" : "video"}`}>Xem tất cả</Link>
+              <Link href={viewAllHref}>Xem tất cả</Link>
             </Button>
             <Button
               variant="outline"
@@ -77,15 +92,29 @@ export function ContentRow({ title, videos, vertical, emptyText, onDelete }: Con
           </>
         )}
       </div>
-      {videos.length === 0 ? (
+      {count === 0 ? (
         <p className="text-sm text-gray-500">{emptyText}</p>
       ) : (
         <div ref={scrollerRef} className="no-scrollbar -mx-2 flex gap-2 overflow-x-auto scroll-smooth pb-2">
-          {videos.map((video) => (
-            <ContentCard key={video.videoId} video={video} vertical={vertical} onDelete={onDelete} />
-          ))}
+          {children}
         </div>
       )}
     </section>
+  );
+}
+
+/** Một khu video (Video hoặc Shorts) của trang Nội dung. */
+export function ContentRow({ title, videos, vertical, emptyText, onDelete }: ContentRowProps) {
+  return (
+    <ContentRowShell
+      title={title}
+      viewAllHref={`/studio/content?tab=${vertical ? "shorts" : "video"}`}
+      count={videos.length}
+      emptyText={emptyText}
+    >
+      {videos.map((video) => (
+        <ContentCard key={video.videoId} video={video} vertical={vertical} onDelete={onDelete} />
+      ))}
+    </ContentRowShell>
   );
 }

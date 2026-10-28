@@ -139,7 +139,7 @@ export const {
   useGetLiveListQuery,
   useGetChannelLivesQuery,
   useGetMyLiveQuery,
-  useGetMyPastLivesQuery,
+  useLazyGetMyPastLivesQuery,
   useDeleteLivesMutation,
   useGetLiveRecordingQuery,
   useLazyGetLiveRecordingQuery,
