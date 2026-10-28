@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Copy } from "lucide-react";
+import Image from "next/image";
+import { Copy, MonitorUp } from "lucide-react";
 import { LiveKitRoom, VideoTrack, useTracks } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import {
@@ -17,6 +18,8 @@ import { useCopyToClipboard } from "@/lib/clipboard";
 import { toastEmitter } from "@/lib/toastEmitter";
 import { useLiveChannel } from "../lib/useLiveChannel";
 import { formatElapsed, liveUrl } from "../lib/format";
+import { hasCamera, hasScreen, loadPublishMode, type PublishMode } from "../lib/publishMode";
+import { useScreenShare } from "../lib/useScreenShare";
 import type { LiveView } from "../types";
 import { LiveBadge, ViewerCount } from "./live-badge";
 import LiveDeviceSettings from "./live-device-settings";
@@ -26,38 +29,92 @@ import LiveEndDialog from "./live-end-dialog";
 import LivePollComposer from "./live-poll-composer";
 import LiveThumbnailPicker from "./live-thumbnail-picker";
 
-/** Hình camera của chính mình (xem trước) và bảng chọn thiết bị; báo cho backend ngay khi đã đăng luồng. */
-function PublisherStage({ onPublished }: { onPublished: () => void }) {
-  const tracks = useTracks([Track.Source.Camera]);
-  const local = tracks.find((t) => t.participant.isLocal && t.publication);
+/**
+ * Hình của chính mình (xem trước) và bảng chọn thiết bị; báo cho backend ngay khi đã đăng bất kỳ luồng nào. Màn hình
+ * là hình chính, camera (nếu cùng có) nằm nhỏ ở góc, giống những gì người xem thấy. Màn hình không lật gương, camera
+ * thì lật.
+ */
+function PublisherStage({
+  mode,
+  thumbnailUrl,
+  onPublished,
+}: {
+  mode: PublishMode;
+  thumbnailUrl: string | null;
+  onPublished: () => void;
+}) {
+  const tracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare, Track.Source.Microphone]).filter(
+    (t) => t.participant.isLocal && t.publication
+  );
+  const camera = tracks.find((t) => t.source === Track.Source.Camera);
+  const screen = tracks.find((t) => t.source === Track.Source.ScreenShare);
+  const screenShare = useScreenShare();
   const reported = useRef(false);
+  const screenSeen = useRef(false);
+  const cameraSeen = useRef(false);
+  if (screen) screenSeen.current = true;
+  if (camera) cameraSeen.current = true;
 
   useEffect(() => {
-    if (local && !reported.current) {
+    if (tracks.length > 0 && !reported.current) {
       reported.current = true;
       onPublished();
     }
-  }, [local, onPublished]);
+  }, [tracks.length, onPublished]);
+
+  const main = screen ?? camera;
+  const shareButton = (
+    <Button variant="secondary" onClick={() => void screenShare.start()}>
+      <MonitorUp className="size-4" />
+      Chọn màn hình để chia sẻ
+    </Button>
+  );
 
   return (
     <div className="space-y-3">
-      <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-black">
-        {local ? (
-          <VideoTrack trackRef={local} className="h-full w-full -scale-x-100 object-contain" />
-        ) : (
+      <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-black">
+        {main ? (
+          <VideoTrack trackRef={main} className={`h-full w-full object-contain ${main === camera ? "-scale-x-100" : ""}`} />
+        ) : hasCamera(mode) && !cameraSeen.current ? (
           <div className="flex flex-col items-center gap-2 text-white">
             <Spinner className="size-6" />
             <p className="text-sm">Đang bật camera…</p>
           </div>
+        ) : hasScreen(mode) || screenSeen.current ? (
+          <div className="flex flex-col items-center gap-3 px-6 text-center text-white">
+            <p className="text-sm">
+              {screenSeen.current ? "Đã dừng chia sẻ màn hình." : "Chọn màn hình để bắt đầu chia sẻ với người xem."}
+            </p>
+            {shareButton}
+          </div>
+        ) : (
+          <div className="relative flex h-full w-full items-center justify-center px-6 text-center text-white">
+            {thumbnailUrl ? (
+              <Image src={thumbnailUrl} alt="" fill sizes="50vw" className="object-cover opacity-50" unoptimized />
+            ) : null}
+            <p className="relative text-sm">Đang phát âm thanh. Người xem không thấy hình.</p>
+          </div>
         )}
+        {screen && camera ? (
+          <div className="absolute bottom-3 right-3 aspect-video w-1/5 overflow-hidden rounded-lg border-2 border-white/80 bg-black">
+            <VideoTrack trackRef={camera} className="h-full w-full -scale-x-100 object-cover" />
+          </div>
+        ) : null}
+        {camera && !screen && hasScreen(mode) && !screenSeen.current ? (
+          <div className="absolute left-3 top-3">{shareButton}</div>
+        ) : null}
       </div>
       <LiveDeviceSettings />
     </div>
   );
 }
 
-/** Phát bằng webcam: lấy token phát rồi vào phòng LiveKit, tự bật camera và micro. */
-function WebcamBroadcast({ id }: { id: string }) {
+/**
+ * Phát từ trình duyệt: lấy token phát rồi vào phòng LiveKit, tự bật micro và, tuỳ kiểu, camera. Màn hình thì chủ kênh
+ * tự bấm chọn (trình duyệt chỉ cho bắt đầu chia sẻ từ một cú bấm).
+ */
+function BrowserBroadcast({ id, thumbnailUrl }: { id: string; thumbnailUrl: string | null }) {
+  const [mode] = useState(() => loadPublishMode(id));
   const [getToken] = useGetLiveTokenMutation();
   const [markStarted] = useMarkLiveStartedMutation();
   const [session, setSession] = useState<{ token: string; wsUrl: string } | null>(null);
@@ -102,12 +159,12 @@ function WebcamBroadcast({ id }: { id: string }) {
       token={session.token}
       connect
       audio
-      video
+      video={hasCamera(mode)}
       onMediaDeviceFailure={() =>
         setProblem("Không bật được camera hoặc micro. Hãy cấp quyền cho trình duyệt rồi tải lại trang.")
       }
     >
-      <PublisherStage onPublished={onPublished} />
+      <PublisherStage mode={mode} thumbnailUrl={thumbnailUrl} onPublished={onPublished} />
     </LiveKitRoom>
   );
 }
@@ -165,7 +222,11 @@ export default function LiveOnAirPanel({ live }: { live: LiveView }) {
   return (
     <section className="grid grid-cols-1 gap-x-6 px-6 py-6 md:grid-cols-6 xxl:grid-cols-8">
       <div className="col-span-1 space-y-4 md:col-span-4 xxl:col-span-6">
-        {live.source === "BROWSER" ? <WebcamBroadcast id={live.id} /> : <LiveEncoderPanel live={live} />}
+        {live.source === "BROWSER" ? (
+          <BrowserBroadcast id={live.id} thumbnailUrl={live.thumbnailUrl} />
+        ) : (
+          <LiveEncoderPanel live={live} />
+        )}
 
         <div className="flex flex-wrap items-center gap-3">
           {status === "LIVE" ? (

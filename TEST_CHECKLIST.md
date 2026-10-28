@@ -429,3 +429,24 @@ Bản thiết kế: `docs/superpowers/specs/2026-10-27-livestream-design.md`; k�
 | 28.23 | Mở đường dẫn cũ `/livestream` | Chuyển sang `/live` | |
 | 28.24 | Trên điện thoại (hoặc thu hẹp cửa sổ), mở `/live/{id}` và `/studio/live` | Chat nằm dưới phần thông tin, cuộn trong khung; không tràn ngang; hình 16:9 | |
 | 28.25 | B để tab xem nền hơn 2 phút rồi quay lại | Hình tạm ngắt (tiết kiệm hạn mức), quay lại thì nối lại tự động; chat vẫn nhận tin | |
+
+### 28b. Phát từ trình duyệt: camera, màn hình, chỉ âm thanh; ảnh thu nhỏ (L1.1)
+
+Bản thiết kế: `docs/superpowers/specs/2026-10-28-live-sources-thumbnail-design.md`. Dùng Chrome hoặc Edge trên máy tính (chia sẻ tiếng hệ thống chỉ có ở hai trình duyệt này). Thử ngắn, mỗi buổi vài phút để đỡ tốn hạn mức LiveKit.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 28.26 | A mở `/studio/live`, chọn **Phát từ trình duyệt**, lần lượt bấm 4 kiểu: Camera, Màn hình, Màn hình + camera, Chỉ âm thanh | Chỉ Camera và Màn hình + camera mở camera xem trước; Màn hình và Chỉ âm thanh thì **đèn camera tắt**, trình duyệt không xin quyền camera | |
+| 28.27 | Chọn **Màn hình**, nhập tiêu đề, **Bắt đầu** | Camera không bật. Khung xem trước có nút **Chọn màn hình để chia sẻ**; bấm thì trình duyệt mở hộp chọn tab / cửa sổ / màn hình, chọn xong thì thấy màn hình trong khung (không bị lật gương) | |
+| 28.28 | B xem `/live/{id}` | Thấy màn hình của A; nếu A chia sẻ **tab có tiếng** (tích "Chia sẻ âm thanh tab") và bật micro thì nghe được cả hai | |
+| 28.29 | A bấm **Dừng chia sẻ** trên thanh của Chrome | A thấy "Đã dừng chia sẻ màn hình" + nút chia sẻ lại. Buổi phát vẫn chạy (còn micro). B thấy ảnh thu nhỏ + "Đang phát âm thanh", **không** thấy "sự cố kết nối" | |
+| 28.30 | Kết thúc buổi, tạo buổi mới kiểu **Màn hình + camera**, chia sẻ màn hình | Xem trước: màn hình chính, camera nhỏ ở góc dưới bên phải. B thấy cùng bố cục | |
+| 28.31 | Kết thúc buổi, tạo buổi mới kiểu **Chỉ âm thanh** | Buổi vẫn chuyển TRỰC TIẾP (không bị huỷ sau 1 giờ); B thấy ảnh thu nhỏ + "Đang phát âm thanh" và nghe được tiếng; thông báo ở chuông vẫn gửi | |
+| 28.32 | Đang phát kiểu Chỉ âm thanh, bấm **Chia sẻ màn hình** / **Camera** | B chuyển sang thấy hình ngay | |
+| 28.33 | Đang phát, tắt cả Micro, Camera, Chia sẻ màn hình | Thanh thiết bị hiện dòng cam "Buổi phát sẽ tự kết thúc nếu để vậy quá 2 phút"; để quá 2 phút thì buổi tự kết thúc | |
+| 28.34 | Trên điện thoại mở `/studio/live` | Chỉ còn 2 kiểu **Camera** và **Chỉ âm thanh** kèm dòng "Trình duyệt này không chia sẻ được màn hình" | |
+| 28.35 | Form chuẩn bị: chọn ảnh GIF, ảnh > 2 MB, rồi ảnh PNG / JPEG nhỏ | GIF và ảnh lớn bị báo lỗi tiếng Việt; ảnh hợp lệ hiện xem trước. Bắt đầu buổi thì ảnh được tải lên | |
+| 28.36 | Trang `/live`, chip **Trực tiếp** ở trang chủ, tab **Trực tiếp** của kênh | Thẻ của buổi có ảnh thu nhỏ (không có ảnh thì như cũ: banner kênh, rồi ảnh đại diện) | |
+| 28.37 | Dán link `/live/{id}` vào Zalo / Facebook / Discord | Thẻ chia sẻ hiện ảnh thu nhỏ (có thể mất vài phút do nơi nhận lưu tạm) | |
+| 28.38 | Đang phát: ở bảng đang phát bấm vào ảnh thu nhỏ, chọn ảnh khác | Ảnh đổi ngay; thẻ ở `/live` đổi theo | |
+| 28.39 | Kết thúc buổi, mở tab **Trực tiếp** của kênh | Thẻ buổi đã phát **vẫn giữ ảnh thu nhỏ** | |

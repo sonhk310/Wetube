@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Monitor, Video } from "lucide-react";
+import Image from "next/image";
+import { Mic, Monitor, PictureInPicture2, Video, type LucideIcon } from "lucide-react";
 import { useCreateLiveMutation, useUploadLiveThumbnailMutation } from "@/app/api/liveApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiErrorMessage } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
 import { toastEmitter } from "@/lib/toastEmitter";
+import {
+  DEFAULT_PUBLISH_MODE,
+  canShareScreen,
+  hasCamera,
+  savePublishMode,
+  type PublishMode,
+} from "../lib/publishMode";
 import type { LiveProtocol, LiveSource } from "../types";
 import LiveThumbnailPicker from "./live-thumbnail-picker";
 
@@ -84,7 +92,42 @@ function CameraPreview() {
   );
 }
 
-/** Bước chuẩn bị: tiêu đề, mô tả, nguồn phát (webcam hoặc OBS) và chat. */
+const MODE_OPTIONS: { mode: PublishMode; title: string; hint: string; needsScreen: boolean; icon: LucideIcon }[] = [
+  { mode: "CAMERA", title: "Camera", hint: "Hình từ camera, tiếng từ micro.", needsScreen: false, icon: Video },
+  {
+    mode: "SCREEN",
+    title: "Màn hình",
+    hint: "Chia sẻ một tab, cửa sổ hoặc cả màn hình; không bật camera.",
+    needsScreen: true,
+    icon: Monitor,
+  },
+  {
+    mode: "SCREEN_CAMERA",
+    title: "Màn hình + camera",
+    hint: "Màn hình là hình chính, camera nhỏ ở góc.",
+    needsScreen: true,
+    icon: PictureInPicture2,
+  },
+  { mode: "AUDIO", title: "Chỉ âm thanh", hint: "Không đăng hình, người xem thấy ảnh thu nhỏ.", needsScreen: false, icon: Mic },
+];
+
+/** Khung xem trước khi không mở camera: nói rõ hình sẽ lấy từ đâu. */
+function NoCameraPreview({ mode, thumbnail }: { mode: PublishMode; thumbnail: string | null }) {
+  return (
+    <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-neutral-900 px-6 text-center text-sm text-neutral-300">
+      {mode === "AUDIO" && thumbnail ? (
+        <Image src={thumbnail} alt="" fill sizes="50vw" className="object-cover opacity-60" unoptimized />
+      ) : null}
+      <span className="relative">
+        {mode === "AUDIO"
+          ? "Chỉ phát âm thanh: người xem thấy ảnh thu nhỏ của buổi phát."
+          : "Sau khi bấm Bắt đầu, bạn sẽ chọn màn hình để chia sẻ."}
+      </span>
+    </div>
+  );
+}
+
+/** Bước chuẩn bị: tiêu đề, mô tả, nguồn phát (trình duyệt hoặc OBS) và chat. */
 export default function LiveSetupForm({ onConflict }: { onConflict: () => void }) {
   const [createLive, { isLoading }] = useCreateLiveMutation();
   const [uploadThumbnail] = useUploadLiveThumbnailMutation();
@@ -94,8 +137,13 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [source, setSource] = useState<LiveSource>("BROWSER");
+  const [mode, setMode] = useState<PublishMode>(DEFAULT_PUBLISH_MODE);
+  const [screenSupported, setScreenSupported] = useState(false);
   const [protocol, setProtocol] = useState<LiveProtocol>("WHIP");
   const [chatEnabled, setChatEnabled] = useState(true);
+
+  // Chỉ biết được ở trình duyệt (render phía máy chủ không có navigator)
+  useEffect(() => setScreenSupported(canShareScreen()), []);
 
   const submit = async () => {
     try {
@@ -106,6 +154,8 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
         protocol: source === "ENCODER" ? protocol : undefined,
         chatEnabled,
       }).unwrap();
+      // Phải nhớ ngay: trang đang phát đọc kiểu này khi dựng lên, ngay sau khi tạo xong
+      if (source === "BROWSER") savePublishMode(created.id, mode);
       if (thumbnail) {
         // Lỗi ảnh không làm hỏng buổi phát đã tạo: chủ kênh đổi ảnh được ở bảng đang phát
         await uploadThumbnail({ id: created.id, file: thumbnail })
@@ -164,8 +214,8 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
               active={source === "BROWSER"}
               onClick={() => setSource("BROWSER")}
               icon={<Video className="size-5" />}
-              title="Webcam"
-              hint="Phát ngay từ trình duyệt bằng camera và micro."
+              title="Phát từ trình duyệt"
+              hint="Phát ngay bằng camera, màn hình hoặc chỉ micro, không cần phần mềm."
             />
             <SourceOption
               active={source === "ENCODER"}
@@ -176,6 +226,27 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
             />
           </div>
         </div>
+
+        {source === "BROWSER" ? (
+          <div className="space-y-2">
+            <Label>Hình đăng lên</Label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {MODE_OPTIONS.filter((o) => screenSupported || !o.needsScreen).map((o) => (
+                <SourceOption
+                  key={o.mode}
+                  active={mode === o.mode}
+                  onClick={() => setMode(o.mode)}
+                  icon={<o.icon className="size-5" />}
+                  title={o.title}
+                  hint={o.hint}
+                />
+              ))}
+            </div>
+            {!screenSupported ? (
+              <p className="text-sm text-gray-500">Trình duyệt này không chia sẻ được màn hình.</p>
+            ) : null}
+          </div>
+        ) : null}
 
         {source === "ENCODER" ? (
           <div className="space-y-2">
@@ -210,8 +281,10 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
       </div>
 
       <div>
-        {source === "BROWSER" ? (
+        {source === "BROWSER" && hasCamera(mode) ? (
           <CameraPreview />
+        ) : source === "BROWSER" ? (
+          <NoCameraPreview mode={mode} thumbnail={thumbnailPreview} />
         ) : (
           <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-neutral-900 px-6 text-center text-sm text-neutral-300">
             Sau khi bấm Bắt đầu, bạn sẽ nhận địa chỉ máy chủ và khoá luồng để dán vào phần mềm phát.

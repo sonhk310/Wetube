@@ -1,9 +1,12 @@
 "use client";
 
-import { Camera, CameraOff, Check, ChevronDown, Mic, MicOff } from "lucide-react";
-import { useLocalParticipant, useMediaDeviceSelect } from "@livekit/components-react";
+import { Camera, CameraOff, Check, ChevronDown, Mic, MicOff, MonitorOff, MonitorUp } from "lucide-react";
+import { useConnectionState, useLocalParticipant, useMediaDeviceSelect } from "@livekit/components-react";
+import { ConnectionState } from "livekit-client";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { canShareScreen } from "../lib/publishMode";
+import { useScreenShare } from "../lib/useScreenShare";
 
 function DeviceMenu({
   disabled,
@@ -35,9 +38,12 @@ function DeviceMenu({
   );
 }
 
-/** Bật / tắt micro, camera và chọn thiết bị; phải nằm trong LiveKitRoom của chủ kênh. */
+/** Bật / tắt micro, camera, chia sẻ màn hình và chọn thiết bị; phải nằm trong LiveKitRoom của chủ kênh. */
 export default function LiveDeviceSettings() {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
+  const screen = useScreenShare();
+  // Lúc đang nối phòng micro chưa kịp bật: chưa cảnh báo
+  const connected = useConnectionState() === ConnectionState.Connected;
   const mic = useMediaDeviceSelect({ kind: "audioinput" });
   const cam = useMediaDeviceSelect({ kind: "videoinput" });
 
@@ -73,6 +79,20 @@ export default function LiveDeviceSettings() {
           onPick={(id) => void cam.setActiveMediaDevice(id)}
         />
       </div>
+      {canShareScreen() ? (
+        <Button
+          variant={screen.sharing ? "secondary" : "outline"}
+          onClick={() => void (screen.sharing ? screen.stop() : screen.start())}
+        >
+          {screen.sharing ? <MonitorOff className="size-4" /> : <MonitorUp className="size-4" />}
+          {screen.sharing ? "Dừng chia sẻ màn hình" : "Chia sẻ màn hình"}
+        </Button>
+      ) : null}
+      {connected && !isMicrophoneEnabled && !isCameraEnabled && !screen.sharing ? (
+        <p className="basis-full text-sm text-amber-700">
+          Đang tắt cả hình và tiếng. Buổi phát sẽ tự kết thúc nếu để vậy quá 2 phút.
+        </p>
+      ) : null}
     </div>
   );
 }

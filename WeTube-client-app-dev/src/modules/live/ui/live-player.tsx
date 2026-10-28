@@ -1,7 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LiveKitRoom, RoomAudioRenderer, StartAudio, VideoTrack, useTracks } from "@livekit/components-react";
+import Image from "next/image";
+import {
+  LiveKitRoom,
+  RoomAudioRenderer,
+  StartAudio,
+  VideoTrack,
+  useParticipants,
+  useTracks,
+} from "@livekit/components-react";
 import { Track } from "livekit-client";
 import { Maximize, Pause, PictureInPicture2, Play, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,8 +30,12 @@ function Frame({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Hình của người phát (identity bắt đầu bằng "u:") và các nút điều khiển. */
-function Stage() {
+/**
+ * Hình của người phát (identity bắt đầu bằng "u:") và các nút điều khiển. Có màn hình thì màn hình là hình chính và
+ * camera (nếu cùng có) nằm nhỏ ở góc. Người phát còn trong phòng mà không có hình (chỉ âm thanh, hoặc tắt camera) thì
+ * hiện ảnh thu nhỏ; chỉ khi người phát rời phòng mới báo sự cố kết nối.
+ */
+function Stage({ thumbnailUrl }: { thumbnailUrl: string | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
@@ -32,7 +44,12 @@ function Stage() {
   const tracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare]).filter(
     (t) => t.participant.identity.startsWith("u:") && t.publication
   );
-  const track = tracks[0];
+  const screen = tracks.find((t) => t.source === Track.Source.ScreenShare);
+  const camera = tracks.find((t) => t.source === Track.Source.Camera);
+  const track = screen ?? camera;
+  const publisher = useParticipants().find((p) => p.identity.startsWith("u:"));
+  // Có luồng hình nhưng chưa nhận kịp: đang tải, chưa phải "chỉ âm thanh"
+  const videoComing = !!publisher && publisher.videoTrackPublications.size > 0;
 
   const togglePlay = () => {
     const el = videoRef.current;
@@ -65,12 +82,24 @@ function Stage() {
     >
       {track ? (
         <VideoTrack ref={videoRef} trackRef={track} className="h-full w-full object-contain" />
+      ) : publisher && !videoComing ? (
+        <div className="relative flex h-full w-full items-center justify-center px-6 text-white">
+          {thumbnailUrl ? (
+            <Image src={thumbnailUrl} alt="" fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover opacity-50" />
+          ) : null}
+          <p className="relative text-base font-semibold">Đang phát âm thanh</p>
+        </div>
       ) : (
         <div className="flex flex-col items-center gap-2 text-white">
           <Spinner className="size-6" />
-          <p className="text-sm">Người phát đang gặp sự cố kết nối…</p>
+          <p className="text-sm">{publisher ? "Đang tải hình…" : "Người phát đang gặp sự cố kết nối…"}</p>
         </div>
       )}
+      {screen && camera ? (
+        <div className="absolute bottom-14 right-3 aspect-video w-1/5 overflow-hidden rounded-lg border-2 border-white/80 bg-black">
+          <VideoTrack trackRef={camera} className="h-full w-full object-cover" />
+        </div>
+      ) : null}
       <RoomAudioRenderer volume={volume} muted={muted} />
       <StartAudio
         label="Bấm để bật tiếng"
@@ -114,7 +143,15 @@ function Stage() {
  * Trình phát người xem. Chỉ nối LiveKit khi buổi đang LIVE (mỗi phút nối đều tính vào hạn mức gói free). Đã đủ người
  * xem bằng hình thì chỉ hiện thông báo; chat và bình chọn vẫn dùng được. Tab ẩn quá 2 phút thì ngắt, quay lại nối lại.
  */
-export default function LivePlayer({ id, status }: { id: string; status: LiveStatus }) {
+export default function LivePlayer({
+  id,
+  status,
+  thumbnailUrl,
+}: {
+  id: string;
+  status: LiveStatus;
+  thumbnailUrl: string | null;
+}) {
   const [getToken] = useGetLiveTokenMutation();
   const [session, setSession] = useState<{ token: string; wsUrl: string } | null>(null);
   const [full, setFull] = useState(false);
@@ -204,7 +241,7 @@ export default function LivePlayer({ id, status }: { id: string; status: LiveSta
   }
   return (
     <LiveKitRoom serverUrl={session.wsUrl} token={session.token} connect audio={false} video={false}>
-      <Stage />
+      <Stage thumbnailUrl={thumbnailUrl} />
     </LiveKitRoom>
   );
 }
