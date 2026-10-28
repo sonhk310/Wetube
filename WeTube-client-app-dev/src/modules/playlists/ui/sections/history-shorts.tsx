@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { ChevronRight, MoreVertical, Trash2 } from "lucide-react";
+import { ChevronRight, FileVideo, MoreVertical, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,9 +91,7 @@ export default function HistoryShorts({
     <section className="mb-6">
       {showTitle && (
         <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
-          <svg viewBox="0 0 24 24" className="size-6 text-red-600" fill="currentColor" aria-hidden>
-            <path d="M17.77 10.32l-1.2-.5L18 9.06a3.74 3.74 0 00-3.5-6.62L6 6.94a3.74 3.74 0 00.23 6.74l1.2.49L6 14.93a3.75 3.75 0 003.5 6.63l8.5-4.5a3.74 3.74 0 00-.23-6.74zM10 14.65v-5.3L15 12l-5 2.65z" />
-          </svg>
+          <FileVideo className="size-6" aria-hidden />
           Shorts
         </h2>
       )}

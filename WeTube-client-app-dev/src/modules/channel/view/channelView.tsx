@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { FileVideo } from "lucide-react";
 import { useGetChannelInfoQuery, useGetChannelVideosQuery } from "@/app/api/channelApi";
 import { VideoCardSkeleton } from "@/modules/home/ui/components/video/videoCard";
 import ChannelShortCard from "../ui/channelShortCard";
@@ -8,14 +9,6 @@ import { ChannelVideoCard } from "../ui/channelVideos";
 import VideoCarousel from "../ui/VideoCarousel";
 
 const ROW_SIZE = 12;
-
-function ShortsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-6 text-red-600" fill="currentColor" aria-hidden>
-      <path d="M17.77 10.32l-1.2-.5L18 9.06a3.74 3.74 0 00-3.5-6.62L6 6.94a3.74 3.74 0 00.23 6.74l1.2.49L6 14.93a3.75 3.75 0 003.5 6.63l8.5-4.5a3.74 3.74 0 00-.23-6.74zM10 14.65v-5.3L15 12l-5 2.65z" />
-    </svg>
-  );
-}
 
 // Trang chủ của kênh: các hàng cuộn ngang "Video mới nhất", "Phổ biến", "Shorts"; hàng nào trống thì ẩn.
 export default function ChannelView() {
@@ -69,7 +62,7 @@ export default function ChannelView() {
         </VideoCarousel>
       )}
       {shortVideos.length > 0 && (
-        <VideoCarousel title="Shorts" icon={<ShortsIcon />}>
+        <VideoCarousel title="Shorts" icon={<FileVideo className="size-6" aria-hidden />}>
           {shortVideos.map((v) => (
             <ChannelShortCard key={v.id} video={v} className="w-[180px] shrink-0" />
           ))}

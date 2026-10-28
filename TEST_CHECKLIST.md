@@ -477,4 +477,4 @@ Bản thiết kế: `docs/superpowers/specs/2026-10-28-live-recording-cloudinary
 | 28.57 | Mở `https://wetube.vibe.tinhgon.xyz/@kysonhuynh/live` | Mục "Các buổi đã phát" chỉ còn các buổi có video xem lại (còn công khai); buổi test cũ không có video không còn; bấm thẻ nào cũng ra trang có nút **Xem lại** | |
 | 28.58 | Xoá hoặc ẩn video xem lại ở Nội dung (không xoá buổi), rồi xem lại tab Trực tiếp công khai | Buổi đó biến khỏi tab công khai, vẫn còn trong danh sách ở Studio để anh xoá | |
 | 28.59 | Vừa kết thúc một buổi có ghi hình, trong lúc đang tải bản ghi lên, mở Nội dung ở tab khác (hoặc đợi tải xong rồi mở) | Buổi đó ở hàng / bảng Trực tiếp ghi "Đang chờ tải bản ghi lên…", ô tick và mục Xoá bị khoá; tải xong thì đổi thành "Có video xem lại" | |
-| 28.60 | Mở trang chủ, tìm hàng **Shorts** | Icon cạnh chữ Shorts là icon tệp-video giống mục Shorts ở sidebar bên trái (không còn icon Shorts đỏ kiểu YouTube) | |
+| 28.60 | Mở trang chủ (hàng **Shorts**), trang một kênh (tab Trang chủ, hàng Shorts), và Lịch sử xem (mục Shorts) | Cả ba nơi icon cạnh chữ Shorts là icon tệp-video giống mục Shorts ở sidebar bên trái (không còn icon Shorts đỏ kiểu YouTube) | |
