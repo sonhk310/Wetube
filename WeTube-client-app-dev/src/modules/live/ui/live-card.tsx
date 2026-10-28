@@ -21,7 +21,8 @@ export default function LiveCardItem({ live }: { live: LiveCard }) {
   const duration = formatLiveDuration(live.startedAt, live.endedAt);
 
   return (
-    <Link href={`/live/${live.id}`} className="group block">
+    // Buổi đã có video xem lại công khai thì thẻ mở thẳng video, không phải qua trang buổi phát rồi bấm "Xem lại"
+    <Link href={live.replayVideoId ? `/watch/${live.replayVideoId}` : `/live/${live.id}`} className="group block">
       <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-neutral-900">
         {cover ? (
           <Image src={cover} alt="" fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover" />

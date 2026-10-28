@@ -50,6 +50,7 @@ import com.wetube.wetube_service.service.video.VideoService;
 class LiveStreamDeleteTest {
 
     private static final String THUMB = "https://res.cloudinary.com/x/image/upload/t.jpg";
+    private static final String BANNER = "https://res.cloudinary.com/x/image/upload/channels/banner.jpg";
 
     private final LiveStreamRepository repo = mock(LiveStreamRepository.class);
     private final UserRepository userRepo = mock(UserRepository.class);
@@ -71,7 +72,8 @@ class LiveStreamDeleteTest {
         service = new LiveStreamService(repo, userRepo, channelRepo, mock(LiveKitGateway.class), rateLimiter,
                 mock(LiveEventPublisher.class), notifications, polls, cloudinary, new LiveRecordingProperties(),
                 mock(TopicCatalog.class), videos, List.of(), tm);
-        Channel channel = Channel.builder().id(channelId).name("Kênh Sơn").status(ActiveStatus.ACTIVE).build();
+        Channel channel = Channel.builder().id(channelId).name("Kênh Sơn").status(ActiveStatus.ACTIVE)
+                .backgroundImgUrl(BANNER).build();
         when(userRepo.findById(owner)).thenReturn(Optional.of(
                 AppUser.builder().id(owner).email("son@example.com").name("Sơn").channel(channel).build()));
         when(repo.findAllById(anyList())).thenAnswer(inv -> {
@@ -106,6 +108,8 @@ class LiveStreamDeleteTest {
         LiveStream without = ended(RecordingStatus.NONE, null);
         when(repo.findByChannelIdAndStatusOrderByEndedAtDesc(channelId, LiveStatus.ENDED, PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(List.of(withVideo, without), PageRequest.of(0, 20), 2));
+        when(repo.replayStatuses(List.of(withVideo.getReplayVideoId())))
+                .thenReturn(java.util.Collections.singletonList(new Object[] {withVideo.getReplayVideoId(), ActiveStatus.PRIVATE}));
 
         MyPastLivesResponse res = service.myPast(owner, PageRequest.of(0, 20));
 
@@ -114,8 +118,26 @@ class LiveStreamDeleteTest {
         assertThat(res.items()).extracting("id").containsExactly(withVideo.getId(), without.getId());
         assertThat(res.items().get(0).replayVideoId()).isEqualTo(withVideo.getReplayVideoId());
         assertThat(res.items().get(0).recordingStatus()).isEqualTo(RecordingStatus.DONE);
+        assertThat(res.items().get(0).replayStatus()).isEqualTo(ActiveStatus.PRIVATE);
+        // ảnh bìa dự phòng của kênh, như thẻ công khai
+        assertThat(res.items()).extracting("channelBackground").containsOnly(BANNER);
         assertThat(res.items().get(1).replayVideoId()).isNull();
         assertThat(res.items().get(1).peakViewers()).isEqualTo(3);
+    }
+
+    @Test
+    void aReplayVideoThatNoLongerExistsOrWasDeletedCountsAsNoReplay() {
+        LiveStream gone = ended(RecordingStatus.DONE, UUID.randomUUID());
+        LiveStream deleted = ended(RecordingStatus.DONE, UUID.randomUUID());
+        when(repo.findByChannelIdAndStatusOrderByEndedAtDesc(channelId, LiveStatus.ENDED, PageRequest.of(0, 20)))
+                .thenReturn(new PageImpl<>(List.of(gone, deleted), PageRequest.of(0, 20), 2));
+        when(repo.replayStatuses(List.of(gone.getReplayVideoId(), deleted.getReplayVideoId())))
+                .thenReturn(java.util.Collections.singletonList(new Object[] {deleted.getReplayVideoId(), ActiveStatus.DELETED}));
+
+        MyPastLivesResponse res = service.myPast(owner, PageRequest.of(0, 20));
+
+        assertThat(res.items()).extracting("replayVideoId").containsOnlyNulls();
+        assertThat(res.items()).extracting("replayStatus").containsOnlyNulls();
     }
 
     @Test

@@ -81,7 +81,7 @@ class LiveReplayTest {
     }
 
     @Test
-    void theReplayIsAPublicVideoOfTheOwnerWithTheRecordedFile() {
+    void theReplayIsAPrivateVideoOfTheOwnerWithTheRecordedFile() {
         UUID id = videoService.createLiveReplay(replay());
 
         ArgumentCaptor<Video> saved = ArgumentCaptor.forClass(Video.class);
@@ -94,14 +94,15 @@ class LiveReplayTest {
         assertThat(v.getTopicId()).isEqualTo("music");
         assertThat(v.getVideoUrl()).isEqualTo("https://pub.example/live/abc.mp4");
         assertThat(v.getThumbnailUrl()).isEqualTo("https://res.cloudinary.com/x/image/upload/t.jpg");
-        assertThat(v.getVideosStatus()).isEqualTo(ActiveStatus.ACTIVE);
+        // riêng tư tới khi chủ kênh tự đổi chế độ hiển thị
+        assertThat(v.getVideosStatus()).isEqualTo(ActiveStatus.PRIVATE);
         assertThat(v.getDuration()).isEqualTo(612f);
         assertThat(v.isShort()).isFalse();
         assertThat(v.getCreatedAt()).isNotNull();
     }
 
     @Test
-    void theReplayIsSearchableButDoesNotNotifySubscribersAgain() {
+    void theReplayIsHandedToTheIndexerButDoesNotNotifySubscribers() {
         videoService.createLiveReplay(replay());
 
         verify(videoIndexer).index(any(Video.class));

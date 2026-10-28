@@ -29,6 +29,21 @@ class CloudinaryThumbnailTest {
     }
 
     @Test
+    void aVideoWithoutAThumbnailGetsAFrameOfItself() {
+        assertThat(CloudinaryService.videoFrameUrl("https://res.cloudinary.com/demo/video/upload/q_auto,vc_h264/v12/rec.mp4"))
+                .isEqualTo("https://res.cloudinary.com/demo/video/upload/so_1,w_1280,h_720,c_fill/q_auto,vc_h264/v12/rec.jpg");
+        assertThat(CloudinaryService.videoFrameUrl("https://res.cloudinary.com/demo/video/upload/v12/rec.mp4?x=1"))
+                .isEqualTo("https://res.cloudinary.com/demo/video/upload/so_1,w_1280,h_720,c_fill/v12/rec.jpg");
+    }
+
+    @Test
+    void noFrameForAnythingThatIsNotACloudinaryVideo() {
+        assertThat(CloudinaryService.videoFrameUrl(null)).isNull();
+        assertThat(CloudinaryService.videoFrameUrl("https://pub.example/live/a.mp4")).isNull();
+        assertThat(CloudinaryService.videoFrameUrl("https://res.cloudinary.com/demo/image/upload/v1/a.jpg")).isNull();
+    }
+
+    @Test
     void transformConstantsAreExactlyWhatCloudinaryGenerates() {
         assertThat(CloudinaryService.THUMB_TRANSFORM).isEqualTo("c_fill,h_720,q_auto,w_1280");
         assertThat(CloudinaryService.SHORT_THUMB_TRANSFORM).isEqualTo("c_fill,h_960,q_auto,w_540");

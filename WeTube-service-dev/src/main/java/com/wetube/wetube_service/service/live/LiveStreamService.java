@@ -667,9 +667,10 @@ public class LiveStreamService {
             cloudinary.deleteVideo(uploaded.url());
         } else {
             try {
+                String thumbnail = stream.getThumbnailUrl() != null
+                        ? stream.getThumbnailUrl() : CloudinaryService.videoFrameUrl(uploaded.url());
                 stream.setReplayVideoId(videos.createLiveReplay(new LiveReplay(stream.getOwnerId(), stream.getTitle(),
-                        replayDescription(stream), stream.getTopicId(), uploaded.url(), stream.getThumbnailUrl(),
-                        seconds)));
+                        replayDescription(stream), stream.getTopicId(), uploaded.url(), thumbnail, seconds)));
                 stream.setRecordingUrl(uploaded.url());
                 stream.setRecordingStatus(RecordingStatus.DONE);
                 // Giữ recordingMessage nếu có (vd. bản ghi bị cắt vì chạm trần) để chủ kênh biết
@@ -735,11 +736,26 @@ public class LiveStreamService {
         }
         boolean isOwner = viewerIdOrNull != null && viewerIdOrNull.equals(stream.getOwnerId());
         LiveView base = view(stream, channelOf(stream.getChannelId()), isOwner);
+        if (stream.getReplayVideoId() != null && !replayWatchable(stream.getReplayVideoId(), isOwner)) {
+            base = base.toBuilder().replayVideoId(null).build();
+        }
         // Đang phát: Poll hiện tại; đã kết thúc: mọi Poll với kết quả cuối
         if (stream.getStatus() == LiveStatus.ENDED) {
             return withPolls(base, null, polls.history(id));
         }
         return withPolls(base, polls.current(id, viewerIdOrNull).orElse(null), null);
+    }
+
+    /**
+     * Người xem có xem được video xem lại không: chủ kênh xem được mọi chế độ trừ video đã xoá; người khác chỉ khi video
+     * đang công khai. Chủ kênh đặt video riêng tư thì trang buổi phát không còn nút "Xem lại" cho người khác.
+     */
+    private boolean replayWatchable(UUID videoId, boolean isOwner) {
+        ActiveStatus status = repo.replayStatus(videoId).orElse(null);
+        if (status == null || status == ActiveStatus.DELETED) {
+            return false;
+        }
+        return isOwner || VideoAccess.isListed(status);
     }
 
     private static LiveView withPolls(LiveView base, PollView poll, List<PollView> history) {
@@ -768,11 +784,21 @@ public class LiveStreamService {
             return new MyPastLivesResponse(List.of(), 0, false);
         }
         Page<LiveStream> page = repo.findByChannelIdAndStatusOrderByEndedAtDesc(channel.getId(), LiveStatus.ENDED, pageable);
-        List<MyPastLive> items = page.getContent().stream()
-                .map(s -> new MyPastLive(s.getId(), s.getTitle(), s.getThumbnailUrl(), s.getStartedAt(), s.getEndedAt(),
-                        s.getPeakViewers(), s.isRecordingEnabled(), recStatus(s), s.getRecordingMessage(),
-                        s.getReplayVideoId()))
-                .toList();
+        List<UUID> replayIds = page.getContent().stream().map(LiveStream::getReplayVideoId).filter(Objects::nonNull).toList();
+        Map<UUID, ActiveStatus> replayStatuses = new HashMap<>();
+        if (!replayIds.isEmpty()) {
+            for (Object[] row : repo.replayStatuses(replayIds)) {
+                replayStatuses.put((UUID) row[0], (ActiveStatus) row[1]);
+            }
+        }
+        List<MyPastLive> items = page.getContent().stream().map(s -> {
+            // Video đã xoá (hoặc không còn) thì coi như buổi này không có video xem lại
+            ActiveStatus replayStatus = s.getReplayVideoId() == null ? null : replayStatuses.get(s.getReplayVideoId());
+            boolean hasReplay = replayStatus != null && replayStatus != ActiveStatus.DELETED;
+            return new MyPastLive(s.getId(), s.getTitle(), s.getThumbnailUrl(), channel.getBackgroundImgUrl(),
+                    s.getStartedAt(), s.getEndedAt(), s.getPeakViewers(), s.isRecordingEnabled(), recStatus(s),
+                    s.getRecordingMessage(), hasReplay ? s.getReplayVideoId() : null, hasReplay ? replayStatus : null);
+        }).toList();
         return new MyPastLivesResponse(items, page.getTotalElements(), page.hasNext());
     }
 
@@ -882,7 +908,8 @@ public class LiveStreamService {
             return new LiveCard(s.getId(), s.getTitle(), s.getChannelId(),
                     c == null ? null : c.getName(), c == null ? null : c.getPicture(),
                     c == null ? null : c.getBackgroundImgUrl(), s.getThumbnailUrl(),
-                    s.getCurrentViewers(), s.getPeakViewers(), s.getStartedAt(), s.getEndedAt(), s.getStatus());
+                    s.getCurrentViewers(), s.getPeakViewers(), s.getStartedAt(), s.getEndedAt(), s.getStatus(),
+                    s.getReplayVideoId());
         }).toList();
     }
 

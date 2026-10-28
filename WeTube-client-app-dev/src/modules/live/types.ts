@@ -70,6 +70,8 @@ export interface LiveCard {
   startedAt: string | null;
   endedAt: string | null;
   status: LiveStatus;
+  /** Ở tab Trực tiếp của kênh: video xem lại đang công khai của buổi (thẻ mở thẳng video). */
+  replayVideoId: string | null;
 }
 
 export interface ChannelLives {
@@ -139,6 +141,8 @@ export interface MyPastLive {
   id: string;
   title: string;
   thumbnailUrl: string | null;
+  /** Ảnh bìa kênh, dùng khi buổi không có ảnh thu nhỏ (như thẻ công khai). */
+  channelBackground: string | null;
   startedAt: string | null;
   endedAt: string | null;
   peakViewers: number;
@@ -146,8 +150,10 @@ export interface MyPastLive {
   recordingStatus: RecordingStatus;
   /** Lý do không có video xem lại (hết hạn mức, lỗi...). */
   recordingMessage: string | null;
-  /** Có khi bản ghi đã thành video: /watch/{replayVideoId}. */
+  /** Có khi bản ghi đã thành video còn tồn tại: /watch/{replayVideoId}. */
   replayVideoId: string | null;
+  /** Chế độ hiển thị của video xem lại (mặc định PRIVATE): ACTIVE / PUBLIC / UNLISTED / PRIVATE / INACTIVE. */
+  replayStatus: string | null;
 }
 
 export interface MyPastLives {

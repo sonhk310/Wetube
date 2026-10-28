@@ -29,8 +29,8 @@ public interface VideoService {
     }
 
     /**
-     * Tạo video công khai từ bản ghi buổi phát (không tải tệp lên, không báo người đăng ký vì họ đã được báo lúc lên
-     * sóng). Cùng videoUrl đã có video thì trả luôn video đó. Kênh đang bị ẩn thì 403. Trả id video.
+     * Tạo video riêng tư từ bản ghi buổi phát (không tải tệp lên): chủ kênh tự đổi chế độ hiển thị khi muốn cho người
+     * khác xem (lúc đó mới báo người đăng ký, như mọi video lần đầu công khai). Cùng videoUrl đã có video thì trả luôn video đó. Kênh đang bị ẩn thì 403. Trả id video.
      */
     UUID createLiveReplay(LiveReplay replay);
 

@@ -5,7 +5,10 @@ import java.util.UUID;
 
 import com.wetube.wetube_service.enumeration.LiveStatus;
 
-/** Thẻ buổi phát ở trang /live, chip Trực tiếp và tab Trực tiếp của kênh. */
+/**
+ * Thẻ buổi phát ở trang /live, chip Trực tiếp và tab Trực tiếp của kênh. replayVideoId: video xem lại (ở tab của kênh
+ * chỉ có buổi mà video này đang công khai, nên thẻ mở thẳng video).
+ */
 public record LiveCard(
         UUID id,
         String title,
@@ -18,5 +21,6 @@ public record LiveCard(
         int peakViewers,
         LocalDateTime startedAt,
         LocalDateTime endedAt,
-        LiveStatus status) {
+        LiveStatus status,
+        UUID replayVideoId) {
 }

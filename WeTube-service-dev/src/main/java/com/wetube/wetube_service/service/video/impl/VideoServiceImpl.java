@@ -282,7 +282,7 @@ private static String draftTitle(String fileName) {
                 .topicId(replay.topicId())
                 .videoUrl(replay.videoUrl())
                 .thumbnailUrl(replay.thumbnailUrl())
-                .videosStatus(ActiveStatus.ACTIVE)
+                .videosStatus(ActiveStatus.PRIVATE)
                 .duration(replay.durationSeconds())
                 .isShort(false)
                 .createdAt(now)

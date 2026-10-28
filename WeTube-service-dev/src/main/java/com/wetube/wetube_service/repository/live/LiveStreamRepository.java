@@ -46,6 +46,14 @@ public interface LiveStreamRepository extends JpaRepository<LiveStream, UUID> {
             + "where s.recordingStartedAt >= :from and s.recordingStartedAt < :to")
     long sumRecordingSeconds(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
+    /** Chế độ hiển thị của các video xem lại: mỗi dòng là [id video, ActiveStatus]; video không còn thì không có dòng. */
+    @Query("select v.id, v.videosStatus from Video v where v.id in :ids")
+    List<Object[]> replayStatuses(@Param("ids") Collection<UUID> ids);
+
+    /** Chế độ hiển thị của một video xem lại; rỗng nếu video không còn. */
+    @Query("select v.videosStatus from Video v where v.id = :id")
+    Optional<ActiveStatus> replayStatus(@Param("id") UUID id);
+
     /** Mọi buổi đã kết thúc của kênh, mới nhất trước (Studio quản lý). */
     Page<LiveStream> findByChannelIdAndStatusOrderByEndedAtDesc(UUID channelId, LiveStatus status, Pageable pageable);
 

@@ -33,7 +33,7 @@ import { formatLiveDuration, liveUrl } from "@/modules/live/lib/format";
 import type { MyPastLive } from "@/modules/live/types";
 import { usePastLives } from "../../hooks/use-past-lives";
 import { DeleteLivesDialog } from "../components/delete-lives-dialog";
-import { ReplayStatus, waitingForUpload } from "../components/live-content-card";
+import { ReplayStatus, liveCover, waitingForUpload } from "../components/live-content-card";
 
 const PAGE_SIZE = 30;
 
@@ -197,8 +197,8 @@ export default function LiveContentList() {
                       <TableCell className="py-3">
                         <div className="flex gap-3">
                           <div className="relative h-[72px] aspect-video shrink-0 overflow-hidden rounded-md bg-neutral-900">
-                            {live.thumbnailUrl && (
-                              <Image src={live.thumbnailUrl} alt={live.title} fill sizes="128px" className="object-cover" />
+                            {liveCover(live) && (
+                              <Image src={liveCover(live)} alt={live.title} fill sizes="128px" className="object-cover" />
                             )}
                             {duration && (
                               <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 text-[11px] font-medium text-white">

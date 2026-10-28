@@ -20,13 +20,39 @@ import type { MyPastLive } from "@/modules/live/types";
 /** Còn chờ trình duyệt tải bản ghi lên: xoá bây giờ thì bản ghi mất, nên chưa cho xoá. */
 export const waitingForUpload = (live: MyPastLive) => live.recordingStatus === "STOPPING";
 
-/** Trạng thái video xem lại của một buổi: có video (bấm xem), đang chờ tải lên, không ghi hình, hoặc không có video. */
+const VISIBILITY_LABELS: Record<string, string> = {
+  ACTIVE: "Công khai",
+  PUBLIC: "Công khai",
+  UNLISTED: "Không công khai",
+  PRIVATE: "Riêng tư",
+  INACTIVE: "Bị ẩn",
+};
+
+/** Ảnh của buổi phát: ảnh thu nhỏ, không có thì ảnh bìa kênh (như thẻ công khai); "" nếu không có cả hai. */
+export const liveCover = (live: MyPastLive) => live.thumbnailUrl || live.channelBackground || "";
+
+/**
+ * Trạng thái video xem lại của một buổi: có video (bấm xem, kèm chế độ hiển thị: mặc định Riêng tư, đổi ở Nội dung),
+ * đang chờ tải lên, không ghi hình, hoặc không có video.
+ */
 export function ReplayStatus({ live, className }: { live: MyPastLive; className?: string }) {
   if (live.replayVideoId) {
+    const visibility = live.replayStatus ? VISIBILITY_LABELS[live.replayStatus] : null;
     return (
-      <Link href={`/watch/${live.replayVideoId}`} className={cn("font-medium text-blue-700 hover:underline", className)}>
-        Có video xem lại
-      </Link>
+      <span className={className}>
+        <Link href={`/watch/${live.replayVideoId}`} className="font-medium text-blue-700 hover:underline">
+          Có video xem lại
+        </Link>
+        {visibility && (
+          <span
+            className="text-gray-500"
+            title="Chế độ hiển thị của video xem lại. Đổi ở Nội dung, tab Video."
+          >
+            {" "}
+            · {visibility}
+          </span>
+        )}
+      </span>
     );
   }
   if (waitingForUpload(live)) {
@@ -63,8 +89,8 @@ export function LiveContentCard({ live, onDelete }: { live: MyPastLive; onDelete
     >
       <Link href={page} className="block w-full text-left">
         <div className="relative aspect-video overflow-hidden rounded-lg bg-neutral-900">
-          {live.thumbnailUrl && (
-            <Image src={live.thumbnailUrl} alt={live.title} fill sizes="224px" className="object-cover" />
+          {liveCover(live) && (
+            <Image src={liveCover(live)} alt={live.title} fill sizes="224px" className="object-cover" />
           )}
           {duration && (
             <span className="absolute bottom-1.5 right-1.5 rounded bg-black/80 px-1 text-xs font-medium text-white">

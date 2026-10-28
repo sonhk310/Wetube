@@ -294,6 +294,17 @@ public class CloudinaryService {
         return dot > 0 ? rest.substring(0, dot) : rest;
     }
 
+    /**
+     * Ảnh thu nhỏ lấy từ một khung hình của video Cloudinary (giây thứ 1, cắt 16:9), cho video chưa có ảnh riêng như
+     * bản ghi buổi phát. Cloudinary tạo ảnh khi có người mở link lần đầu. Null nếu không phải link video Cloudinary.
+     */
+    public static String videoFrameUrl(String videoUrl) {
+        if (videoUrl == null || !videoUrl.contains("/video/upload/")) {
+            return null;
+        }
+        return videoUrl.replace("/upload/", "/upload/so_1,w_1280,h_720,c_fill/").replaceFirst("\\.mp4(\\?.*)?$", ".jpg");
+    }
+
     /** Xoá ảnh (thumbnail) trên Cloudinary; URL không phải của Cloudinary hoặc rỗng thì bỏ qua. */
     public void deleteImage(String imageUrl) {
         try {

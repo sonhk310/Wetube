@@ -37,7 +37,7 @@ export default function LiveRecordingUpload() {
       <div className="mx-6 mt-4 flex flex-wrap items-center gap-3 rounded-xl border p-4 text-sm">
         <p className="flex-1">
           {videoId
-            ? "Bản ghi của buổi phát vừa rồi đã thành video công khai của kênh."
+            ? "Bản ghi của buổi phát vừa rồi đã thành video riêng tư của kênh. Vào Nội dung đổi sang Công khai khi muốn mọi người xem."
             : published?.recordingMessage ?? "Bản ghi đã được tải lên."}
         </p>
         {videoId ? (

@@ -429,6 +429,21 @@ class LiveStreamRecordingTest {
     }
 
     @Test
+    void aStreamWithoutAThumbnailGivesItsReplayAFrameOfTheRecording() {
+        LiveStream s = stoppingStream(now.minusMinutes(1));
+        s.setThumbnailUrl(null);
+        givenUploaded(300f);
+        when(videos.createLiveReplay(any())).thenReturn(UUID.randomUUID());
+
+        service.uploadReplay(owner, s.getId(), webm, null, "USER");
+
+        ArgumentCaptor<LiveReplay> replay = ArgumentCaptor.forClass(LiveReplay.class);
+        verify(videos).createLiveReplay(replay.capture());
+        assertThat(replay.getValue().thumbnailUrl())
+                .isEqualTo("https://res.cloudinary.com/x/video/upload/so_1,w_1280,h_720,c_fill/q_auto,vc_h264/rec.jpg");
+    }
+
+    @Test
     void theReplayDateIsInVietnamTimeNotUtc() {
         LiveStream s = stoppingStream(now.minusMinutes(1));
         s.setStartedAt(LocalDateTime.of(2026, 10, 15, 20, 30)); // 03:30 ngày 16/10 giờ Việt Nam
@@ -611,13 +626,44 @@ class LiveStreamRecordingTest {
     }
 
     @Test
-    void theReplayVideoIsPublicOnTheEndedStream() {
+    void thePublicReplayIsOfferedToEveryone() {
+        LiveStream s = stoppingStream(now.minusMinutes(5));
+        UUID videoId = UUID.randomUUID();
+        s.setRecordingStatus(RecordingStatus.DONE);
+        s.setReplayVideoId(videoId);
+        when(repo.replayStatus(videoId)).thenReturn(Optional.of(ActiveStatus.ACTIVE));
+
+        assertThat(service.get(s.getId(), null).replayVideoId()).isEqualTo(videoId);
+        assertThat(service.get(s.getId(), UUID.randomUUID()).replayVideoId()).isEqualTo(videoId);
+    }
+
+    @Test
+    void aPrivateReplayIsOnlyOfferedToTheOwner() {
+        LiveStream s = stoppingStream(now.minusMinutes(5));
+        UUID videoId = UUID.randomUUID();
+        s.setRecordingStatus(RecordingStatus.DONE);
+        s.setReplayVideoId(videoId);
+        for (ActiveStatus hidden : new ActiveStatus[] {ActiveStatus.PRIVATE, ActiveStatus.UNLISTED, ActiveStatus.INACTIVE}) {
+            when(repo.replayStatus(videoId)).thenReturn(Optional.of(hidden));
+
+            assertThat(service.get(s.getId(), owner).replayVideoId()).as("owner, " + hidden).isEqualTo(videoId);
+            assertThat(service.get(s.getId(), UUID.randomUUID()).replayVideoId()).as("viewer, " + hidden).isNull();
+            assertThat(service.get(s.getId(), null).replayVideoId()).as("guest, " + hidden).isNull();
+        }
+    }
+
+    @Test
+    void aDeletedReplayIsOfferedToNobody() {
         LiveStream s = stoppingStream(now.minusMinutes(5));
         UUID videoId = UUID.randomUUID();
         s.setRecordingStatus(RecordingStatus.DONE);
         s.setReplayVideoId(videoId);
 
-        assertThat(service.get(s.getId(), null).replayVideoId()).isEqualTo(videoId);
+        when(repo.replayStatus(videoId)).thenReturn(Optional.of(ActiveStatus.DELETED));
+        assertThat(service.get(s.getId(), owner).replayVideoId()).isNull();
+
+        when(repo.replayStatus(videoId)).thenReturn(Optional.empty()); // video không còn
+        assertThat(service.get(s.getId(), owner).replayVideoId()).isNull();
     }
 
     @Test
