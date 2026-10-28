@@ -266,10 +266,27 @@ Anh đã thử trên trình duyệt: OK (26/10): B3 chương (khung Chương bê
 
 ---
 
-## 3. LỘ TRÌNH (anh duyệt thứ tự 25/10)
+## 3. LỘ TRÌNH (anh duyệt thứ tự 25/10; sắp xếp lại 28/10 sau khi đối chiếu PRD: xem bảng "Thứ tự làm tiếp" ngay dưới, bảng đó thắng các bảng cũ khi khác nhau)
 
-Đã xong: **L1 (phát trực tiếp, chờ anh thử)**, A1–A7, B3, B4, B6, B7, C1, C2, D1, D3, E1, E3, F1, W1, **H1 (@handle), H2 giai đoạn A + B (giao diện trang kênh, sửa kênh ở Studio, cắt ảnh)**, hàng Shorts ở trang chủ, ảnh thu nhỏ nét, Short lấp đầy khung 9:16. Xong việc nào thì chuyển mã lên dòng này và bỏ khỏi bảng.
+Đã xong: **L1 + L2b (phát trực tiếp và ghi hình xem lại, anh thử 28/10: OK)**, A1–A7, B3, B4, B6, B7, C1, C2, D1, D3, E1, E3, F1, W1, **H1 (@handle), H2 giai đoạn A + B (giao diện trang kênh, sửa kênh ở Studio, cắt ảnh)**, hàng Shorts ở trang chủ, ảnh thu nhỏ nét, Short lấp đầy khung 9:16. Xong việc nào thì chuyển mã lên dòng này và bỏ khỏi bảng.
 Cỡ: S = vài giờ, M = khoảng 1 ngày, L = vài ngày. Việc cỡ L viết thiết kế cho anh duyệt trước khi code.
+
+### Thứ tự làm tiếp (anh chốt 28/10, sau khi đối chiếu `PRD.md`)
+Đối chiếu PRD ra 4 chỗ lộ trình cũ không phủ (P1, K1, N1 và phần "nội dung hội viên" của M1). Đã xếp lại theo mức PRD đòi và theo việc nào mở đường cho việc nào. Việc ngoài PRD (B2, B8, C3, C5, B5, D2, D4, E4–E6, F2, F4, F5, C4) giữ ở các bảng cũ bên dưới, làm sau cùng.
+
+| Thứ tự | Mã | Việc | PRD | Cỡ | Ghi chú |
+|---|---|---|---|---|---|
+| 1 | G2 | Thử MoMo sandbox thật | 4.1.5, luồng 4 bước 3 | S | Chưa từng thử chữ ký. Phải xong trước P1 và M1 vì cả hai thu tiền |
+| 2 | P1 | **Premium có quyền lợi thật** | 4.1.5, KPI 5–8% | M | Hiện có trang Premium + MoMo + `/api/subpacks` nhưng **không nơi nào đọc trạng thái Premium**; trang hứa "không quảng cáo, tải xuống, phát nền" mà không có tính năng nào, và site không có quảng cáo. **Chờ anh chốt quyền lợi.** Đề xuất của em: nút tải video (chỉ Premium) + huy hiệu Premium cạnh tên; chữ "không quảng cáo" giữ vì site không có quảng cáo (ghi rõ); bỏ "phát nền" khỏi trang nếu không làm. Cần thiết kế ngắn cho anh duyệt |
+| 3 | E2 | Duyệt / sửa phụ đề AI trước khi đăng | luồng 1 bước 4, 4.1.2 | M | AI tạo + dịch được, chưa sửa được. Là điểm bán chính của PRD |
+| 4 | M1 | Hội viên kênh trên client **kèm nội dung độc quyền cho hội viên** | luồng 4 bước 1–4 | L | Thêm so với bản cũ: video "chỉ hội viên" (code chưa có khái niệm này). Cũng là giai đoạn C của H2. Viết thiết kế riêng cho anh duyệt; `POST /api/transactions/purchase` đang tắt (503), chỉ mở lại sau khi MoMo báo thành công |
+| 5 | Q1 | Admin: quản lý người dùng và doanh thu | 4.1.6 | M | Hiện chỉ có `/admin/reports` |
+| 6 | K1 | **Kiểm thử tải + tối ưu + đóng gói cho vòng chấm** | giai đoạn 4 của PRD, BRD | M | PRD ghi đây là giai đoạn "hiện tại" nhưng chưa có việc nào. Đề xuất: k6 cho vài API chính (trang chủ, tìm kiếm, WebSocket phòng / live), đo độ trễ live, chạy lại `next build` / test backend, bản bàn giao (hướng dẫn chạy, tài khoản thử) |
+| 7 | B1 | Chọn chất lượng 360p / 720p / 1080p, Tự động (HLS) | 4.1.1, 6.1 | L | Hiện phát thẳng MP4 từ Cloudinary |
+| 8 | F3 | Giao diện tối | 6.1 | M | Anh để dành; PRD có ghi Dark Mode, nên nhắc lại trước vòng chấm |
+| 9 | N1 | Thông báo đẩy (web push) khi kênh đăng ký lên sóng | luồng 3 bước 3 | M | **Tuỳ chọn, anh quyết**: hiện chỉ có chuông trong site, chưa có service worker |
+
+Lệch PRD có chủ ý (không làm): thả cảm xúc trong phòng xem chung (anh bỏ 26/10); vai trò Creator riêng (ai có kênh là Creator, code chỉ có `ROLE_USER` / `ROLE_ADMIN`).
 
 ### Làm trước L1 (anh chốt 27/10 sau buổi brainstorm; viết thiết kế cho anh duyệt trước khi code)
 | # | Mã | Việc | Ở đâu | Cỡ | Anh chốt / hiện trạng |
@@ -284,7 +301,7 @@ Cỡ: S = vài giờ, M = khoảng 1 ngày, L = vài ngày. Việc cỡ L viết
 ### Giai đoạn 1: hoàn thiện 4 luồng chính của PRD
 | # | Mã | Việc | Ở đâu | Cỡ | Hiện trạng (em đọc code 25/10, chưa thử) |
 |---|---|---|---|---|---|
-| 2 | L1 | **Livestream** (PRD luồng 3): trang "Đang phát trực tiếp", buổi phát gắn với kênh, thông báo cho người đăng ký, Poll của người phát, lưu lịch sử buổi phát, giao diện cùng kiểu site | BE+FE | L | ✅ Đã deploy 27/10 (mục 2.11), chờ anh thử TEST_CHECKLIST.md mục 28 |
+| 2 | L1 | **Livestream** (PRD luồng 3): trang "Đang phát trực tiếp", buổi phát gắn với kênh, thông báo cho người đăng ký, Poll của người phát, lưu lịch sử buổi phát, giao diện cùng kiểu site | BE+FE | L | ✅ Đã deploy 27/10 (mục 2.11); anh thử 28/10: OK (còn các mục chưa thử với dữ liệu thật, xem mục 2.11) |
 | 3 | M1 | **Hội viên kênh trên client** (PRD luồng 4): nút "Tham gia Hội viên", chọn cấp, thanh toán, huy hiệu khi bình luận / chat. **Cũng là giai đoạn C của H2** (nút Tham gia + hàng "Hội viên của chúng tôi" ở trang kênh, xem `docs/superpowers/specs/2026-10-26-channel-ui-design.md` mục 2). Làm **sau G2**, viết thiết kế riêng cho anh duyệt | FE+BE | L | Backend có `/api/tiers` (chỉ API, chủ kênh chưa có giao diện tạo cấp); chưa có bảng ghi ai là hội viên đến khi nào; `POST /api/transactions/purchase` **đang tắt (503)** vì từng cho "mua" miễn phí, chỉ mở lại sau khi MoMo báo thành công |
 | 4 | E2 | Duyệt / sửa phụ đề AI trước khi đăng (PRD luồng 1 bước 4) | BE+FE | M | AI tạo + dịch được, chưa sửa được |
 | 5 | G2 | Thử MoMo sandbox thật | BE | S | Chưa từng thử chữ ký |
