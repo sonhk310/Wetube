@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import VideoGrid from '../components/video/videoGrid';
 import ChipVideoGrid from '../components/video/chipVideoGrid';
 import LiveListView from "@/modules/live/ui/live-list-view";
+import LiveNowRow from "@/modules/live/ui/live-now-row";
 
 /** Id chip Trực tiếp do backend trả (HomeFeedService.LIVE_CHIP). */
 const LIVE_CHIP = "LIVE";
@@ -31,7 +32,14 @@ export default function HomeView({categoryId }: HomeViewProps) {
   const showChips = isAuthLoading || (!!user?.sub && (isLoading || categories.length > 0));
 
   const renderGrid = () => {
-    if (!selectedCategory) return <VideoGrid seed={seed} />;
+    if (!selectedCategory) {
+      return (
+        <>
+          <LiveNowRow />
+          <VideoGrid seed={seed} />
+        </>
+      );
+    }
     // Chip Trực tiếp: lưới là các buổi đang phát (không phải video), nên không đi qua /home/feed
     if (selectedCategory === LIVE_CHIP) return <LiveListView embedded />;
     return <ChipVideoGrid key={selectedCategory} chip={selectedCategory} seed={seed} />;
