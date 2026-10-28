@@ -134,6 +134,39 @@ export interface LiveRecordingInfo {
   limitedBy: "CHANNEL" | "TOTAL" | null;
 }
 
+/** Một buổi đã phát trong danh sách quản lý ở Studio. STOPPING: còn chờ trình duyệt tải bản ghi lên (chưa xoá được). */
+export interface MyPastLive {
+  id: string;
+  title: string;
+  thumbnailUrl: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  peakViewers: number;
+  recordingEnabled: boolean;
+  recordingStatus: RecordingStatus;
+  /** Lý do không có video xem lại (hết hạn mức, lỗi...). */
+  recordingMessage: string | null;
+  /** Có khi bản ghi đã thành video: /watch/{replayVideoId}. */
+  replayVideoId: string | null;
+}
+
+export interface MyPastLives {
+  items: MyPastLive[];
+  total: number;
+  hasMore: boolean;
+}
+
+export interface DeleteLivesBody {
+  ids: string[];
+  /** Xoá cả video xem lại; không thì video vẫn nằm ở Nội dung. */
+  deleteVideos: boolean;
+}
+
+export interface DeleteLivesResult {
+  deleted: number;
+  videosDeleted: number;
+}
+
 export interface UpdateLiveBody {
   id: string;
   title?: string;

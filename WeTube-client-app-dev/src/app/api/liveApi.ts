@@ -4,11 +4,14 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type {
   ChannelLives,
   CreateLiveBody,
+  DeleteLivesBody,
+  DeleteLivesResult,
   LiveCard,
   LiveChatMessage,
   LiveRecordingInfo,
   LiveTokenResponse,
   LiveView,
+  MyPastLives,
   PollView,
   UpdateLiveBody,
 } from "@/modules/live/types";
@@ -24,7 +27,7 @@ export const liveApi = createApi({
     credentials: "include",
     fetchFn: apiFetch,
   }),
-  tagTypes: ["MyLive"],
+  tagTypes: ["MyLive", "PastLives"],
   endpoints: (builder) => ({
     getLive: builder.query<LiveView, string>({
       query: (id) => `/${id}`,
@@ -47,6 +50,19 @@ export const liveApi = createApi({
       query: () => "/me",
       providesTags: ["MyLive"],
       keepUnusedDataFor: 0,
+    }),
+
+    /** Studio: các buổi đã phát của kênh mình (kể cả buổi không có video xem lại), mới nhất trước. */
+    getMyPastLives: builder.query<MyPastLives, { page?: number; size?: number }>({
+      query: ({ page = 0, size = 20 }) => `/me/past?page=${page}&size=${size}`,
+      providesTags: ["PastLives"],
+      keepUnusedDataFor: 0,
+    }),
+
+    /** Xoá các buổi đã phát đã chọn (tối đa 50); deleteVideos: xoá cả video xem lại. */
+    deleteLives: builder.mutation<DeleteLivesResult, DeleteLivesBody>({
+      query: (body) => ({ url: "/delete", method: "POST", body }),
+      invalidatesTags: ["PastLives"],
     }),
 
     /** Form chuẩn bị: máy chủ có bật ghi hình không và kênh còn bao nhiêu giây ghi trong tháng. */
@@ -88,7 +104,7 @@ export const liveApi = createApi({
 
     endLive: builder.mutation<null, string>({
       query: (id) => ({ url: `/${id}/end`, method: "POST" }),
-      invalidatesTags: ["MyLive"],
+      invalidatesTags: ["MyLive", "PastLives"],
     }),
 
     /**
@@ -123,6 +139,8 @@ export const {
   useGetLiveListQuery,
   useGetChannelLivesQuery,
   useGetMyLiveQuery,
+  useGetMyPastLivesQuery,
+  useDeleteLivesMutation,
   useGetLiveRecordingQuery,
   useLazyGetLiveRecordingQuery,
   useGetLiveChatQuery,

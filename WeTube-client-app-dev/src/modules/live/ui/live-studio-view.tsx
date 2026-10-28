@@ -3,6 +3,7 @@
 import { useGetMyLiveQuery } from "@/app/api/liveApi";
 import { Skeleton } from "@/components/ui/skeleton";
 import LiveOnAirPanel from "./live-onair-panel";
+import LivePastList from "./live-past-list";
 import LiveRecordingUpload from "./live-recording-upload";
 import LiveSetupForm from "./live-setup-form";
 
@@ -30,6 +31,7 @@ export default function LiveStudioView() {
       <h1 className="px-6 pt-6 text-2xl font-bold tracking-tight">Phát trực tiếp</h1>
       <LiveRecordingUpload />
       <LiveSetupForm onConflict={() => void refetch()} />
+      <LivePastList />
     </div>
   );
 }
