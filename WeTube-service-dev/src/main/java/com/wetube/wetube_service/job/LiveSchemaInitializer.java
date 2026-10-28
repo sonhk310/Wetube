@@ -46,7 +46,6 @@ public class LiveSchemaInitializer implements CommandLineRunner {
                     recording_enabled BIT(1) NOT NULL DEFAULT 0,
                     topic_id VARCHAR(100),
                     recording_status VARCHAR(20),
-                    egress_id VARCHAR(100),
                     recording_started_at DATETIME(6),
                     recording_stopped_at DATETIME(6),
                     recording_seconds INT NOT NULL DEFAULT 0,
@@ -89,7 +88,6 @@ public class LiveSchemaInitializer implements CommandLineRunner {
         addColumn("live_streams", "recording_enabled", "BIT(1) NOT NULL DEFAULT 0");
         addColumn("live_streams", "topic_id", "VARCHAR(100) NULL");
         addColumn("live_streams", "recording_status", "VARCHAR(20) NULL");
-        addColumn("live_streams", "egress_id", "VARCHAR(100) NULL");
         addColumn("live_streams", "recording_started_at", "DATETIME(6) NULL");
         addColumn("live_streams", "recording_stopped_at", "DATETIME(6) NULL");
         addColumn("live_streams", "recording_seconds", "INT NOT NULL DEFAULT 0");

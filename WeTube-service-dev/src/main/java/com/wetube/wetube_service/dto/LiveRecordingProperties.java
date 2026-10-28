@@ -6,35 +6,16 @@ import org.springframework.context.annotation.Configuration;
 import lombok.Data;
 
 /**
- * Ghi hình buổi phát (biến môi trường LIVE_RECORDING_*). Không đặt LIVE_RECORDING_ENABLED thì tính năng tắt hẳn: form
- * không hiện ô ghi hình và máy chủ từ chối yêu cầu ghi.
+ * Ghi hình buổi phát (biến môi trường LIVE_RECORDING_*). Trình duyệt của chủ kênh ghi rồi tải lên Cloudinary nên không
+ * cần kho riêng: bật sẵn, đặt LIVE_RECORDING_ENABLED=false để tắt (form không hiện ô ghi hình, máy chủ từ chối ghi).
  */
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "live.recording")
 public class LiveRecordingProperties {
-    private boolean enabled;
-    /** Kho tương thích S3 (Cloudflare R2): https://&lt;account-id&gt;.r2.cloudflarestorage.com */
-    private String s3Endpoint;
-    /** Vùng ký yêu cầu: R2 dùng "auto"; Backblaze B2 phải đúng vùng của bucket, ví dụ "us-west-004". */
-    private String s3Region = "auto";
-    private String s3Bucket;
-    private String s3AccessKey;
-    private String s3Secret;
-    /** Địa chỉ công khai của bucket, không có dấu / ở cuối; link video = publicUrl + "/" + đường dẫn file. */
-    private String publicUrl;
+    private boolean enabled = true;
     /** Mỗi kênh được ghi tối đa chừng này phút mỗi tháng (UTC). */
     private int channelMinutes = 15;
-    /** Cả WeTube ghi tối đa chừng này phút mỗi tháng: chừa chỗ cho hạn mức 60 phút của gói free LiveKit. */
+    /** Cả WeTube ghi tối đa chừng này phút mỗi tháng: giữ phần ghi hình ở mức nhỏ trong credit Cloudinary. */
     private int totalMinutes = 55;
-
-    /** Bật và đủ thông tin kho lưu trữ. */
-    public boolean isAvailable() {
-        return enabled && filled(s3Endpoint) && filled(s3Bucket) && filled(s3AccessKey) && filled(s3Secret)
-                && filled(publicUrl);
-    }
-
-    private static boolean filled(String value) {
-        return value != null && !value.isBlank();
-    }
 }

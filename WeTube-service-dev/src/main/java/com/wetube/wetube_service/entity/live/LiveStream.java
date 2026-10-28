@@ -96,16 +96,13 @@ public class LiveStream {
     @Column(name = "recording_status", length = 20)
     private RecordingStatus recordingStatus;
 
-    @Column(name = "egress_id", length = 100)
-    private String egressId;
-
     @Column(name = "recording_started_at")
     private LocalDateTime recordingStartedAt;
 
     @Column(name = "recording_stopped_at")
     private LocalDateTime recordingStoppedAt;
 
-    /** Thời lượng đã ghi: ước tính theo đồng hồ khi dừng, thay bằng thời lượng thật của file khi LiveKit trả về. */
+    /** Thời lượng đã ghi: ước tính theo đồng hồ khi dừng, thay bằng thời lượng thật của bản ghi khi trình duyệt tải lên. */
     @Column(name = "recording_seconds", nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
     private int recordingSeconds;
 

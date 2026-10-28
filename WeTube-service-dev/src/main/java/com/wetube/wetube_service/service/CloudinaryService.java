@@ -28,6 +28,18 @@ public class CloudinaryService {
     }
 
     public UploadedVideo uploadVideoWithMeta(MultipartFile videoFile) {
+        return uploadVideoWithMeta(videoFile, false);
+    }
+
+    /**
+     * Bản ghi buổi phát quay trên trình duyệt: luôn chuyển mã, kể cả khi đã là MP4 H.264, vì tệp của MediaRecorder
+     * thường không ghi thời lượng / chỉ mục nên phát file gốc thì khó tua.
+     */
+    public UploadedVideo uploadLiveRecording(MultipartFile videoFile) {
+        return uploadVideoWithMeta(videoFile, true);
+    }
+
+    private UploadedVideo uploadVideoWithMeta(MultipartFile videoFile, boolean alwaysTranscode) {
         if (videoFile == null || videoFile.isEmpty()) {
             throw new IllegalArgumentException("File video is required");
         }
@@ -53,7 +65,7 @@ public class CloudinaryService {
         // Bản chuyển mã chỉ được Cloudinary tạo khi có người mở link lần đầu; trong lúc tạo (vài phút với
         // video dài) nó phát kiểu vừa mã hoá vừa gửi, không tua được và trình duyệt thấy thời lượng sai.
         // File đã là MP4 H.264 thì phát thẳng file gốc; còn lại thì xin tạo sẵn bản chuyển mã ngay.
-        boolean asUploaded = playsAsUploaded(result);
+        boolean asUploaded = !alwaysTranscode && playsAsUploaded(result);
         if (!asUploaded) {
             requestTranscode(publicId);
         }

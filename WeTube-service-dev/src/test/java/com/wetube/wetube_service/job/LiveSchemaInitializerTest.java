@@ -129,7 +129,7 @@ class LiveSchemaInitializerTest {
     void addsTheRecordingColumnsToAnL1TableThatLacksThem() {
         runInitializer();
         // Bảng như trên production sau L1.1: chưa có cột ghi hình
-        for (String column : List.of("recording_enabled", "topic_id", "recording_status", "egress_id",
+        for (String column : List.of("recording_enabled", "topic_id", "recording_status",
                 "recording_started_at", "recording_stopped_at", "recording_seconds", "recording_url",
                 "recording_message", "replay_video_id")) {
             jdbc.execute("ALTER TABLE live_streams DROP COLUMN " + column);
@@ -142,7 +142,7 @@ class LiveSchemaInitializerTest {
         LiveStream saved = streams.save(LiveStream.builder()
                 .channelId(UUID.randomUUID()).ownerId(UUID.randomUUID()).title("Có ghi hình")
                 .source(LiveSource.BROWSER).status(LiveStatus.ENDED).chatEnabled(true).createdAt(now)
-                .recordingEnabled(true).topicId("music").recordingStatus(RecordingStatus.DONE).egressId("EG_1")
+                .recordingEnabled(true).topicId("music").recordingStatus(RecordingStatus.DONE)
                 .recordingStartedAt(now).recordingStoppedAt(now.plusMinutes(10)).recordingSeconds(600)
                 .recordingUrl("https://pub.example/live/a.mp4").recordingMessage("ghi chú").replayVideoId(videoId)
                 .build());
@@ -151,7 +151,6 @@ class LiveSchemaInitializerTest {
         assertThat(read.isRecordingEnabled()).isTrue();
         assertThat(read.getTopicId()).isEqualTo("music");
         assertThat(read.getRecordingStatus()).isEqualTo(RecordingStatus.DONE);
-        assertThat(read.getEgressId()).isEqualTo("EG_1");
         assertThat(read.getRecordingSeconds()).isEqualTo(600);
         assertThat(read.getRecordingUrl()).isEqualTo("https://pub.example/live/a.mp4");
         assertThat(read.getRecordingMessage()).isEqualTo("ghi chú");

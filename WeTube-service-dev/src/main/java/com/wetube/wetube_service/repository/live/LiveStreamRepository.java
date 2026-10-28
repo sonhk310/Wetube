@@ -28,7 +28,7 @@ public interface LiveStreamRepository extends JpaRepository<LiveStream, UUID> {
 
     boolean existsByStatus(LiveStatus status);
 
-    /** Buổi đang ghi hoặc đang chờ LiveKit trả file (kể cả buổi đã kết thúc). */
+    /** Buổi đang ghi hoặc đang chờ trình duyệt tải bản ghi lên (kể cả buổi đã kết thúc). */
     List<LiveStream> findByRecordingStatusIn(Collection<RecordingStatus> statuses);
 
     /**

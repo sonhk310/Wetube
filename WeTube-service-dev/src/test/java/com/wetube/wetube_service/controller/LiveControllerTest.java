@@ -74,6 +74,20 @@ class LiveControllerTest {
     }
 
     @Test
+    void theReplayUploadIsForTheLoggedInUserAndIs401Otherwise() {
+        UUID me = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+        var file = new org.springframework.mock.web.MockMultipartFile("file", "a.webm", "video/webm", new byte[] {1});
+        LiveView done = LiveView.builder().id(id).build();
+        when(service.uploadReplay(me, id, file, 42.0)).thenReturn(done);
+
+        assertThat(controller.replay(id, file, 42.0, jwtOf(me))).isSameAs(done);
+        assertThatThrownBy(() -> controller.replay(id, file, 42.0, null))
+                .isInstanceOfSatisfying(ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+    }
+
+    @Test
     void createWithoutLoginIs401() {
         assertThatThrownBy(() -> controller.create(new CreateLiveRequest("a", null, null, null, null, null, null), null))
                 .isInstanceOfSatisfying(ResponseStatusException.class,
