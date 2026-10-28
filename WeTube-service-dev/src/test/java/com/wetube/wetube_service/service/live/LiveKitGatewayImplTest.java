@@ -150,6 +150,23 @@ class LiveKitGatewayImplTest {
     }
 
     @Test
+    void theStorageRegionIsConfigurableForProvidersThatSignWithTheRealRegion() throws Exception {
+        LiveRecordingProperties b2 = recordingProps();
+        b2.setS3Region(" us-west-004 ");
+        EgressServiceClient egress = mock(EgressServiceClient.class);
+        Call<LivekitEgress.EgressInfo> started = answering(LivekitEgress.EgressInfo.newBuilder().setEgressId("EG_2").build());
+        when(egress.startRoomCompositeEgress(any(), any(LivekitEgress.EncodedFileOutput.class), any(), any(), any(),
+                eq(false), eq(false), any(), any())).thenReturn(started);
+
+        new LiveKitGatewayImpl(null, null, egress, props(), b2).startRecording("live-x", "live/abc.mp4");
+
+        ArgumentCaptor<LivekitEgress.EncodedFileOutput> output = ArgumentCaptor.forClass(LivekitEgress.EncodedFileOutput.class);
+        verify(egress).startRoomCompositeEgress(any(), output.capture(), any(), any(), any(), eq(false), eq(false),
+                any(), any());
+        assertThat(output.getValue().getS3().getRegion()).isEqualTo("us-west-004");
+    }
+
+    @Test
     void stoppingARecordingThatAlreadyEndedIsNotAnError() throws Exception {
         EgressServiceClient egress = mock(EgressServiceClient.class);
         Call<LivekitEgress.EgressInfo> gone = mock(Call.class);

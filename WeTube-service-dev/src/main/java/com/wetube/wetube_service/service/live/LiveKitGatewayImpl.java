@@ -159,7 +159,8 @@ public class LiveKitGatewayImpl implements LiveKitGateway {
                 .setSecret(recording.getS3Secret())
                 .setBucket(recording.getS3Bucket())
                 .setEndpoint(recording.getS3Endpoint())
-                .setRegion("auto")
+                .setRegion(recording.getS3Region() == null || recording.getS3Region().isBlank()
+                        ? "auto" : recording.getS3Region().strip())
                 .setForcePathStyle(true)
                 .build();
         LivekitEgress.EncodedFileOutput output = LivekitEgress.EncodedFileOutput.newBuilder()

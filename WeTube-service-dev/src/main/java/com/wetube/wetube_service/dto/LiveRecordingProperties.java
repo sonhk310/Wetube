@@ -16,6 +16,8 @@ public class LiveRecordingProperties {
     private boolean enabled;
     /** Kho tương thích S3 (Cloudflare R2): https://&lt;account-id&gt;.r2.cloudflarestorage.com */
     private String s3Endpoint;
+    /** Vùng ký yêu cầu: R2 dùng "auto"; Backblaze B2 phải đúng vùng của bucket, ví dụ "us-west-004". */
+    private String s3Region = "auto";
     private String s3Bucket;
     private String s3AccessKey;
     private String s3Secret;

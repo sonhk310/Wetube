@@ -94,7 +94,7 @@ Anh thử L1 ngày 28/10: kết thúc buổi phát thì trong lịch sử không
 | `LIVE_RECORDING_CHANNEL_MINUTES` | mặc định 15 |
 | `LIVE_RECORDING_TOTAL_MINUTES` | mặc định 55 |
 
-Backend tự đặt `region=auto` và `force_path_style=true` khi gọi LiveKit. File lưu ở `live/{streamId}.mp4`.
+Backend tự đặt `force_path_style=true` khi gọi LiveKit. Vùng ký lấy từ `LIVE_RECORDING_S3_REGION` (tuỳ chọn, mặc định `auto` cho R2; **Backblaze B2 phải đặt đúng vùng của bucket**, ví dụ `us-west-004` nếu địa chỉ là `s3.us-west-004.backblazeb2.com`). Thêm sau khi anh chọn Backblaze (28/10). File lưu ở `live/{streamId}.mp4`.
 
 ### 3.2 Dữ liệu
 - **Thêm cột vào `live_streams`** (runner `LiveSchemaInitializer`, bước `addColumn` đã có):
