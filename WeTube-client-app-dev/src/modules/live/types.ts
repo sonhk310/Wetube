@@ -29,6 +29,8 @@ export interface LiveView {
   ownerId: string;
   title: string;
   description: string | null;
+  /** Ảnh thu nhỏ do chủ kênh tải lên; null thì dùng banner / ảnh đại diện kênh. */
+  thumbnailUrl: string | null;
   status: LiveStatus;
   source: LiveSource;
   protocol: LiveProtocol | null;
@@ -53,6 +55,7 @@ export interface LiveCard {
   channelName: string | null;
   channelPicture: string | null;
   channelBackground: string | null;
+  thumbnailUrl: string | null;
   viewers: number;
   peakViewers: number;
   startedAt: string | null;

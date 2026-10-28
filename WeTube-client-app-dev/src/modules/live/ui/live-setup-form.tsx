@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Monitor, Video } from "lucide-react";
-import { useCreateLiveMutation } from "@/app/api/liveApi";
+import { useCreateLiveMutation, useUploadLiveThumbnailMutation } from "@/app/api/liveApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
 import { toastEmitter } from "@/lib/toastEmitter";
 import type { LiveProtocol, LiveSource } from "../types";
+import LiveThumbnailPicker from "./live-thumbnail-picker";
 
 const TITLE_MAX = 100;
 const DESCRIPTION_MAX = 5000;
@@ -86,6 +87,10 @@ function CameraPreview() {
 /** Bước chuẩn bị: tiêu đề, mô tả, nguồn phát (webcam hoặc OBS) và chat. */
 export default function LiveSetupForm({ onConflict }: { onConflict: () => void }) {
   const [createLive, { isLoading }] = useCreateLiveMutation();
+  const [uploadThumbnail] = useUploadLiveThumbnailMutation();
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const thumbnailPreview = useMemo(() => (thumbnail ? URL.createObjectURL(thumbnail) : null), [thumbnail]);
+  useEffect(() => () => (thumbnailPreview ? URL.revokeObjectURL(thumbnailPreview) : undefined), [thumbnailPreview]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [source, setSource] = useState<LiveSource>("BROWSER");
@@ -94,13 +99,21 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
 
   const submit = async () => {
     try {
-      await createLive({
+      const created = await createLive({
         title: title.trim(),
         description: description.trim() || undefined,
         source,
         protocol: source === "ENCODER" ? protocol : undefined,
         chatEnabled,
       }).unwrap();
+      if (thumbnail) {
+        // Lỗi ảnh không làm hỏng buổi phát đã tạo: chủ kênh đổi ảnh được ở bảng đang phát
+        await uploadThumbnail({ id: created.id, file: thumbnail })
+          .unwrap()
+          .catch((err) =>
+            toastEmitter.error(apiErrorMessage(err, "Chưa tải được ảnh thu nhỏ, bạn có thể đổi ảnh khi đang phát."))
+          );
+      }
     } catch (err) {
       // Đã có một buổi chưa kết thúc (vd. mở ở tab khác): chuyển sang buổi đó
       if ((err as { status?: number }).status === 409) {
@@ -137,6 +150,11 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
             onChange={(e) => setDescription(e.target.value)}
             className="min-h-24"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Ảnh thu nhỏ</Label>
+          <LiveThumbnailPicker preview={thumbnailPreview} onPick={setThumbnail} />
         </div>
 
         <div className="space-y-2">

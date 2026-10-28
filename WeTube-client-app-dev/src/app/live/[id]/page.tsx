@@ -11,6 +11,7 @@ interface ShareInfo {
   description?: string | null;
   channelName?: string | null;
   channelPicture?: string | null;
+  thumbnailUrl?: string | null;
   status?: string;
 }
 
@@ -35,7 +36,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const raw = live.description?.trim() || `Phát trực tiếp của ${live.channelName ?? "WeTube"} trên WeTube`;
   const description = raw.length > DESCRIPTION_MAX ? `${raw.slice(0, DESCRIPTION_MAX - 1)}…` : raw;
   const url = `/live/${id}`;
-  const images = live.channelPicture ? [{ url: live.channelPicture, alt: live.title }] : undefined;
+  const image = live.thumbnailUrl || live.channelPicture;
+  const images = image ? [{ url: image, alt: live.title }] : undefined;
 
   return {
     title: `${live.title} - WeTube`,
@@ -43,10 +45,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     alternates: { canonical: url },
     openGraph: { type: "website", siteName: "WeTube", locale: "vi_VN", url, title: live.title, description, images },
     twitter: {
-      card: "summary",
+      card: live.thumbnailUrl ? "summary_large_image" : "summary",
       title: live.title,
       description,
-      images: live.channelPicture ? [live.channelPicture] : undefined,
+      images: image ? [image] : undefined,
     },
   };
 }

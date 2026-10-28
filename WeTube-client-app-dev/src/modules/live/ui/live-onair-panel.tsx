@@ -4,7 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Copy } from "lucide-react";
 import { LiveKitRoom, VideoTrack, useTracks } from "@livekit/components-react";
 import { Track } from "livekit-client";
-import { useEndLiveMutation, useGetLiveTokenMutation, useMarkLiveStartedMutation } from "@/app/api/liveApi";
+import {
+  useEndLiveMutation,
+  useGetLiveTokenMutation,
+  useMarkLiveStartedMutation,
+  useUploadLiveThumbnailMutation,
+} from "@/app/api/liveApi";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -19,6 +24,7 @@ import LiveEncoderPanel from "./live-encoder-panel";
 import LiveChat from "./live-chat";
 import LiveEndDialog from "./live-end-dialog";
 import LivePollComposer from "./live-poll-composer";
+import LiveThumbnailPicker from "./live-thumbnail-picker";
 
 /** Hình camera của chính mình (xem trước) và bảng chọn thiết bị; báo cho backend ngay khi đã đăng luồng. */
 function PublisherStage({ onPublished }: { onPublished: () => void }) {
@@ -121,6 +127,7 @@ export default function LiveOnAirPanel({ live }: { live: LiveView }) {
   const channel = useLiveChannel(live.id, true);
   const [, copy] = useCopyToClipboard();
   const [endLive, { isLoading: ending }] = useEndLiveMutation();
+  const [uploadThumbnail, { isLoading: uploadingThumbnail }] = useUploadLiveThumbnailMutation();
   const [endOpen, setEndOpen] = useState(false);
   const status = channel.status ?? live.status;
   const viewers = channel.viewers ?? live.currentViewers;
@@ -143,6 +150,15 @@ export default function LiveOnAirPanel({ live }: { live: LiveView }) {
       setEndOpen(false);
     } catch (err) {
       toastEmitter.error(apiErrorMessage(err, "Không kết thúc được buổi phát, vui lòng thử lại."));
+    }
+  };
+
+  const onPickThumbnail = async (file: File) => {
+    try {
+      await uploadThumbnail({ id: live.id, file }).unwrap();
+      toastEmitter.success("Đã đổi ảnh thu nhỏ");
+    } catch (err) {
+      toastEmitter.error(apiErrorMessage(err, "Không tải được ảnh thu nhỏ, vui lòng thử lại."));
     }
   };
 
@@ -181,6 +197,15 @@ export default function LiveOnAirPanel({ live }: { live: LiveView }) {
           <Button variant="destructive" className="rounded-full" onClick={() => setEndOpen(true)}>
             Kết thúc buổi phát
           </Button>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Ảnh thu nhỏ</p>
+          <LiveThumbnailPicker
+            preview={live.thumbnailUrl}
+            busy={uploadingThumbnail}
+            onPick={(file) => void onPickThumbnail(file)}
+          />
         </div>
       </div>
 

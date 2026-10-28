@@ -11,18 +11,20 @@ const FALLBACK_AVATAR = "https://placehold.co/160x160?text=W";
 
 /**
  * Thẻ một buổi phát. Đang phát: nhãn TRỰC TIẾP + số người xem. Đã phát: thời lượng + người xem cao nhất.
- * Ảnh bìa là banner của kênh (không có thì nền tối với ảnh đại diện kênh ở giữa).
+ * Ảnh bìa là ảnh thu nhỏ của buổi phát, không có thì banner của kênh, không có nữa thì nền tối với ảnh đại diện kênh
+ * ở giữa.
  */
 export default function LiveCardItem({ live }: { live: LiveCard }) {
   const avatar = live.channelPicture || FALLBACK_AVATAR;
+  const cover = live.thumbnailUrl || live.channelBackground;
   const isLive = live.status === "LIVE";
   const duration = formatLiveDuration(live.startedAt, live.endedAt);
 
   return (
     <Link href={`/live/${live.id}`} className="group block">
       <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-neutral-900">
-        {live.channelBackground ? (
-          <Image src={live.channelBackground} alt="" fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover" />
+        {cover ? (
+          <Image src={cover} alt="" fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <Image src={avatar} alt="" width={72} height={72} className="size-[72px] rounded-full object-cover" />

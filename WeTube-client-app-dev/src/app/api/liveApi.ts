@@ -63,6 +63,16 @@ export const liveApi = createApi({
       invalidatesTags: ["MyLive"],
     }),
 
+    /** Đặt / đổi ảnh thu nhỏ (PNG hoặc JPEG, tối đa 2 MB) khi buổi chưa kết thúc. */
+    uploadLiveThumbnail: builder.mutation<LiveView, { id: string; file: File }>({
+      query: ({ id, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return { url: `/${id}/thumbnail`, method: "POST", body: formData };
+      },
+      invalidatesTags: ["MyLive"],
+    }),
+
     /** Webcam: báo đã đăng luồng để chuyển sang LIVE ngay (không đợi job 15 giây). */
     markLiveStarted: builder.mutation<null, string>({
       query: (id) => ({ url: `/${id}/started`, method: "POST" }),
@@ -110,6 +120,7 @@ export const {
   useLazyGetLiveChatQuery,
   useCreateLiveMutation,
   useUpdateLiveMutation,
+  useUploadLiveThumbnailMutation,
   useMarkLiveStartedMutation,
   useEndLiveMutation,
   useGetLiveTokenMutation,
