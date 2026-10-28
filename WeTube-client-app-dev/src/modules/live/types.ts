@@ -101,7 +101,7 @@ export interface LiveChatMessage {
   at: number;
 }
 
-export type LiveEventType = "CHAT" | "CHAT_DELETED" | "CHAT_STATE" | "VIEWERS" | "POLL" | "STATUS" | "ERROR";
+export type LiveEventType = "CHAT" | "CHAT_DELETED" | "CHAT_STATE" | "VIEWERS" | "POLL" | "STATUS" | "THUMBNAIL" | "ERROR";
 
 /** Tin phát qua STOMP; chỉ các trường thuộc `type` đó có giá trị. */
 export interface LiveEvent {
@@ -113,6 +113,7 @@ export interface LiveEvent {
   chatEnabled?: boolean;
   poll?: PollView;
   text?: string;
+  thumbnailUrl?: string;
 }
 
 export interface CreateLiveBody {

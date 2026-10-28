@@ -164,7 +164,7 @@ export default function LiveWatchView({ id }: { id: string }) {
     <section className="grid grid-cols-1 gap-x-6 px-6 py-6 md:grid-cols-6 xxl:grid-cols-8 xxl:px-20">
       <div className="col-span-1 md:col-span-4 xxl:col-span-6">
         {unfinished ? (
-          <LivePlayer id={id} status={status} thumbnailUrl={live.thumbnailUrl} />
+          <LivePlayer id={id} status={status} thumbnailUrl={channelState.thumbnailUrl ?? live.thumbnailUrl} />
         ) : (
           <EndedScreen
             endedAt={live.endedAt}

@@ -423,6 +423,11 @@ class LiveStreamServiceTest {
         verify(cloudinary).deleteImage("https://res.cloudinary.com/x/image/upload/old.jpg");
         verify(rateLimiter).check(Limit.LIVE_THUMBNAIL, owner);
 
+        ArgumentCaptor<LiveEvent> event = ArgumentCaptor.forClass(LiveEvent.class);
+        verify(publisher).toStream(eq(s.getId()), event.capture());
+        assertThat(event.getValue().getType()).isEqualTo("THUMBNAIL");
+        assertThat(event.getValue().getThumbnailUrl()).isEqualTo("https://res.cloudinary.com/x/image/upload/new.jpg");
+
         when(repo.findByStatusOrderByCurrentViewersDesc(LiveStatus.LIVE)).thenReturn(List.of(s));
         assertThat(service.listLive().get(0).thumbnailUrl()).isEqualTo("https://res.cloudinary.com/x/image/upload/new.jpg");
     }

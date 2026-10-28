@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Mic, Monitor, PictureInPicture2, Video, type LucideIcon } from "lucide-react";
+import { Mic, Monitor, PictureInPicture2, Radio, Video, type LucideIcon } from "lucide-react";
 import { useCreateLiveMutation, useGetLiveRecordingQuery, useUploadLiveThumbnailMutation } from "@/app/api/liveApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -229,7 +229,7 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
             <SourceOption
               active={source === "ENCODER"}
               onClick={() => setSource("ENCODER")}
-              icon={<Monitor className="size-5" />}
+              icon={<Radio className="size-5" />}
               title="Phần mềm phát (OBS)"
               hint="Dùng OBS hoặc phần mềm tương tự để phát màn hình, game..."
             />

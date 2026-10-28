@@ -17,6 +17,7 @@ export interface LiveChannel {
   viewers: number | null;
   status: LiveStatus | null;
   chatEnabled: boolean | null;
+  thumbnailUrl: string | null;
   /** undefined: chưa nhận tin Poll nào (dùng Poll trong GET /api/live/{id}); null: không còn Poll nào để hiện. */
   poll: PollView | null | undefined;
   messages: LiveChatMessage[];
@@ -45,6 +46,7 @@ export function useLiveChannel(streamId: string | undefined, authenticated: bool
   const [viewers, setViewers] = useState<number | null>(null);
   const [status, setStatus] = useState<LiveStatus | null>(null);
   const [chatEnabled, setChatEnabled] = useState<boolean | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [poll, setPoll] = useState<PollView | null | undefined>(undefined);
   const [messages, setMessages] = useState<LiveChatMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +94,9 @@ export function useLiveChannel(streamId: string | undefined, authenticated: bool
           break;
         case "STATUS":
           if (event.status) setStatus(event.status);
+          break;
+        case "THUMBNAIL":
+          if (event.thumbnailUrl) setThumbnailUrl(event.thumbnailUrl);
           break;
         case "POLL": {
           const incoming = event.poll;
@@ -141,5 +146,5 @@ export function useLiveChannel(streamId: string | undefined, authenticated: bool
   const clearError = useCallback(() => setError(null), []);
   const setMyVote = useCallback((voted: PollView) => setPoll(voted), []);
 
-  return { connected, viewers, status, chatEnabled, poll, messages, error, clearError, sendChat, deleteMessage, setMyVote };
+  return { connected, viewers, status, chatEnabled, thumbnailUrl, poll, messages, error, clearError, sendChat, deleteMessage, setMyVote };
 }

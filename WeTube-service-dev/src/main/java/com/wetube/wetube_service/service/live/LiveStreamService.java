@@ -262,6 +262,7 @@ public class LiveStreamService {
         stream.setThumbnailUrl(cloudinary.uploadThumbnail(file, false));
         repo.save(stream);
         deleteImageAfterCommit(replaced);
+        publisher.toStream(id, LiveEvent.builder().type("THUMBNAIL").thumbnailUrl(stream.getThumbnailUrl()).build());
         return view(stream, channelOf(stream.getChannelId()), true);
     }
 
