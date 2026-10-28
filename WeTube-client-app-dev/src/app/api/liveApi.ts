@@ -124,6 +124,7 @@ export const {
   useGetChannelLivesQuery,
   useGetMyLiveQuery,
   useGetLiveRecordingQuery,
+  useLazyGetLiveRecordingQuery,
   useGetLiveChatQuery,
   useLazyGetLiveChatQuery,
   useCreateLiveMutation,

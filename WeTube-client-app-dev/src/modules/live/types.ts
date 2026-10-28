@@ -3,7 +3,7 @@
 export type LiveStatus = "CREATED" | "LIVE" | "ENDED" | "CANCELED";
 export type LiveSource = "BROWSER" | "ENCODER";
 export type LiveProtocol = "WHIP" | "RTMP";
-/** NONE: chưa ghi; RECORDING: đang ghi; STOPPING: chờ file; DONE: đã thành video; FAILED / SKIPPED: không có video. */
+/** NONE: chưa ghi; RECORDING: đang ghi; STOPPING: chờ trình duyệt tải bản ghi lên; DONE: đã thành video; FAILED / SKIPPED: không có video. */
 export type RecordingStatus = "NONE" | "RECORDING" | "STOPPING" | "DONE" | "FAILED" | "SKIPPED";
 
 export interface PollView {

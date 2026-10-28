@@ -62,7 +62,7 @@ export default function LiveRecordingOption({
               ? info.limitedBy === "CHANNEL"
                 ? "Kênh đã dùng hết phần ghi hình của tháng này. Phần này đặt lại vào đầu tháng sau."
                 : "WeTube đã dùng hết hạn mức ghi hình của tháng này. Phần này đặt lại vào đầu tháng sau."
-              : `Kênh còn ${leftText(info.secondsLeft)} ghi hình trong tháng này. Kết thúc buổi, bản ghi thành một video công khai của kênh. Hết phần ghi thì buổi vẫn phát nhưng không có video xem lại.`}
+              : `Kênh còn ${leftText(info.secondsLeft)} ghi hình trong tháng này. Trình duyệt này ghi hình (mỗi bản ghi tối đa khoảng 14 phút; kiểu Màn hình + camera chỉ ghi màn hình), kết thúc buổi thì tải lên thành một video công khai của kênh: đừng đóng tab cho tới khi tải xong. Hết phần ghi thì buổi vẫn phát nhưng không có video xem lại.`}
           </span>
         </span>
       </label>

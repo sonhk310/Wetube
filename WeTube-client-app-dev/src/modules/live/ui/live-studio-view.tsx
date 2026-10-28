@@ -3,6 +3,7 @@
 import { useGetMyLiveQuery } from "@/app/api/liveApi";
 import { Skeleton } from "@/components/ui/skeleton";
 import LiveOnAirPanel from "./live-onair-panel";
+import LiveRecordingUpload from "./live-recording-upload";
 import LiveSetupForm from "./live-setup-form";
 
 /** Hỏi lại buổi của mình mỗi chừng này (STOMP báo trước, đây là dự phòng, nhất là lúc chờ tín hiệu OBS). */
@@ -27,6 +28,7 @@ export default function LiveStudioView() {
   return (
     <div>
       <h1 className="px-6 pt-6 text-2xl font-bold tracking-tight">Phát trực tiếp</h1>
+      <LiveRecordingUpload />
       <LiveSetupForm onConflict={() => void refetch()} />
     </div>
   );

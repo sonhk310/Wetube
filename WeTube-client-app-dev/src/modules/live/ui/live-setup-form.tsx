@@ -145,9 +145,9 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
   const { data: recordingInfo } = useGetLiveRecordingQuery();
   const [record, setRecord] = useState(false);
   const [topicId, setTopicId] = useState("");
-  // Chỉ buổi phát từ trình duyệt, máy chủ đã bật ghi hình và kênh còn phần ghi
-  const recordingOn =
-    source === "BROWSER" && record && !!recordingInfo?.enabled && (recordingInfo?.secondsLeft ?? 0) > 0;
+  // Chỉ buổi phát từ trình duyệt có hình, máy chủ đã bật ghi hình và kênh còn phần ghi
+  const canRecord = source === "BROWSER" && mode !== "AUDIO" && !!recordingInfo?.enabled;
+  const recordingOn = canRecord && record && (recordingInfo?.secondsLeft ?? 0) > 0;
 
   // Chỉ biết được ở trình duyệt (render phía máy chủ không có navigator)
   useEffect(() => setScreenSupported(canShareScreen()), []);
@@ -257,7 +257,7 @@ export default function LiveSetupForm({ onConflict }: { onConflict: () => void }
           </div>
         ) : null}
 
-        {source === "BROWSER" && recordingInfo?.enabled ? (
+        {canRecord && recordingInfo ? (
           <LiveRecordingOption
             info={recordingInfo}
             checked={record}
