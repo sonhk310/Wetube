@@ -283,7 +283,7 @@ Anh đã thử trên trình duyệt: OK (26/10): B3 chương (khung Chương bê
   - **Điện thoại thật** (rủi ro lớn nhất): Android Chrome và iPhone Safari có cho audio chạy khi tắt màn hình không, có cần chạm gần đây không; Cloudinary tạo MP3 lần đầu có chậm với video dài không. Giả lập chỉ chứng minh logic chuyển video ↔ audio.
   - **Chat trực tiếp có huy hiệu** (chưa dựng được trang live với API giả lập; mã chỉ thêm một dòng).
   - **Mua Premium thật bằng MoMo sandbox** rồi thấy quyền lợi có ngay (vòng còn lại của G2 ở mục 2.12).
-- **Việc em thấy thêm, chưa sửa:** nút thanh toán gửi `userId` lấy từ client (`PaymentRequestDto`), backend chưa lấy người mua từ đăng nhập (CLAUDE.md: không tin `userId` do client gửi); mô tả các gói Standard / Premium / VIP trong DB ("đầy đủ tính năng phổ biến", "nhiều tiện ích nâng cao") mơ hồ, chỉ Basic được trang quảng cáo.
+- **Việc em thấy thêm, chưa sửa** (đã bỏ ý "thanh toán tin `userId` của client": em đọc nhầm, `PaymentController.createPayment` ghi đè `userId` bằng người đăng nhập): mô tả các gói Standard / Premium / VIP trong DB ("đầy đủ tính năng phổ biến", "nhiều tiện ích nâng cao") mơ hồ, chỉ Basic được trang quảng cáo.
 - **Anh thử giúp em:** (1) đăng nhập tài khoản thường, xem thẻ quảng cáo ở trang chủ / trang xem và pre-roll (giữ hay bỏ pre-roll?); (2) mua Premium bằng MoMo sandbox, kiểm tra quảng cáo biến mất ngay, menu tài khoản đổi, trang Premium hiện ngày hết hạn; (3) bấm Tải xuống một video; (4) trên điện thoại thật: mở video, tắt màn hình, xem có nghe tiếp và có điều khiển trên màn hình khoá không; (5) bình luận bằng tài khoản Premium xem huy hiệu.
 
 ### 2.2 Em theo dõi
