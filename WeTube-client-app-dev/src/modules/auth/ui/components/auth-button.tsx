@@ -10,6 +10,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { useProgressRouter } from "@/hooks/use-progress-router";
+import { formatYmd } from "@/lib/utils";
 
 const AuthButton = () => {
     const { user, isLoading, login, logout } = useAuth();
@@ -43,6 +44,9 @@ const AuthButton = () => {
                 }}
               >
                 Hồ sơ
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push("/otherservices/premium")}>
+                {user.premiumUntil ? `Premium · đến ${formatYmd(user.premiumUntil)}` : "Dùng Premium"}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={logout}>Đăng xuất</DropdownMenuItem>
             </DropdownMenuContent>

@@ -23,6 +23,7 @@ import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.RateLimiter.Limit;
 import com.wetube.wetube_service.service.RedisService;
+import com.wetube.wetube_service.service.premium.PremiumUserService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ public class LiveChatService implements LiveCleanup {
     private final RateLimiter rateLimiter;
     private final LiveEventPublisher publisher;
     private final ObjectMapper mapper;
+    private final PremiumUserService premiumUserService;
 
     private final Map<UUID, Deque<LiveChatMessage>> rooms = new ConcurrentHashMap<>();
 
@@ -85,7 +87,8 @@ public class LiveChatService implements LiveCleanup {
                 sender.getChannel() == null ? null : sender.getChannel().getHandle(),
                 text,
                 stream.getOwnerId().toString().equals(userId),
-                System.currentTimeMillis());
+                System.currentTimeMillis(),
+                premiumUserService.premiumUntil(sender.getId()).isPresent());
 
         Deque<LiveChatMessage> messages = messagesOf(streamId);
         List<LiveChatMessage> snapshot;

@@ -18,6 +18,7 @@ import com.wetube.wetube_service.entity.notification.Notification;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.service.channel.ChannelHandles;
 import com.wetube.wetube_service.service.notification.NotificationService;
+import com.wetube.wetube_service.service.premium.PremiumUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ public class CommentServiceImpl implements CommentService {
     private final UserMapper userMapper;
     private final VideoRepository videoRepository;
     private final NotificationService notificationService;
+    private final PremiumUserService premiumUserService;
 
     @Override
     public List<CommentResponseDto> getCommentsByTargetId(UUID targetId, Comment.TargetType type, Sort sort) {
@@ -55,10 +57,10 @@ public class CommentServiceImpl implements CommentService {
                     c -> Optional.ofNullable(c.getLikeCount()).orElse(0) + Optional.ofNullable(c.getReplyCount()).orElse(0),
                     Comparator.reverseOrder());
         }
-        return roots.stream()
+        return flagPremium(roots.stream()
                 .map(c -> toResponseWithReplies(c, ownerId))
                 .sorted(order)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 
     @Override
@@ -66,7 +68,28 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
-        return toResponseWithReplies(comment, ownerOf(comment));
+        return flagPremium(toResponseWithReplies(comment, ownerOf(comment)));
+    }
+
+    /** Huy hiệu Premium cho tác giả của cả danh sách (kể cả trả lời): một truy vấn, không tra từng người. */
+    private List<CommentResponseDto> flagPremium(List<CommentResponseDto> roots) {
+        List<UserDto> authors = new ArrayList<>();
+        for (CommentResponseDto root : roots) {
+            authors.add(root.getUser());
+            if (root.getReplies() != null) {
+                root.getReplies().forEach(reply -> authors.add(reply.getUser()));
+            }
+        }
+        authors.removeIf(a -> a == null || a.getId() == null);
+        Set<UUID> premium = premiumUserService.premiumUserIds(
+                authors.stream().map(UserDto::getId).collect(Collectors.toSet()));
+        authors.forEach(a -> a.setPremium(premium.contains(a.getId())));
+        return roots;
+    }
+
+    private CommentResponseDto flagPremium(CommentResponseDto comment) {
+        flagPremium(List.of(comment));
+        return comment;
     }
 
     @Override
@@ -109,7 +132,7 @@ public class CommentServiceImpl implements CommentService {
         }
         Comment updated = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
-        return toResponseBasic(updated, ownerOf(updated));
+        return flagPremium(toResponseBasic(updated, ownerOf(updated)));
     }
 
     @Override
@@ -152,7 +175,7 @@ public class CommentServiceImpl implements CommentService {
             });
         }
 
-        return toResponseWithReplies(saved, ownerId);
+        return flagPremium(toResponseWithReplies(saved, ownerId));
     }
 
     /**
@@ -232,9 +255,9 @@ public class CommentServiceImpl implements CommentService {
     public List<CommentResponseDto> getReplies(UUID parentId) {
         List<Comment> replies = commentRepository.findByParentCommentIdOrderByCreatedAtAsc(parentId);
         UUID ownerId = replies.isEmpty() ? null : ownerOf(replies.get(0));
-        return replies.stream()
+        return flagPremium(replies.stream()
                 .map(c -> toResponseBasic(c, ownerId))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 
     /** Chủ video chứa bình luận, null nếu không phải bình luận video. */

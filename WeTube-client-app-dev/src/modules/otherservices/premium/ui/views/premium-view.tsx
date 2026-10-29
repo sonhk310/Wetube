@@ -1,4 +1,3 @@
-import FeatureMusic from "../layouts/animasion/featureMusic";
 import FeatureNoAds from "../layouts/animasion/featureNoads";
 import FeatureOffline from "../layouts/animasion/featureoffline";
 import PremiumFaq from "../layouts/premium-faq";
@@ -15,7 +14,6 @@ export default function PremiumView() {
 
       <FeatureNoAds/>
       <FeatureOffline/>
-      <FeatureMusic/>
 
       <PremiumTrialBanner/>
       <PremiumFaq/>

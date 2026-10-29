@@ -6,7 +6,7 @@ export default function PremiumTrialBanner() {
   return (
     <section className="text-center py-20 px-4 bg-white">
       <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">
-        Dùng thử Premium ngay
+        Dùng Premium ngay
       </h1>
 
       <p className="text-lg sm:text-xl text-gray-800 mb-6">

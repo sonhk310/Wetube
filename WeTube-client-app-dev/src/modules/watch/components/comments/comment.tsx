@@ -35,6 +35,7 @@ import {
 import ReportDialog from "@/modules/reports/report-dialog";
 import LinkifiedText from "../linkified-text";
 import { Spinner } from "@/components/ui/spinner";
+import PremiumBadge from "@/components/premium-badge";
 
 export interface Comment {
     id: string;
@@ -54,6 +55,8 @@ export interface Comment {
     pinned: boolean;
     hearted: boolean;
     byCreator: boolean;
+    /** Người viết đang có Premium. */
+    premium: boolean;
 }
 
 // Sửa sau khi đăng hơn chừng này thì hiện "(đã chỉnh sửa)"
@@ -81,6 +84,7 @@ export const mapApiCommentToUI = (apiComment: any): Comment => ({
     pinned: !!apiComment.pinned,
     hearted: !!apiComment.hearted,
     byCreator: !!apiComment.byCreator,
+    premium: !!apiComment.user?.premium,
 });
 
 const item = {
@@ -360,6 +364,7 @@ export const CommentComponent = ({
                             {comment.commenter}
                         </p>
                     )}
+                    {comment.premium && <PremiumBadge />}
                     {comment.handle && <p className="text-xs text-gray-500">@{comment.handle}</p>}
                     <p className="text-xs text-gray-600">
                         {timeAgo(comment.commentedAt)}

@@ -15,4 +15,6 @@ public class UserDto {
     private String picture;
     /** @handle của kênh người này (không có "@"); null nếu chưa có kênh. */
     private String handle;
+    /** Đang có Premium (huy hiệu cạnh tên ở bình luận); chỉ được điền ở nơi cần huy hiệu, còn lại false. */
+    private boolean premium;
 }

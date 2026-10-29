@@ -2,6 +2,8 @@
 
 import Image from 'next/image';
 import PaymentButton from './PaymentButton';
+import { useAuth } from "@/contexts/auth-context";
+import { formatYmd } from "@/lib/utils";
 
 const features = [
   {
@@ -11,22 +13,18 @@ const features = [
   },
   {
     icon: "/icons/download.png",
-    title: "Tải xuống",
-    desc: "để xem khi bạn không có kết nối internet",
+    title: "Tải video về máy",
+    desc: "lưu tệp MP4 của video về thiết bị bằng nút Tải xuống dưới video",
   },
   {
     icon: "/icons/background-play.png",
-    title: "Phát nền",
-    desc: "tiếp tục phát video khi dùng ứng dụng khác hoặc khi khoá màn hình",
-  },
-  {
-    icon: "/icons/music.png",
-    title: "Nhạc không quảng cáo",
-    desc: "trên WeTube Music",
+    title: "Phát nền trên điện thoại",
+    desc: "tiếp tục nghe khi tắt màn hình hoặc chuyển sang ứng dụng khác",
   },
 ];
 
 export default function PremiumTryitforfree() {
+  const { user } = useAuth();
 
   return (
     <section className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center text-center px-4 py-20pt-10 pb-20">
@@ -51,9 +49,15 @@ export default function PremiumTryitforfree() {
         </p>
 
         <p className="text-lg text-gray-700 mb-6">
-          Xem WeTube và nghe nhạc không quảng cáo, phát nền
-          và xem ngoại tuyến.
+          Xem WeTube không quảng cáo, tải video về máy
+          và phát nền trên điện thoại.
         </p>
+
+        {user?.premiumUntil && (
+          <p className="mb-4 rounded-full bg-green-100 px-4 py-2 text-base font-medium text-green-800">
+            Bạn đang dùng Premium đến {formatYmd(user.premiumUntil)}. Gia hạn sẽ được cộng dồn vào số ngày còn lại.
+          </p>
+        )}
 
         <p className="text-base text-gray-600 mb-2">
           Gói Basic chỉ <strong>₫99.000 / 30 ngày</strong> • Thanh toán qua MoMo • Chưa gồm VAT
@@ -62,10 +66,6 @@ export default function PremiumTryitforfree() {
         <div className="mt-6">
           <PaymentButton/>
         </div>
-
-        <p className="mt-4 text-sm text-blue-700 underline cursor-pointer hover:text-blue-900">
-          Gói dành cho gia đình hoặc sinh viên
-        </p>
       </div>
 
       <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">

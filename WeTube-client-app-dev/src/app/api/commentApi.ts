@@ -28,6 +28,8 @@ export interface Comment {
         id: string;
         name: string;
         picture?: string;
+        /** Đang có Premium (huy hiệu cạnh tên). */
+        premium?: boolean;
     };
 }
 

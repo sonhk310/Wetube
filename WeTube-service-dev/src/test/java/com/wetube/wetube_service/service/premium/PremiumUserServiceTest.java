@@ -72,6 +72,23 @@ class PremiumUserServiceTest {
     }
 
     @Test
+    void batchLookupAsksOnceWithTheVietnamDateAndReturnsThoseFound() {
+        clockAt("2026-10-29T18:00:00Z");
+        UUID other = UUID.randomUUID();
+        when(repo.findPremiumUserIds(java.util.List.of(userId, other), ActiveStatus.ACTIVE, LocalDate.of(2026, 10, 30)))
+                .thenReturn(java.util.List.of(other));
+
+        assertThat(service.premiumUserIds(java.util.List.of(userId, other))).containsExactly(other);
+    }
+
+    @Test
+    void batchLookupOfNobodySkipsTheQuery() {
+        assertThat(service.premiumUserIds(java.util.List.of())).isEmpty();
+        assertThat(service.premiumUserIds(null)).isEmpty();
+        verify(repo, never()).findPremiumUserIds(any(), any(), any());
+    }
+
+    @Test
     void anonymousIsNeverPremiumAndSkipsTheQuery() {
         assertThat(service.premiumUntil(null)).isEmpty();
         verify(repo, never()).findLatestEndDate(any(), eq(ActiveStatus.ACTIVE), any());

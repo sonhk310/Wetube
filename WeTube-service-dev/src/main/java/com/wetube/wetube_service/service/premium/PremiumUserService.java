@@ -3,7 +3,9 @@ package com.wetube.wetube_service.service.premium;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import com.wetube.wetube_service.dto.PremiumUserDto;
@@ -16,4 +18,7 @@ public interface PremiumUserService {
      * trở đi); rỗng nếu người dùng không có Premium. Mọi chỗ cần biết Premium đều hỏi hàm này.
      */
     Optional<LocalDate> premiumUntil(UUID userId);
+
+    /** Trong số userIds, những người đang có Premium; một truy vấn cho cả danh sách (huy hiệu ở bình luận). */
+    Set<UUID> premiumUserIds(Collection<UUID> userIds);
 }

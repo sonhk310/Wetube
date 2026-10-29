@@ -9,7 +9,8 @@ const faqs = [
       <>
         <p>
           Khi là thành viên WeTube Premium, bạn xem video trên WeTube mà không bị
-          quảng cáo làm gián đoạn.
+          quảng cáo làm gián đoạn, tải video về máy bằng nút Tải xuống, và phát
+          nền trên điện thoại (tắt màn hình vẫn nghe tiếp).
         </p>
         <p className="mt-2">
           Bạn cũng có thể tham gia hội viên của từng kênh để nhận huy hiệu và

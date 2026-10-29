@@ -99,6 +99,8 @@ export interface LiveChatMessage {
   owner: boolean;
   /** Mili-giây epoch (UTC). */
   at: number;
+  /** Người gửi đang có Premium. */
+  premium?: boolean;
 }
 
 export type LiveEventType = "CHAT" | "CHAT_DELETED" | "CHAT_STATE" | "VIEWERS" | "POLL" | "STATUS" | "THUMBNAIL" | "ERROR";

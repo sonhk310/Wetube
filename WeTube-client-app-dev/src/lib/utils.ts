@@ -61,3 +61,6 @@ export const formatViews = (num?: number) => {
 };
 
 export const generateId = () => crypto.randomUUID();
+
+/** "2026-11-30" (ngày không kèm giờ, vd. hạn Premium) -> "30/11/2026". Không qua Date nên không lệch múi giờ. */
+export const formatYmd = (ymd: string) => ymd.split("-").reverse().join("/");

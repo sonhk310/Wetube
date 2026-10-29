@@ -3,8 +3,11 @@ package com.wetube.wetube_service.service.premium.impl;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -43,5 +46,13 @@ public class PremiumUserServiceImpl implements PremiumUserService  {
         }
         return Optional.ofNullable(premiumUserRepository.findLatestEndDate(
                 userId, ActiveStatus.ACTIVE, LocalDate.now(clock)));
+    }
+
+    @Override
+    public Set<UUID> premiumUserIds(Collection<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Set.of();
+        }
+        return new HashSet<>(premiumUserRepository.findPremiumUserIds(userIds, ActiveStatus.ACTIVE, LocalDate.now(clock)));
     }
 }

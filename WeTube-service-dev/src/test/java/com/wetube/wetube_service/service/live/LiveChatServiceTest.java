@@ -34,6 +34,7 @@ import com.wetube.wetube_service.repository.live.LiveStreamRepository;
 import com.wetube.wetube_service.security.RateLimiter;
 import com.wetube.wetube_service.security.RateLimiter.Limit;
 import com.wetube.wetube_service.service.RedisService;
+import com.wetube.wetube_service.service.premium.PremiumUserService;
 
 class LiveChatServiceTest {
 
@@ -42,6 +43,7 @@ class LiveChatServiceTest {
     private final RedisService redis = mock(RedisService.class);
     private final RateLimiter rateLimiter = mock(RateLimiter.class);
     private final LiveEventPublisher publisher = mock(LiveEventPublisher.class);
+    private final PremiumUserService premium = mock(PremiumUserService.class);
 
     private final UUID owner = UUID.randomUUID();
     private final UUID fan = UUID.randomUUID();
@@ -56,7 +58,7 @@ class LiveChatServiceTest {
     }
 
     private LiveChatService newChat() {
-        return new LiveChatService(repo, userRepo, redis, rateLimiter, publisher, new ObjectMapper());
+        return new LiveChatService(repo, userRepo, redis, rateLimiter, publisher, new ObjectMapper(), premium);
     }
 
     @BeforeEach
@@ -101,6 +103,18 @@ class LiveChatServiceTest {
         assertThat(fromFan.id()).isNotBlank();
         assertThat(events.get(1).getMessage().owner()).isTrue();
         assertThat(chat.recent(stream.getId())).extracting(LiveChatMessage::text).containsExactly("Xin chào", "Chào cả nhà");
+    }
+
+    @Test
+    void messageFromAPremiumSenderCarriesThePremiumFlag() {
+        when(premium.premiumUntil(fan)).thenReturn(Optional.of(java.time.LocalDate.now().plusDays(2)));
+
+        chat.post(stream.getId(), fan.toString(), "Xin chào");
+        chat.post(stream.getId(), owner.toString(), "Chào cả nhà");
+
+        List<LiveEvent> events = streamEvents();
+        assertThat(events.get(0).getMessage().premium()).isTrue();
+        assertThat(events.get(1).getMessage().premium()).isFalse();
     }
 
     @Test
@@ -233,7 +247,7 @@ class LiveChatServiceTest {
     @Test
     void restoresRecentMessagesFromRedisAfterARestart() throws Exception {
         List<LiveChatMessage> saved = List.of(
-                new LiveChatMessage("m1", fan.toString(), "Fan", "Fan.png", "fan", "tin cũ", false, 1L));
+                new LiveChatMessage("m1", fan.toString(), "Fan", "Fan.png", "fan", "tin cũ", false, 1L, false));
         when(redis.get("live:chat:" + stream.getId())).thenReturn(new ObjectMapper().writeValueAsString(saved));
 
         List<LiveChatMessage> recent = newChat().recent(stream.getId());

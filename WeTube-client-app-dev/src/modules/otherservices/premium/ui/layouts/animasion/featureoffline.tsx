@@ -5,19 +5,18 @@ export default function FeatureOffline() {
   return (
     <section className="py-20 px-6 bg-white">
       <h2 className="text-3xl md:text-5xl font-extrabold text-center mb-16">
-        Xem video yêu thích — không cần internet
+        Tải video yêu thích về máy
       </h2>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         {/* Text content */}
         <div>
           <h3 className="text-2xl font-bold mb-4">
-            Xem ngoại tuyến mọi lúc, mọi nơi
+            Nút Tải xuống ngay dưới mỗi video
           </h3>
           <p className="text-gray-600 leading-relaxed">
-            Tải video yêu thích về để xem bất cứ lúc nào, không cần kết nối
-            internet. <br />
-            Thưởng thức nội dung của các nhà sáng tạo bạn yêu thích ngay cả khi ngoại tuyến.
+            Bấm Tải xuống để lưu tệp MP4 của video về thiết bị. <br />
+            Việc xem trong WeTube vẫn cần kết nối internet.
           </p>
         </div>
 
@@ -27,7 +26,7 @@ export default function FeatureOffline() {
             <div className="w-full h-full rounded-full overflow-hidden bg-white">
               <Image
                 src="/image/video-thumbnail.png"
-                alt="Xem ngoại tuyến"
+                alt="Tải video về máy"
                 fill
                 sizes="288px"
                 className="object-cover"
