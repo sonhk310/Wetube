@@ -10,6 +10,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { useProgressRouter } from "@/hooks/use-progress-router";
+import { ArrowLeftRight, Crown, LogOut, User } from "lucide-react";
 
 const AuthButton = () => {
     const { user, isLoading, login, switchAccount, logout } = useAuth();
@@ -42,14 +43,24 @@ const AuthButton = () => {
                   router.push(`/channel/${user.channelId}`); 
                 }}
               >
+                <User />
                 Hồ sơ
               </DropdownMenuItem>
               {/* Người đang có Premium thấy nhãn Premium cạnh logo (kèm ngày hết hạn), không lặp lại ở đây */}
               {!user.premiumUntil && (
-                <DropdownMenuItem onSelect={() => router.push("/otherservices/premium")}>Dùng Premium</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => router.push("/otherservices/premium")}>
+                  <Crown className="text-amber-500" />
+                  Dùng Premium
+                </DropdownMenuItem>
               )}
-              <DropdownMenuItem onSelect={switchAccount}>Chuyển tài khoản</DropdownMenuItem>
-              <DropdownMenuItem onSelect={logout}>Đăng xuất</DropdownMenuItem>
+              <DropdownMenuItem onSelect={switchAccount}>
+                <ArrowLeftRight />
+                Chuyển tài khoản
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={logout}>
+                <LogOut />
+                Đăng xuất
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
