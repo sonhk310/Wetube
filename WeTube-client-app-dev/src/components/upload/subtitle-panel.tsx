@@ -5,6 +5,8 @@ import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  AI_SUBTITLE_LIMITS_NOTE,
+  AI_SUBTITLE_MAX_MINUTES,
   useDeleteSubtitleMutation,
   useGenerateSubtitleMutation,
   useGetManagedSubtitlesQuery,
@@ -14,6 +16,7 @@ import {
 import { apiErrorMessage } from "@/lib/apiError";
 import { confirmDialog } from "@/lib/dialogs";
 import { toastEmitter } from "@/lib/toastEmitter";
+import { formatDuration } from "@/lib/utils";
 import { subtitleLabel } from "@/modules/watch/components/video/settings-menu";
 import type { ManagedSubtitle } from "@/types/subtitle";
 import { SubtitleEditor } from "./subtitle-editor";
@@ -24,12 +27,15 @@ interface SubtitlePanelProps {
   /** Chưa có khi tệp đang tải lên. */
   videoId?: string;
   videoSrc: string;
+  /** Giây; 0 khi chưa đọc được. */
+  videoDuration: number;
   /** Video chưa đăng: phụ đề đã tạo xong được công khai cùng lúc đăng video. */
   videoIsDraft: boolean;
 }
 
 /** Phụ đề AI (E2): tạo bằng AI → bản nháp để xem, sửa → công khai. */
-export function SubtitlePanel({ videoId, videoSrc, videoIsDraft }: SubtitlePanelProps) {
+export function SubtitlePanel({ videoId, videoSrc, videoDuration, videoIsDraft }: SubtitlePanelProps) {
+  const tooLong = videoDuration > AI_SUBTITLE_MAX_MINUTES * 60;
   const [language, setLanguage] = useState("vi");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
@@ -101,6 +107,7 @@ export function SubtitlePanel({ videoId, videoSrc, videoIsDraft }: SubtitlePanel
         AI nghe video và tạo phụ đề dịch sang ngôn ngữ bạn chọn, mất khoảng 1–3 phút. Phụ đề tạo xong là bản nháp: bạn
         xem, sửa rồi {videoIsDraft ? "đăng video để công khai cùng lúc" : "bấm Công khai để người xem thấy"}.
       </p>
+      <p className="mb-3 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-600">{AI_SUBTITLE_LIMITS_NOTE}</p>
 
       <div className="flex flex-wrap items-center gap-2">
         <Select
@@ -119,12 +126,18 @@ export function SubtitlePanel({ videoId, videoSrc, videoIsDraft }: SubtitlePanel
             ))}
           </SelectContent>
         </Select>
-        <Button variant="outline" className="rounded-full" onClick={() => start(language)} disabled={!videoId || generating}>
+        <Button variant="outline" className="rounded-full" onClick={() => start(language)} disabled={!videoId || generating || tooLong}>
           {generating && <Loader2 className="mr-2 size-4 animate-spin" />}
           Tạo phụ đề AI
         </Button>
       </div>
-      {!videoId && <p className="mt-2 text-sm text-gray-500">Tệp tải lên xong mới tạo được phụ đề.</p>}
+      {tooLong ? (
+        <p className="mt-2 text-sm text-amber-700">
+          Video dài {formatDuration(videoDuration)}, quá {AI_SUBTITLE_MAX_MINUTES} phút nên không tạo được phụ đề AI.
+        </p>
+      ) : (
+        !videoId && <p className="mt-2 text-sm text-gray-500">Tệp tải lên xong mới tạo được phụ đề.</p>
+      )}
       {isError && <p className="mt-2 text-sm text-red-600">Không tải được danh sách phụ đề.</p>}
 
       {subtitles.length > 0 && (

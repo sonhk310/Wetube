@@ -1,5 +1,7 @@
 package com.wetube.wetube_service.controller;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -107,8 +109,10 @@ public class VideoController {
             VideoDto createdVideo = videoService.createVideo(videoFile, thumbnailFile, meta, authenticatedUserId);
 
             // Có chọn ngôn ngữ thì tạo phụ đề AI (Gemini) chạy nền, không chặn upload; quá giới hạn thì bỏ qua phụ đề
-            if (SubtitleAiService.isSupported(targetLang)) {
-                if (rateLimiter.tryAcquire(RateLimiter.Limit.AI_SUBTITLE, authenticatedUserId)) {
+            if (SubtitleAiService.isSupported(targetLang) && !SubtitleAiService.isTooLong(createdVideo.getDuration())) {
+                if (rateLimiter.tryAcquire(RateLimiter.Limit.AI_SUBTITLE, authenticatedUserId)
+                        && rateLimiter.tryAcquire(RateLimiter.Limit.AI_SUBTITLE_DAILY,
+                                LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))) {
                     subtitleAiService.start(createdVideo.getId(), createdVideo.getVideoUrl(), targetLang);
                 } else {
                     log.warn("Bỏ qua phụ đề AI cho video {}: người dùng {} đã vượt giới hạn", createdVideo.getId(), authenticatedUserId);

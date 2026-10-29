@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/auth-context";
+import { AI_SUBTITLE_LIMITS_NOTE } from "@/app/api/subtitleApi";
 import { API_PREFIX } from "@/constants/appConstant";
 import { apiFetch } from "@/lib/apiFetch";
 import ReportDialog from "@/modules/reports/report-dialog";
@@ -95,6 +96,7 @@ export default function VideoMoreMenu({ videoId, channelId }: { videoId: string;
               Gemini sẽ nghe video và tạo phụ đề dịch sang ngôn ngữ bạn chọn. Việc này mất khoảng 1 phút. Phụ đề cùng
               ngôn ngữ đang có sẽ bị thay.
             </p>
+            <p className="text-gray-500">{AI_SUBTITLE_LIMITS_NOTE}</p>
             <select
               value={lang}
               onChange={(e) => setLang(e.target.value)}

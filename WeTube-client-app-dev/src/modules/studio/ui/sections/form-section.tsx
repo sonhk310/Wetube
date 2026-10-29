@@ -190,7 +190,7 @@ function VideoDetailsEditor({ video }: { video: VideoFormDetail }) {
             isShort={!!video.isShort}
             showHeading={false}
           />
-          <StepElements videoId={video.id} videoSrc={video.videoUrl} videoIsDraft={isDraft} />
+          <StepElements videoId={video.id} videoSrc={video.videoUrl} videoDuration={meta.duration} videoIsDraft={isDraft} />
           {isHidden ? (
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">Chế độ hiển thị</h2>

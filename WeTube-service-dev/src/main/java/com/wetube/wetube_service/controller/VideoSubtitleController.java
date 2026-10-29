@@ -1,5 +1,7 @@
 package com.wetube.wetube_service.controller;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,6 +23,7 @@ import com.wetube.wetube_service.dto.request.CreateSubtitleRequest;
 import com.wetube.wetube_service.dto.video.SubtitleCue;
 import com.wetube.wetube_service.dto.video.SubtitleManageDto;
 import com.wetube.wetube_service.dto.video.VideoSubtitleDto;
+import com.wetube.wetube_service.entity.video.Video;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.security.OwnershipGuard;
@@ -40,6 +43,9 @@ public class VideoSubtitleController {
     private final VideoRepository videoRepository;
     private final OwnershipGuard ownershipGuard;
     private final RateLimiter rateLimiter;
+
+    /** Lượt phụ đề AI của cả trang tính theo ngày giờ Việt Nam. */
+    private static final ZoneId VN = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @PostMapping("/{videoId}/subtitles")
     public ResponseEntity<VideoSubtitleDto> addSubtitle(
@@ -64,10 +70,15 @@ public class VideoSubtitleController {
         if (!SubtitleAiService.isSupported(targetLang)) {
             throw new IllegalArgumentException("Ngôn ngữ chưa hỗ trợ: " + targetLang);
         }
+        Video video = videoRepository.findById(videoId).orElseThrow();
+        if (SubtitleAiService.isTooLong(video.getDuration())) {
+            throw new IllegalArgumentException("Chỉ tạo được phụ đề AI cho video dài tối đa "
+                    + SubtitleAiService.MAX_DURATION_SECONDS / 60 + " phút.");
+        }
         rateLimiter.check(RateLimiter.Limit.AI_SUBTITLE, CurrentUser.id(jwt));
-        String videoUrl = videoRepository.findById(videoId).orElseThrow().getVideoUrl();
+        rateLimiter.check(RateLimiter.Limit.AI_SUBTITLE_DAILY, LocalDate.now(VN));
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(subtitleAiService.start(videoId, videoUrl, targetLang));
+                .body(subtitleAiService.start(videoId, video.getVideoUrl(), targetLang));
     }
 
     // Quản lý phụ đề (E2): chỉ chủ video

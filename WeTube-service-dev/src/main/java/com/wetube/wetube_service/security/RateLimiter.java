@@ -25,6 +25,8 @@ public class RateLimiter {
         AI_TEXT(20, Duration.ofHours(1), "Bạn đã dùng hết lượt AI trong giờ này, vui lòng thử lại sau."),
         /** Gemini tạo phụ đề từ âm thanh video (tốn nhất). */
         AI_SUBTITLE(5, Duration.ofHours(1), "Bạn đã yêu cầu tạo phụ đề AI quá nhiều lần trong giờ này, vui lòng thử lại sau."),
+        /** Phụ đề AI của cả trang trong một ngày (subject = ngày, giờ VN): quota Gemini tính chung cho cả dự án. */
+        AI_SUBTITLE_DAILY(20, Duration.ofDays(1), "Hôm nay WeTube đã dùng hết 20 lượt tạo phụ đề AI, vui lòng thử lại vào ngày mai."),
         /** Gửi lượt xem, theo IP. */
         VIEW(120, Duration.ofMinutes(10), "Quá nhiều yêu cầu, vui lòng thử lại sau."),
         COMMENT(10, Duration.ofMinutes(1), "Bạn bình luận quá nhanh, vui lòng chờ một chút."),

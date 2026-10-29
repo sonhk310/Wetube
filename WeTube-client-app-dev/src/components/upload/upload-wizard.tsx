@@ -435,6 +435,7 @@ export function UploadWizard({ file, draft, onClose }: UploadWizardProps) {
             <StepElements
               videoId={upload.phase === "done" ? upload.videoId : undefined}
               videoSrc={previewUrl}
+              videoDuration={meta.duration}
               videoIsDraft
             />
           )}

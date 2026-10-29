@@ -46,5 +46,11 @@ Người xem (`getVideoDetail`) chỉ nhận phụ đề `PUBLISHED`.
 - Client: `tsc`, `eslint`, `next build`; Chrome thật (playwright, API giả lập) cho trình sửa và mục Studio.
 - Sau deploy: curl các API mới khi chưa đăng nhập (401); anh thử tạo phụ đề thật với Gemini.
 
+### Giới hạn phụ đề AI (anh duyệt 29/10, vì Gemini đang dùng gói miễn phí)
+- Chỉ video dài **tối đa 10 phút** (thời lượng 0 = chưa đọc được thì vẫn cho). Server trả 400 trước khi tính lượt; client khoá nút và báo "Video dài m:ss, quá 10 phút…".
+- Mỗi người **5 lượt / giờ** (như cũ) và **cả trang 20 lượt / ngày** (theo ngày giờ VN, đếm trên Redis như các giới hạn khác), quá thì 429.
+- Ghi rõ cả ba giới hạn ở mục Phụ đề AI (hộp thoại tải lên, Studio) và hộp thoại "Tạo phụ đề AI" ở trang xem.
+- Lý do: âm thanh khoảng 32 token / giây là nhỏ; tốn là đầu ra (giờ + câu gốc + câu dịch) dài theo video, và request gửi cả file MP3 nên video dài hơn khoảng 15 phút vượt giới hạn 20 MB của Gemini.
+
 ### Ngoài phạm vi
 Tải lên file `.vtt` / `.srt` có sẵn; một lần tạo nhiều ngôn ngữ; dịch lại từ bản đã sửa sang ngôn ngữ khác; lịch sử chỉnh sửa.

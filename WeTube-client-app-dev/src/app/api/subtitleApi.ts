@@ -5,6 +5,14 @@ import type { ManagedSubtitle, SubtitleCue } from "@/types/subtitle";
 
 type SubtitleRef = { videoId: string; subtitleId: string };
 
+/** Giới hạn phụ đề AI, khớp với backend (SubtitleAiService.MAX_DURATION_SECONDS, RateLimiter AI_SUBTITLE*). */
+export const AI_SUBTITLE_MAX_MINUTES = 10;
+export const AI_SUBTITLE_DAILY_LIMIT = 20;
+export const AI_SUBTITLE_HOURLY_PER_USER = 5;
+export const AI_SUBTITLE_LIMITS_NOTE =
+  `Giới hạn: chỉ tạo phụ đề AI cho video dài tối đa ${AI_SUBTITLE_MAX_MINUTES} phút; ` +
+  `mỗi người tối đa ${AI_SUBTITLE_HOURLY_PER_USER} lượt mỗi giờ và cả WeTube tối đa ${AI_SUBTITLE_DAILY_LIMIT} lượt mỗi ngày.`;
+
 /** Chủ video quản lý phụ đề (E2). Không cache lâu: trạng thái AI đổi trong lúc chờ. */
 export const subtitleApi = createApi({
   reducerPath: "subtitleApi",

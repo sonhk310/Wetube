@@ -51,8 +51,16 @@ public class SubtitleAiService {
     private final CloudinaryService cloudinaryService;
     private final VideoSubtitleService subtitleService;
 
+    /** Video dài hơn thì không tạo phụ đề AI: đầu ra của Gemini dài theo video và quota là gói miễn phí. */
+    public static final int MAX_DURATION_SECONDS = 600;
+
     public static boolean isSupported(String lang) {
         return lang != null && LANGUAGE_NAMES.containsKey(lang);
+    }
+
+    /** Thời lượng 0 là chưa đọc được (trình duyệt không đọc được metadata): vẫn cho tạo. */
+    public static boolean isTooLong(float durationSeconds) {
+        return durationSeconds > MAX_DURATION_SECONDS;
     }
 
     /**
