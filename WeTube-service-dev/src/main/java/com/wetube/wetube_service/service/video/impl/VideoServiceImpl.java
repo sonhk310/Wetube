@@ -64,6 +64,7 @@ import com.wetube.wetube_service.service.video.VideoSubtitleService;
 import com.wetube.wetube_service.service.video.WatchProgressService;
 import com.wetube.wetube_service.service.notification.NotificationService;
 import com.wetube.wetube_service.service.premium.PremiumUserService;
+import com.wetube.wetube_service.service.video.AudioWarmer;
 
 import lombok.RequiredArgsConstructor;
 
@@ -96,6 +97,7 @@ public class VideoServiceImpl implements VideoService {
     private final VideoStatsStore videoStatsStore;
     private final TopicCatalog topicCatalog;
     private final PremiumUserService premiumUserService;
+    private final AudioWarmer audioWarmer;
 
     private static final String ID_NOT_FOUND = "Video not found with id: ";
     private static final String VIDEO = "video";
@@ -554,7 +556,10 @@ private static String draftTitle(String fileName) {
                 || premiumUserService.premiumUntil(userId).isEmpty()) {
             return null;
         }
-        return cloudinaryService.audioUrlFor(videoUrl);
+        String audioUrl = cloudinaryService.audioUrlFor(videoUrl);
+        // Cloudinary tạo MP3 ở lần yêu cầu đầu (không tua được): tạo sẵn trước khi người xem tắt màn hình
+        audioWarmer.warm(video.getId(), audioUrl);
+        return audioUrl;
     }
 
     @Override

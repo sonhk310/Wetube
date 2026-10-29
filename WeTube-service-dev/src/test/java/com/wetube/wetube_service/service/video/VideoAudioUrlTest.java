@@ -45,6 +45,7 @@ class VideoAudioUrlTest {
     @Mock VideoRepository videoRepository;
     @Mock PremiumUserService premiumUserService;
     @Mock CloudinaryService cloudinaryService;
+    @Mock AudioWarmer audioWarmer;
     @Mock TagRepository tagRepository;
     @Mock CommentRepository commentRepository;
     @Mock SubscriptionRepository subscriptionRepository;
@@ -85,6 +86,7 @@ class VideoAudioUrlTest {
         when(premiumUserService.premiumUntil(viewerId)).thenReturn(Optional.of(LocalDate.now().plusDays(3)));
 
         assertThat(audioUrlFor(viewerId)).isEqualTo("https://res.cloudinary.com/demo/video/upload/v12/abc.mp3");
+        verify(audioWarmer).warm(videoId, "https://res.cloudinary.com/demo/video/upload/v12/abc.mp3");
     }
 
     @Test
@@ -93,6 +95,7 @@ class VideoAudioUrlTest {
 
         assertThat(audioUrlFor(viewerId)).isNull();
         verify(cloudinaryService, never()).audioUrlFor(any());
+        verify(audioWarmer, never()).warm(any(), any());
     }
 
     @Test
