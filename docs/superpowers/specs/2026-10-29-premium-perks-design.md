@@ -1,6 +1,6 @@
 # Thiết kế: Premium có quyền lợi thật (P1)
 
-Ngày: 2026-10-29. Trạng thái: **chờ anh duyệt**. Anh chốt 28/10: làm cả 3 quyền lợi trang Premium đang hứa (không quảng cáo, tải xuống, phát nền); 29/10: viết theo đề xuất của em, không qua vòng hỏi.
+Ngày: 2026-10-29. Trạng thái: **anh duyệt 29/10, đã code xong 5 bước (xem YOUTUBE_PARITY.md mục 2.13)**. Anh chốt 28/10: làm cả 3 quyền lợi trang Premium đang hứa (không quảng cáo, tải xuống, phát nền); 29/10: viết theo đề xuất của em, không qua vòng hỏi.
 
 ## 1. Vì sao làm
 - PRD 4.1.5 có "Gói Premium (tắt quảng cáo)", KPI 5–8% người dùng đăng ký Premium.
