@@ -45,6 +45,8 @@ public class RateLimiter {
         LIVE_DELETE(20, Duration.ofHours(1), "Bạn xoá buổi phát quá nhiều trong giờ này, vui lòng thử lại sau."),
         /** Trình duyệt tải bản ghi buổi phát lên (gồm các lần Thử lại). */
         LIVE_REPLAY(10, Duration.ofHours(1), "Bạn tải bản ghi lên quá nhiều trong giờ này, vui lòng thử lại sau."),
+        /** Premium tải video về máy (mỗi lần tốn băng thông Cloudinary như một lần xem trọn video). */
+        DOWNLOAD(30, Duration.ofHours(1), "Bạn đã tải xuống quá nhiều video trong giờ này, vui lòng thử lại sau."),
         /** Tải ảnh bìa / ảnh đại diện kênh lên Cloudinary. */
         CHANNEL_IMAGE(20, Duration.ofHours(1), "Bạn tải ảnh lên quá nhiều trong giờ này, vui lòng thử lại sau.");
 

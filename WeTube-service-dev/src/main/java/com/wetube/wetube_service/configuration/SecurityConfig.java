@@ -98,6 +98,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/me").authenticated()
                         .requestMatchers("/api/customers/**").authenticated()
 
+                        // Tải video về máy (Premium): phải đăng nhập, đứng trước nhóm đọc công khai bên dưới
+                        .requestMatchers(HttpMethod.GET, "/api/videos/*/download").authenticated()
+
                         // Đọc công khai (GET); mọi thao tác ghi bên dưới yêu cầu đăng nhập
                         .requestMatchers(HttpMethod.GET,
                                 "/api/users/**",

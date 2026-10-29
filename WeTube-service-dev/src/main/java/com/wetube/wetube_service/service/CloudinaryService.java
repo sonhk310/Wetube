@@ -305,6 +305,32 @@ public class CloudinaryService {
         return videoUrl.replace("/upload/", "/upload/so_1,w_1280,h_720,c_fill/").replaceFirst("\\.mp4(\\?.*)?$", ".jpg");
     }
 
+    /**
+     * Link tải tệp về máy: flag fl_attachment:&lt;tên tệp&gt; làm Cloudinary trả header Content-Disposition: attachment
+     * (đuôi tệp lấy từ link). Link không phải video Cloudinary thì giữ nguyên.
+     */
+    public static String downloadUrl(String videoUrl, String title) {
+        final String marker = "/video/upload/";
+        if (videoUrl == null || !videoUrl.contains(marker)) {
+            return videoUrl;
+        }
+        int at = videoUrl.indexOf(marker) + marker.length();
+        return videoUrl.substring(0, at) + "fl_attachment:" + downloadFileName(title) + "/" + videoUrl.substring(at);
+    }
+
+    /** Tên tệp tải về từ tiêu đề: bỏ dấu, chỉ giữ chữ và số, các đoạn khác thành "_", tối đa 60 ký tự; rỗng thì "video". */
+    static String downloadFileName(String title) {
+        String plain = java.text.Normalizer.normalize(title == null ? "" : title, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('đ', 'd').replace('Đ', 'D')
+                .replaceAll("[^A-Za-z0-9]+", "_")
+                .replaceAll("^_+|_+$", "");
+        if (plain.length() > 60) {
+            plain = plain.substring(0, 60).replaceAll("_+$", "");
+        }
+        return plain.isEmpty() ? "video" : plain;
+    }
+
     /** Xoá ảnh (thumbnail) trên Cloudinary; URL không phải của Cloudinary hoặc rỗng thì bỏ qua. */
     public void deleteImage(String imageUrl) {
         try {

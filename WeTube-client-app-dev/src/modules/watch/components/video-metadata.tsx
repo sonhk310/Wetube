@@ -24,6 +24,7 @@ import VideoMoreMenu from "./video-more-menu";
 import LinkifiedText from "./linkified-text";
 import SubscribeControl from "@/modules/channel/ui/subscribeControl";
 import ShareDialog from "./share-dialog";
+import DownloadButton from "./download-button";
 import SaveToPlaylistDialog from "./save-to-playlist-dialog";
 import { useToggleDislikeMutation } from "@/app/api/videoApi";
 import { useControls } from "@/hooks/use-controls";
@@ -268,6 +269,7 @@ export default function VideoMetadata() {
           <IconAction label="Chia sẻ" onClick={handleShare}>
             <ShareIcon className="size-5" />
           </IconAction>
+          <DownloadButton videoId={videoDetail.detail.id} />
           <IconAction label="Xem chung với bạn bè" onClick={handleWatchTogether}>
             <Users className="size-5" />
           </IconAction>

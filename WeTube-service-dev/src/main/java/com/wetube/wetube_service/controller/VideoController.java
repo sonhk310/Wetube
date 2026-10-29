@@ -34,6 +34,7 @@ import com.wetube.wetube_service.search.SearchFilters;
 import com.wetube.wetube_service.search.VideoDocument;
 import com.wetube.wetube_service.service.VideoSearchService;
 import com.wetube.wetube_service.service.AI.SubtitleAiService;
+import com.wetube.wetube_service.service.video.VideoDownloadService;
 import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.video.WatchProgressService;
 import com.wetube.wetube_service.service.analytics.WatchTimeTracker;
@@ -55,6 +56,7 @@ public class VideoController {
     private final LikeService likeService;
     private final VideoAccess videoAccess;
     private final RateLimiter rateLimiter;
+    private final VideoDownloadService videoDownloadService;
     private final WatchProgressService watchProgressService;
     private final WatchTimeTracker watchTimeTracker;
     private final TagAffinityService tagAffinityService;
@@ -291,6 +293,17 @@ public class VideoController {
         ownershipGuard.videoOwner(id, jwt);
         videoService.deleteVideo(id);
         return ResponseEntity.ok(Map.of("message", "Đã xoá video"));
+    }
+
+    /**
+     * Tải video về máy (Premium): chuyển hướng 302 tới link Cloudinary có flag tải về, backend không chuyển dữ liệu.
+     * 401 chưa đăng nhập, 403 chưa có Premium, 404 không xem được video, 429 quá 30 lần mỗi giờ.
+     */
+    @GetMapping("/{id}/download")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> download(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        String url = videoDownloadService.downloadUrl(id, jwt);
+        return ResponseEntity.status(HttpStatus.FOUND).location(java.net.URI.create(url)).build();
     }
 
     /**
