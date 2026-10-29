@@ -7,15 +7,13 @@ const faqs = [
     question: "Gói WeTube Premium gồm những gì?",
     answer: (
       <>
-        <p>
-          Khi là thành viên WeTube Premium, bạn xem video trên WeTube mà không bị
-          quảng cáo làm gián đoạn, tải video về máy bằng nút Tải xuống, và phát
-          nền trên điện thoại (tắt màn hình vẫn nghe tiếp).
-        </p>
-        <p className="mt-2">
-          Bạn cũng có thể tham gia hội viên của từng kênh để nhận huy hiệu và
-          nội dung dành riêng cho hội viên.
-        </p>
+        <p>Khi là thành viên WeTube Premium, bạn được:</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          <li>Xem không quảng cáo: không thẻ quảng cáo, không quảng cáo chen trước hoặc giữa video.</li>
+          <li>Tải video về máy bằng nút Tải xuống dưới video (tệp MP4).</li>
+          <li>Phát nền trên điện thoại: tắt màn hình hoặc chuyển ứng dụng vẫn nghe tiếp.</li>
+          <li>Nhãn Premium cạnh logo và vương miện cạnh tên ở bình luận, chat trực tiếp.</li>
+        </ul>
       </>
     ),
   },
@@ -24,31 +22,57 @@ const faqs = [
     answer: (
       <>
         <p>
-          WeTube hỗ trợ thanh toán qua ví MoMo. Sau khi thanh toán xong, bạn sẽ
-          được đưa về WeTube và tài khoản sẽ được nâng cấp.
+          Bạn chọn MoMo (tính theo VND) hoặc PayPal (tính theo USD, quy đổi theo tỉ giá cố định của WeTube; số tiền
+          USD hiện ở trang PayPal). Thanh toán xong, bạn được đưa về WeTube và Premium có ngay, không cần đăng nhập lại.
         </p>
       </>
     ),
   },
   {
-    question: "Gói Premium kéo dài bao lâu?",
+    question: "Gói Premium kéo dài bao lâu? Có tự động gia hạn không?",
     answer: (
       <>
         <p>
-          Mỗi gói có thời hạn riêng (30, 90, 180 hoặc 365 ngày). Hết thời hạn,
-          bạn có thể gia hạn bằng cách mua lại gói bất cứ lúc nào.
+          Có các gói 30 ngày, 90 ngày (3 tháng), 180 ngày (6 tháng) và 365 ngày (1 năm). Gói dài hơn có giá mỗi tháng
+          rẻ hơn. WeTube không tự động gia hạn hay trừ tiền: hết hạn thì Premium tắt, bạn mua lại khi muốn.
+        </p>
+        <p className="mt-2">
+          Mua thêm khi gói cũ còn hạn thì gói mới được cộng dồn vào sau ngày hết hạn, bạn không mất số ngày còn lại.
         </p>
       </>
     ),
   },
   {
-    question: "WeTube Premium khác gì hội viên kênh?",
+    question: "Tôi dùng Premium trên thiết bị khác được không?",
     answer: (
       <>
         <p>
-          WeTube Premium áp dụng cho cả tài khoản của bạn (xem không quảng cáo).
-          Hội viên kênh là khoản đóng góp cho một nhà sáng tạo cụ thể để nhận
-          quyền lợi riêng của kênh đó.
+          Được. Premium gắn với tài khoản Google của bạn: đăng nhập đúng tài khoản đó trên bất kỳ thiết bị nào là có
+          quyền lợi.
+        </p>
+      </>
+    ),
+  },
+  {
+    question: "Tải xuống hoạt động thế nào?",
+    answer: (
+      <>
+        <p>
+          Bấm nút Tải xuống dưới video để lưu tệp MP4 về thiết bị. Mỗi giờ tải được tối đa 30 video, và bạn chỉ tải được
+          những video mình có quyền xem. Việc xem video trong WeTube vẫn cần kết nối internet.
+        </p>
+      </>
+    ),
+  },
+  {
+    question: "Phát nền hoạt động thế nào?",
+    answer: (
+      <>
+        <p>
+          Khi bạn tắt màn hình hoặc chuyển sang ứng dụng khác lúc đang xem, WeTube chuyển sang phát âm thanh của video
+          để bạn nghe tiếp, và quay lại đúng chỗ khi bạn mở lại. Bạn bật hoặc tắt trong Cài đặt của trình phát (mục
+          “Phát nền”). Kết quả có thể khác nhau tuỳ trình duyệt trên điện thoại; trên máy tính, video vốn vẫn phát khi
+          bạn chuyển thẻ.
         </p>
       </>
     ),
@@ -83,16 +107,12 @@ export default function PremiumFaq() {
               </button>
 
               {openIndex === index && (
-                <div className="pl-1 pb-4 text-sm text-gray-700">
+                <div className="pl-1 pb-4 text-sm font-normal text-gray-700">
                   {faq.answer}
                 </div>
               )}
             </div>
           ))}
-        </div>
-
-        <div className="mt-6 text-sm">
-          Còn thắc mắc? Hãy dùng mục “Gửi phản hồi” ở thanh bên để liên hệ với chúng tôi.
         </div>
       </div>
     </section>

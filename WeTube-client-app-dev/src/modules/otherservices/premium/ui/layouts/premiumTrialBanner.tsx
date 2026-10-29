@@ -10,19 +10,14 @@ export default function PremiumTrialBanner() {
       </h1>
 
       <p className="text-lg sm:text-xl text-gray-800 mb-6">
-        Gói Basic chỉ 99.000 ₫ / 30 ngày • Thanh toán qua MoMo • Chưa gồm VAT
+        Gói Basic chỉ ₫99.000 / 30 ngày • Thanh toán bằng MoMo hoặc PayPal
       </p>
 
       <PaymentButton />
 
-      <div className="text-sm text-gray-500 mt-6">
-        Thanh toán một lần cho mỗi kỳ.{" "}
-        <a
-          href="#"
-          className="text-blue-600 underline hover:text-blue-800"
-        >
-          Có áp dụng điều kiện.
-        </a>
+      <div className="text-sm font-normal text-gray-500 mt-6">
+        Thanh toán một lần cho mỗi kỳ, không tự động gia hạn.
+        Mua thêm khi còn hạn thì được cộng dồn vào số ngày còn lại.
       </div>
     </section>
   );

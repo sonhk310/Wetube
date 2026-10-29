@@ -15,8 +15,8 @@ export default function FeatureNoAds() {
             Không quảng cáo, trọn vẹn từng video
           </h3>
           <p className="text-gray-600 leading-relaxed">
-            Với Premium, WeTube không hiện thẻ quảng cáo ở trang chủ, trang xem
-            và không chen quảng cáo trước video. <br />
+            Với Premium, WeTube không hiện thẻ quảng cáo ở trang chủ và trang xem,
+            không chen quảng cáo trước hoặc giữa video. <br />
             Bạn chỉ xem nội dung của các nhà sáng tạo mình yêu thích.
           </p>
         </div>

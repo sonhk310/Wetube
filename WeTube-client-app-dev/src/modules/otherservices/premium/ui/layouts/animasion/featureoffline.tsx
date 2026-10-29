@@ -15,7 +15,7 @@ export default function FeatureOffline() {
             Nút Tải xuống ngay dưới mỗi video
           </h3>
           <p className="text-gray-600 leading-relaxed">
-            Bấm Tải xuống để lưu tệp MP4 của video về thiết bị. <br />
+            Bấm Tải xuống để lưu tệp MP4 của video về thiết bị, tối đa 30 video mỗi giờ. <br />
             Việc xem trong WeTube vẫn cần kết nối internet.
           </p>
         </div>

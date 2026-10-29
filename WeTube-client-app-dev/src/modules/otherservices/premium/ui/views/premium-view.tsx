@@ -1,4 +1,5 @@
 import FeatureNoAds from "../layouts/animasion/featureNoads";
+import FeatureBackground from "../layouts/animasion/featureBackground";
 import FeatureOffline from "../layouts/animasion/featureoffline";
 import PremiumFaq from "../layouts/premium-faq";
 import PremiumTryitforfree from "../layouts/premium-Tryitforfree";
@@ -14,6 +15,7 @@ export default function PremiumView() {
 
       <FeatureNoAds/>
       <FeatureOffline/>
+      <FeatureBackground/>
 
       <PremiumTrialBanner/>
       <PremiumFaq/>

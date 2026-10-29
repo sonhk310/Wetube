@@ -1,11 +1,11 @@
 "use client";
-import { useAuth } from "@/contexts/auth-context";
 import { API_PREFIX } from "@/constants/appConstant";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
-import { payWithMomo } from "../../lib/pay";
+import { BASIC_PACK_ID } from "../../lib/pay";
+import { durationLabel, formatVnd, pricePerMonth, savingPercent } from "../../lib/plans";
+import PaymentButton from "./PaymentButton";
 
 type SubPack = {
   id: string;
@@ -13,29 +13,19 @@ type SubPack = {
   description: string;
   durationDays: number;
   price: number;
-  active?: boolean;
 };
 
+/** Các gói dài hạn (gói Basic 30 ngày đã có nút mua ở đầu trang): cùng quyền lợi, khác thời hạn và giá. */
 export default function PremiumFeatures() {
-  const [plans, setPlans] = useState<SubPack[]>([]);
+  const [packs, setPacks] = useState<SubPack[]>([]);
   const [loading, setLoading] = useState(true);
-  const [payLoading, setPayLoading] = useState<string | null>(null); 
 
-  const {user}=useAuth();
   useEffect(() => {
     const fetchSubPacks = async () => {
       try {
         const res = await apiFetch(`${API_PREFIX}/subpacks`);
         const data: SubPack[] = await res.json();
-
-        const updatedData = data
-        .filter(plan => plan.id !== "550e8400-e29b-41d4-a716-446655440000")
-        .map((plan, index) => ({
-          ...plan,
-          active: index === 0,
-        }));
-
-        setPlans(updatedData);
+        setPacks(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error fetching subpacks:", err);
       } finally {
@@ -59,60 +49,70 @@ export default function PremiumFeatures() {
     );
   }
 
-  const handlePayment = async (subPackId: string) => {
-    setPayLoading(subPackId);
-    try {
-      await payWithMomo(subPackId, user?.sub);
-    } finally {
-      setPayLoading(null);
-    }
-  };
+  const basic = packs.find((p) => p.id === BASIC_PACK_ID);
+  const longer = packs
+    .filter((p) => p.id !== BASIC_PACK_ID)
+    .sort((a, b) => a.durationDays - b.durationDays)
+    .map((p) => ({
+      ...p,
+      saving: basic ? savingPercent(p.price, p.durationDays, basic.price, basic.durationDays) : 0,
+    }));
+  if (longer.length === 0) return null;
+  const bestSaving = Math.max(...longer.map((p) => p.saving));
 
   return (
     <section className="py-20 px-4 bg-gray-50">
       <div className="text-center mb-16">
         <h2 className="text-4xl sm:text-5xl font-extrabold leading-tight text-gray-900">
-          Tham gia Premium để dùng mọi tính năng
+          Chọn gói dài hơn để tiết kiệm hơn
         </h2>
+        <p className="mt-4 text-lg font-normal text-gray-600">
+          Mọi gói đều có đủ quyền lợi Premium, chỉ khác thời hạn và giá.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        {plans.map((plan) => (
-          <div
-            key={plan.id}
-            className={`rounded-2xl p-6 transition-all duration-300 shadow-sm hover:shadow-lg hover:scale-[1.02] ${
-              plan.active
-                ? "border border-blue-500 bg-white"
-                : "border border-gray-200 bg-white"
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <h3 className="text-xl font-semibold">{plan.name}</h3>
-            </div>
-
-            <p className="text-lg font-bold text-gray-900 mb-2">
-              {plan.price.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
-            </p>
-            <p className="text-sm text-gray-700 mb-1">{plan.description}</p>
-            <p className="text-xs text-gray-500 mb-4">
-              Thời hạn: {plan.durationDays} ngày
-            </p>
-
-            <button
-              onClick={() => handlePayment(plan.id)}
-              disabled={payLoading === plan.id}
-              className={`w-full rounded-full px-4 py-2 text-sm font-medium transition ${
-                plan.active
-                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                  : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-              } disabled:opacity-50`}
+        {longer.map((pack) => {
+          const best = bestSaving > 0 && pack.saving === bestSaving;
+          const name = `Gói ${durationLabel(pack.durationDays)}`;
+          return (
+            <div
+              key={pack.id}
+              className={`flex flex-col rounded-2xl bg-white p-6 transition-all duration-300 shadow-sm hover:shadow-lg hover:scale-[1.02] ${
+                best ? "border-2 border-blue-500" : "border border-gray-200"
+              }`}
             >
-              {payLoading === plan.id
-                ? <Spinner className="size-5 mx-auto text-current" />
-                : `Chọn ${plan.name}`}
-            </button>
-          </div>
-        ))}
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="text-xl font-semibold">{name}</h3>
+                {best && (
+                  <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                    Tiết kiệm nhất
+                  </span>
+                )}
+              </div>
+
+              <p className="text-2xl font-bold text-gray-900">{formatVnd(pack.price)}</p>
+              <p className="mb-1 text-sm font-normal text-gray-600">
+                {pack.durationDays} ngày · khoảng {formatVnd(pricePerMonth(pack.price, pack.durationDays))} / tháng
+              </p>
+              {pack.saving > 0 && (
+                <p className="mb-3 text-sm font-semibold text-green-700">
+                  Rẻ hơn {pack.saving}% so với mua gói 30 ngày liên tục
+                </p>
+              )}
+              <p className="mb-5 text-sm font-normal text-gray-700">
+                Không quảng cáo · Tải video về máy · Phát nền
+              </p>
+
+              <PaymentButton
+                subPackId={pack.id}
+                label={`Chọn ${name}`}
+                summary={`WeTube Premium ${name.toLowerCase()}: ${formatVnd(pack.price)} / ${pack.durationDays} ngày`}
+                className="mt-auto w-full px-4 py-2 text-sm"
+              />
+            </div>
+          );
+        })}
       </div>
     </section>
   );

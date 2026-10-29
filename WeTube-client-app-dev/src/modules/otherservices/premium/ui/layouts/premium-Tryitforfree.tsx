@@ -1,6 +1,7 @@
 "use client";
 
 import Image from 'next/image';
+import { Crown } from "lucide-react";
 import PaymentButton from './PaymentButton';
 import { useAuth } from "@/contexts/auth-context";
 import { formatYmd } from "@/lib/utils";
@@ -9,17 +10,22 @@ const features = [
   {
     icon: "/icons/no-ads.png",
     title: "Xem WeTube không quảng cáo",
-    desc: "đắm chìm trong những video bạn yêu thích, không bị gián đoạn",
+    desc: "không thẻ quảng cáo, không quảng cáo chen trước hoặc giữa video",
   },
   {
     icon: "/icons/download.png",
     title: "Tải video về máy",
-    desc: "lưu tệp MP4 của video về thiết bị bằng nút Tải xuống dưới video",
+    desc: "lưu tệp MP4 về thiết bị bằng nút Tải xuống dưới video",
   },
   {
     icon: "/icons/background-play.png",
     title: "Phát nền trên điện thoại",
-    desc: "tiếp tục nghe khi tắt màn hình hoặc chuyển sang ứng dụng khác",
+    desc: "tắt màn hình hoặc chuyển sang ứng dụng khác vẫn nghe tiếp",
+  },
+  {
+    icon: null,
+    title: "Huy hiệu Premium",
+    desc: "nhãn Premium cạnh logo, vương miện cạnh tên ở bình luận và chat trực tiếp",
   },
 ];
 
@@ -60,7 +66,7 @@ export default function PremiumTryitforfree() {
         )}
 
         <p className="text-base text-gray-600 mb-2">
-          Gói Basic chỉ <strong>₫99.000 / 30 ngày</strong> • Thanh toán qua MoMo • Chưa gồm VAT
+          Gói Basic chỉ <strong>₫99.000 / 30 ngày</strong> • Thanh toán bằng MoMo hoặc PayPal
         </p>
 
         <div className="mt-6">
@@ -74,13 +80,19 @@ export default function PremiumTryitforfree() {
             key={index}
             className="flex items-start gap-4 text-left px-4"
           >
-            <Image
-              src={feature.icon}
-              alt={feature.title}
-              width={48}
-              height={48} 
-              className="object-contain"
-            />
+            {feature.icon ? (
+              <Image
+                src={feature.icon}
+                alt={feature.title}
+                width={48}
+                height={48}
+                className="object-contain"
+              />
+            ) : (
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-orange-500">
+                <Crown aria-hidden className="size-6 fill-white text-white" />
+              </span>
+            )}
             <div>
               <h3 className="text-xl font-semibold text-gray-800">
                 {feature.title}
