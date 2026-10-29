@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { BASIC_PACK_ID, payWithMomo, payWithPaypal } from "../../lib/pay";
+import { BASIC_PACK_ID, MOMO_DOWN_NOTE, MOMO_ENABLED, payWithMomo, payWithPaypal } from "../../lib/pay";
 
 type Gateway = "momo" | "paypal";
 
@@ -69,13 +69,17 @@ export default function PaymentButton({
             <DialogDescription>{summary}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
-            <button
-              onClick={() => pay("momo")}
-              className="flex flex-col items-start rounded-xl bg-[#a50064] px-5 py-3 text-left text-white transition hover:bg-[#8c0055]"
-            >
-              <span className="text-base font-semibold">Thanh toán bằng MoMo</span>
-              <span className="text-sm text-white/85">Ví MoMo, tính theo VND</span>
-            </button>
+            {MOMO_ENABLED ? (
+              <button
+                onClick={() => pay("momo")}
+                className="flex flex-col items-start rounded-xl bg-[#a50064] px-5 py-3 text-left text-white transition hover:bg-[#8c0055]"
+              >
+                <span className="text-base font-semibold">Thanh toán bằng MoMo</span>
+                <span className="text-sm text-white/85">Ví MoMo, tính theo VND</span>
+              </button>
+            ) : (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{MOMO_DOWN_NOTE}</p>
+            )}
             <button
               onClick={() => pay("paypal")}
               className="flex flex-col items-start rounded-xl bg-[#ffc439] px-5 py-3 text-left text-[#003087] transition hover:bg-[#f2b72d]"

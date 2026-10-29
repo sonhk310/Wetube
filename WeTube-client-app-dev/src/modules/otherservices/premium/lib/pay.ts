@@ -5,6 +5,10 @@ import { noticeDialog } from "@/lib/dialogs";
 /** Gói Basic (cùng id với SubPackSeeder ở backend). */
 export const BASIC_PACK_ID = "550e8400-e29b-41d4-a716-446655440000";
 
+/** MoMo sandbox từ chối mọi đơn (resultCode 99) từ 29/10, lỗi phía MoMo: ẩn nút MoMo. MoMo chạy lại thì đặt true. */
+export const MOMO_ENABLED = false;
+export const MOMO_DOWN_NOTE = "MoMo tạm thời không hoạt động do lỗi từ phía MoMo, vui lòng thanh toán bằng PayPal.";
+
 async function bodyOf(res: Response): Promise<{ message?: string; [key: string]: unknown }> {
   try {
     return await res.json();

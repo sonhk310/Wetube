@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Crown } from "lucide-react";
 import PaymentButton from './PaymentButton';
+import { MOMO_DOWN_NOTE, MOMO_ENABLED } from "../../lib/pay";
 import { useAuth } from "@/contexts/auth-context";
 import { formatYmd } from "@/lib/utils";
 
@@ -66,8 +67,11 @@ export default function PremiumTryitforfree() {
         )}
 
         <p className="text-base text-gray-600 mb-2">
-          Gói Basic chỉ <strong>₫99.000 / 30 ngày</strong> • Thanh toán bằng MoMo hoặc PayPal
+          Gói Basic chỉ <strong>₫99.000 / 30 ngày</strong> • Thanh toán bằng {MOMO_ENABLED ? "MoMo hoặc PayPal" : "PayPal"}
         </p>
+        {!MOMO_ENABLED && (
+          <p className="mb-2 rounded-full bg-amber-50 px-4 py-2 text-sm text-amber-800">{MOMO_DOWN_NOTE}</p>
+        )}
 
         <div className="mt-6">
           <PaymentButton/>

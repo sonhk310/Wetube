@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { MOMO_DOWN_NOTE, MOMO_ENABLED } from "../../lib/pay";
 
 const faqs = [
   {
@@ -25,6 +26,7 @@ const faqs = [
           Bạn chọn MoMo (tính theo VND) hoặc PayPal (tính theo USD, quy đổi theo tỉ giá cố định của WeTube; số tiền
           USD hiện ở trang PayPal). Thanh toán xong, bạn được đưa về WeTube và Premium có ngay, không cần đăng nhập lại.
         </p>
+        {!MOMO_ENABLED && <p className="mt-2 font-medium text-amber-800">{MOMO_DOWN_NOTE}</p>}
       </>
     ),
   },

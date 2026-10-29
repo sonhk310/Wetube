@@ -1,6 +1,7 @@
 "use client";
 
 import PaymentButton from "./PaymentButton";
+import { MOMO_DOWN_NOTE, MOMO_ENABLED } from "../../lib/pay";
 
 export default function PremiumTrialBanner() {
   return (
@@ -10,8 +11,9 @@ export default function PremiumTrialBanner() {
       </h1>
 
       <p className="text-lg sm:text-xl text-gray-800 mb-6">
-        Gói Basic chỉ ₫99.000 / 30 ngày • Thanh toán bằng MoMo hoặc PayPal
+        Gói Basic chỉ ₫99.000 / 30 ngày • Thanh toán bằng {MOMO_ENABLED ? "MoMo hoặc PayPal" : "PayPal"}
       </p>
+      {!MOMO_ENABLED && <p className="mb-6 text-sm text-amber-800">{MOMO_DOWN_NOTE}</p>}
 
       <PaymentButton />
 
