@@ -55,8 +55,13 @@ public class AuthController {
     @Value("${CLIENT_URL}")
     private String clientUrl;
 
+    /**
+     * Chuyển sang Google để đăng nhập. switch=true (nút "Chuyển tài khoản"): ép Google hiện màn hình chọn tài khoản,
+     * nếu không, trình duyệt chỉ có một tài khoản Google thì Google tự chọn luôn và không chuyển được.
+     */
     @GetMapping("/login/google")
-    public void redirectToGoogle(HttpServletResponse response) throws IOException {
+    public void redirectToGoogle(@RequestParam(value = "switch", defaultValue = "false") boolean switchAccount,
+            HttpServletResponse response) throws IOException {
         String url = UriComponentsBuilder
                 .fromUriString("https://accounts.google.com/o/oauth2/v2/auth")
                 .queryParam("client_id", clientId)
@@ -64,7 +69,7 @@ public class AuthController {
                 .queryParam("response_type", "code")
                 .queryParam("scope", "openid email profile")
                 .queryParam("access_type", "offline")
-                .queryParam("prompt", "consent")
+                .queryParam("prompt", switchAccount ? "select_account consent" : "consent")
                 .build().toUriString();
         response.sendRedirect(url);
     }

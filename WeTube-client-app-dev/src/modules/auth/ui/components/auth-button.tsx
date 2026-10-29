@@ -12,7 +12,7 @@ import {
 import { useProgressRouter } from "@/hooks/use-progress-router";
 
 const AuthButton = () => {
-    const { user, isLoading, login, logout } = useAuth();
+    const { user, isLoading, login, switchAccount, logout } = useAuth();
     const router = useProgressRouter();
 
     if (isLoading) {
@@ -48,6 +48,7 @@ const AuthButton = () => {
               {!user.premiumUntil && (
                 <DropdownMenuItem onSelect={() => router.push("/otherservices/premium")}>Dùng Premium</DropdownMenuItem>
               )}
+              <DropdownMenuItem onSelect={switchAccount}>Chuyển tài khoản</DropdownMenuItem>
               <DropdownMenuItem onSelect={logout}>Đăng xuất</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

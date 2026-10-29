@@ -50,6 +50,8 @@ interface AuthContextType {
   isPremium: boolean;
   isLoading: boolean;
   login: () => void;
+  /** Mở màn hình chọn tài khoản Google để đăng nhập tài khoản khác; huỷ giữa chừng thì vẫn ở tài khoản hiện tại. */
+  switchAccount: () => void;
   logout: () => Promise<void>;
   /** Tải lại thông tin người đang đăng nhập (vd. sau khi đổi tên / ảnh kênh ở Studio). */
   refresh: () => Promise<void>;
@@ -106,6 +108,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     window.location.href = `${apiClient.defaults.baseURL}/auth/login/google`;
   }, []);
 
+  const switchAccount = useCallback(() => {
+    window.location.href = `${apiClient.defaults.baseURL}/auth/login/google?switch=true`;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await apiClient.post("/auth/logout");
@@ -130,10 +136,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isPremium: !!user?.premiumUntil,
       isLoading,
       login,
+      switchAccount,
       logout,
       refresh,
     }),
-    [user, isLoading, login, logout, refresh]
+    [user, isLoading, login, switchAccount, logout, refresh]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
