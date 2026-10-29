@@ -144,17 +144,19 @@ import jakarta.transaction.Transactional;
                     String payUrl = (String) response.getBody().get("payUrl");
 
                     Map<String, Object> momoResp = response.getBody();
-                    
-                    // Tạo PaymentMomo PENDING trước, chưa tạo PremiumUser
+                    boolean accepted = Integer.valueOf(0).equals(momoResp.get("resultCode"));
+
+                    // Tạo PaymentMomo PENDING trước, chưa tạo PremiumUser; MoMo từ chối đơn thì ghi FAILED
                     PaymentMomo payment = PaymentMomo.builder()
                             .orderId(orderId)
                             .requestId(requestId)
                             .amount(amountLong)
                             .provider("MOMO")
-                            .status(PaymentStatus.PENDING) 
+                            .status(accepted ? PaymentStatus.PENDING : PaymentStatus.FAILED)
+                            .eventType(accepted ? null : "PAYMENT_FAILED")
                             .subpack(subPack)
                             .user(user)
-                            .payload("{}") 
+                            .payload("{}")
                             .build();
 
                     paymentRepo.save(payment);
