@@ -342,6 +342,11 @@ Thiết kế: `docs/superpowers/specs/2026-10-29-subtitle-review-design.md`. Anh
 - **Anh đã thử trên trình duyệt: OK** (29/10, anh báo chung "ok", không nói riêng từng mục 29.1–29.16).
 - **Lưu ý:** xoá phụ đề không xoá file `.vtt` trên Cloudinary (file nhỏ, ghi đè khi công khai lại cùng ngôn ngữ). API cũ `POST /api/videos` (tải lên một lần kèm `targetLang`) vẫn chạy nhưng phụ đề thành bản nháp.
 
+### 2.20 Tạm ẩn MoMo ở trang Premium (anh yêu cầu 29/10 vì MoMo sandbox vẫn trả resultCode 99; **đã push và deploy client 29/10 16:26 giờ VN**, commit `e86fbb7`)
+- Hộp thoại "Chọn cách thanh toán" (cả nút mua chính và các gói dài hạn, cùng component `PaymentButton`) chỉ còn PayPal, kèm ghi chú "MoMo tạm thời không hoạt động do lỗi từ phía MoMo, vui lòng thanh toán bằng PayPal." Ghi chú này cũng hiện dưới dòng giá ở đầu trang, ở banner cuối trang và trong FAQ "Tôi thanh toán bằng cách nào?"; hai dòng giá đổi thành "Thanh toán bằng PayPal". Backend MoMo giữ nguyên.
+- **Bật lại MoMo:** đặt `MOMO_ENABLED = true` trong `modules/otherservices/premium/lib/pay.ts`, rồi deploy client.
+- **Đã kiểm tra thật:** `tsc`, `eslint`, `next build` qua; Chrome thật ở máy và trên production sau deploy: 9/9 (không còn nút / chữ MoMo trong hộp thoại, ghi chú ở đầu trang, banner, FAQ, hộp thoại; không gọi API thanh toán; 390 px không tràn ngang). **Chưa kiểm tra:** hộp thoại mở từ lưới gói dài hạn (bài kiểm tra không tìm thấy nút gói; cùng component nên phải giống hệt).
+
 ### 2.2 Em theo dõi
 - **Vibe Host lỗi build 25/10 18:36–19:25:** lượt deploy dừng ở bước Build, không có output Docker, mỗi 5 phút báo `fetch failed`; job `cmvnr4rse15oj0i5fwk24jx1t` hỏng sau 6/6 lần, job deploy lại `cmvnsfwo315u00i5f440xr7gk` thành công ở lần thử lại thứ 2 (v63). Lỗi phía nền tảng, không phải code. Gặp lại thì chờ thử lại / deploy lại, kéo dài thì báo hỗ trợ Mắt Bão.
 - Lần deploy backend lỗi của gói 11 (24/10 13:52) chưa rõ nguyên nhân (log bị cắt).
