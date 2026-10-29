@@ -136,10 +136,11 @@ class PaypalClientTest {
         expectToken();
         server.expect(requestTo(BASE + "/v2/checkout/orders/ORDER1/capture"))
                 .andRespond(withStatus(HttpStatus.UNPROCESSABLE_ENTITY).contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"name\":\"UNPROCESSABLE_ENTITY\",\"message\":\"ORDER_NOT_APPROVED\"}"));
+                        .body("{\"name\":\"UNPROCESSABLE_ENTITY\",\"message\":\"business validation\",\"details\":[{\"issue\":\"ORDER_NOT_APPROVED\"}]}"));
 
         assertThatThrownBy(() -> client.capture("ORDER1", "r")).isInstanceOfSatisfying(PaypalException.class, e -> {
-            assertThat(e.getMessage()).contains("UNPROCESSABLE_ENTITY").doesNotContain("my-secret-value").doesNotContain("A21AAtoken");
+            assertThat(e.getMessage()).contains("UNPROCESSABLE_ENTITY: ORDER_NOT_APPROVED")
+                    .doesNotContain("my-secret-value").doesNotContain("A21AAtoken");
         });
     }
 

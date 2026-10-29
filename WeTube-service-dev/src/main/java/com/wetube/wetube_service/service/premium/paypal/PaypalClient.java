@@ -165,6 +165,11 @@ public class PaypalClient {
             JsonNode json = MAPPER.readTree(e.getResponseBodyAsString());
             name = json.path("name").asText(json.path("error").asText(""));
             message = json.path("message").asText(json.path("error_description").asText(""));
+            // Lý do cụ thể (vd. ORDER_NOT_APPROVED, INSTRUMENT_DECLINED) nằm ở details[0].issue
+            String issue = json.path("details").path(0).path("issue").asText("");
+            if (!issue.isBlank()) {
+                name = name.isBlank() ? issue : name + ": " + issue;
+            }
         } catch (IOException ignored) {
             // phản hồi không phải JSON
         }
