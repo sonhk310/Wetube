@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -43,6 +44,7 @@ class PaymentCallbackTest {
     private final MomoConfiguration momo = new MomoConfiguration();
     private final PaymentMomoRepository paymentRepo = mock(PaymentMomoRepository.class);
     private final PremiumUserRepository premiumRepo = mock(PremiumUserRepository.class);
+    private final PremiumUserService premiumService = mock(PremiumUserService.class);
     private PaymentServiceImpl service;
     private PaymentMomo payment;
 
@@ -51,7 +53,7 @@ class PaymentCallbackTest {
         ReflectionTestUtils.setField(momo, "accessKey", ACCESS_KEY);
         ReflectionTestUtils.setField(momo, "secretKey", SECRET_KEY);
         service = new PaymentServiceImpl(momo, paymentRepo, premiumRepo, mock(SubPackRepository.class),
-                mock(UserRepository.class));
+                mock(UserRepository.class), premiumService);
         ReflectionTestUtils.setField(service, "verifySignature", true);
 
         SubPack pack = SubPack.builder().id(UUID.randomUUID()).name("Basic Plan")
@@ -96,9 +98,22 @@ class PaymentCallbackTest {
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
         PremiumUser granted = payment.getPremiumUser();
         assertThat(granted.getStatus()).isEqualTo(ActiveStatus.ACTIVE);
-        assertThat(granted.getStartDate()).isEqualTo(LocalDate.now());
-        assertThat(granted.getEndDate()).isEqualTo(LocalDate.now().plusDays(30));
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        assertThat(granted.getStartDate()).isEqualTo(today);
+        assertThat(granted.getEndDate()).isEqualTo(today.plusDays(30));
         assertThat(granted.getUser()).isSameAs(payment.getUser());
+    }
+
+    @Test
+    void buyingWhileStillPremiumStartsTheDayAfterTheCurrentExpiry() throws Exception {
+        LocalDate expiry = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).plusDays(10);
+        when(premiumService.premiumUntil(payment.getUser().getId())).thenReturn(Optional.of(expiry));
+
+        service.handleMoMoIpn(signed("0"));
+
+        PremiumUser granted = payment.getPremiumUser();
+        assertThat(granted.getStartDate()).isEqualTo(expiry.plusDays(1));
+        assertThat(granted.getEndDate()).isEqualTo(expiry.plusDays(31));
     }
 
     @Test

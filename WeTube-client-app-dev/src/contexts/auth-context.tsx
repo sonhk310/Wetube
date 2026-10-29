@@ -19,6 +19,8 @@ interface User {
   picture: string;
   channelId: string;
   roles?: string[];
+  /** Ngày hết hạn Premium (yyyy-MM-dd); null nếu không có Premium còn hiệu lực. */
+  premiumUntil?: string | null;
     channel: {
     id: string;
     backgroundImgUrl: string;
@@ -44,6 +46,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  /** Đang có Premium còn hiệu lực (suy ra từ user.premiumUntil). */
+  isPremium: boolean;
   isLoading: boolean;
   login: () => void;
   logout: () => Promise<void>;
@@ -133,6 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(
     () => ({
       user,
+      isPremium: !!user?.premiumUntil,
       isLoading,
       login,
       logout,

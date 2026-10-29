@@ -5,6 +5,7 @@ import com.wetube.wetube_service.entity.AppUser;
 import com.wetube.wetube_service.mapper.MeMapper;
 import com.wetube.wetube_service.service.UserService;
 import com.wetube.wetube_service.service.auth.RefreshTokenService;
+import com.wetube.wetube_service.service.premium.PremiumUserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ public class MeController {
     private final RefreshTokenService refreshTokenService;
     private final UserService userService;
     private final MeMapper meMapper;
+    private final PremiumUserService premiumUserService;
 
 
     @GetMapping
@@ -79,7 +81,8 @@ public class MeController {
             ));
         }
 
-        MeResponseDto response = meMapper.toDto(user);
+        MeResponseDto response = MeResponseDto.withPremiumUntil(
+                meMapper.toDto(user), premiumUserService.premiumUntil(userId).orElse(null));
         return ResponseEntity.ok(response);
     }
 }

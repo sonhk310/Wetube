@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProgressRouter } from "@/hooks/use-progress-router";
+import { useAuth } from "@/contexts/auth-context";
 
 type PaymentStatus = {
   success: boolean;
@@ -12,6 +13,7 @@ type PaymentStatus = {
 export default function PaymentResult() {
   const params = useSearchParams();
   const router = useProgressRouter();
+  const { refresh } = useAuth();
   const [status, setStatus] = useState<PaymentStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,11 +27,14 @@ export default function PaymentResult() {
       return;
     }
 
-    setStatus({ success: resultCode === "0", orderId });
+    const success = resultCode === "0";
+    setStatus({ success, orderId });
     setLoading(false);
+    // Quyền lợi Premium có ngay, không cần đăng nhập lại
+    if (success) void refresh();
     const timer = setTimeout(() => router.replace("/"), 3000);
     return () => clearTimeout(timer);
-  }, [params, router]);
+  }, [params, router, refresh]);
 
   if (loading) {
     return (

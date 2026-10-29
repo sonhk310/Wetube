@@ -15,5 +15,6 @@ public interface MeMapper {
     @Mapping(target = "channelId", expression = "java(user.getChannel() != null && user.getChannel().getId() != null ? user.getChannel().getId().toString() : null)")
     @Mapping(target = "channel", source = "channel")
     @Mapping(target = "playlists", source = "playlists")
+    @Mapping(target = "premiumUntil", ignore = true)
     MeResponseDto toDto(AppUser user);
 }
