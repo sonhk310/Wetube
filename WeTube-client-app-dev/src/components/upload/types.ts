@@ -17,7 +17,6 @@ export type WizardForm = {
   topicId: string;
   thumbnailFile: File | null;
   playlistIds: string[];
-  targetLang: string;
   visibility: Visibility;
 };
 

@@ -8,9 +8,8 @@ import { Button } from "@/components/ui/button";
 import { DialogTitle } from "@/components/ui/dialog";
 import { useUpdateVideoDetailsMutation, videoApi } from "@/app/api/videoApi";
 import { playlistApi } from "@/app/api/playlistApi";
-import { API_PREFIX } from "@/constants/appConstant";
+import { publishDraftSubtitles } from "@/app/api/subtitleApi";
 import { apiErrorMessage } from "@/lib/apiError";
-import { apiFetch } from "@/lib/apiFetch";
 import { isShortVideo, shortsReason } from "@/lib/shorts";
 import { toastEmitter } from "@/lib/toastEmitter";
 import { uploadDraft } from "@/lib/uploadDraft";
@@ -128,7 +127,6 @@ export function UploadWizard({ file, draft, onClose }: UploadWizardProps) {
     topicId: draft?.topicId ?? "",
     thumbnailFile: null,
     playlistIds: [],
-    targetLang: "",
     visibility: "ACTIVE",
   }));
   const setForm = useCallback((patch: Partial<WizardForm>) => setFormState((f) => ({ ...f, ...patch })), []);
@@ -295,14 +293,13 @@ export function UploadWizard({ file, draft, onClose }: UploadWizardProps) {
           if (!failed.includes("danh sách phát")) failed.push("danh sách phát");
         }
       }
-      if (form.targetLang) {
-        const res = await apiFetch(`${API_PREFIX}/videos/${videoId}/subtitles/ai?targetLang=${form.targetLang}`, {
-          method: "POST",
-        }).catch(() => null);
-        if (!res?.ok) failed.push("phụ đề AI");
-      }
+      // Phụ đề AI đã tạo xong (bản nháp) công khai cùng video; còn đang tạo thì ở lại bản nháp
+      const subtitles = await publishDraftSubtitles(videoId);
+      if (subtitles.failed) failed.push("phụ đề");
       if (failed.length) {
-        toastEmitter.error(`Video đã đăng, nhưng không thêm được ${failed.join(" và ")}.`);
+        toastEmitter.error(`Video đã đăng, nhưng lỗi ở ${failed.join(" và ")}, hãy kiểm tra lại trong Studio.`);
+      } else if (subtitles.processing > 0) {
+        toastEmitter.success("Đã đăng video. Phụ đề đang tạo sẽ là bản nháp, xem và công khai trong Studio.");
       } else {
         toastEmitter.success("Đã đăng video");
       }
@@ -434,7 +431,13 @@ export function UploadWizard({ file, draft, onClose }: UploadWizardProps) {
               isShort={isShort}
             />
           )}
-          {step === "elements" && <StepElements form={form} setForm={setForm} />}
+          {step === "elements" && (
+            <StepElements
+              videoId={upload.phase === "done" ? upload.videoId : undefined}
+              videoSrc={previewUrl}
+              videoIsDraft
+            />
+          )}
           {step === "checks" && (
             <StepChecks
               errors={errors}

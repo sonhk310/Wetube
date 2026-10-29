@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetVideoFormDetailsQuery, useUpdateVideoDetailsMutation, videoApi } from "@/app/api/videoApi";
 import { playlistApi } from "@/app/api/playlistApi";
-import { API_PREFIX } from "@/constants/appConstant";
+import { publishDraftSubtitles, subtitleApi } from "@/app/api/subtitleApi";
 import { useAuth } from "@/contexts/auth-context";
 import { apiErrorMessage } from "@/lib/apiError";
-import { apiFetch } from "@/lib/apiFetch";
 import { shortsReason } from "@/lib/shorts";
 import { toastEmitter } from "@/lib/toastEmitter";
 import { videoImageUrl } from "@/lib/videoMedia";
@@ -57,7 +56,6 @@ function VideoDetailsEditor({ video }: { video: VideoFormDetail }) {
     topicId: video.topicId ?? "",
     thumbnailFile: null,
     playlistIds: [],
-    targetLang: "",
     visibility: toVisibility(video.status),
   }));
   const [form, setFormState] = useState<WizardForm>(baseline);
@@ -117,7 +115,6 @@ function VideoDetailsEditor({ video }: { video: VideoFormDetail }) {
     form.topicId !== baseline.topicId ||
     form.visibility !== baseline.visibility ||
     !!form.thumbnailFile ||
-    !!form.targetLang ||
     !sameIds(form.playlistIds, baseline.playlistIds);
 
   const save = async () => {
@@ -143,16 +140,16 @@ function VideoDetailsEditor({ video }: { video: VideoFormDetail }) {
       ...removed.map((id) => playlistService.removeVideo(id, video.id)),
     ]);
     if (playlistResults.some((r) => r.status === "rejected")) failed.push("danh sách phát");
-    if (form.targetLang) {
-      const res = await apiFetch(`${API_PREFIX}/videos/${video.id}/subtitles/ai?targetLang=${form.targetLang}`, {
-        method: "POST",
-      }).catch(() => null);
-      if (!res?.ok) failed.push("phụ đề AI");
+    // Đăng bản nháp: phụ đề AI đã tạo xong công khai cùng video
+    if (isDraft) {
+      const subtitles = await publishDraftSubtitles(video.id);
+      if (subtitles.failed) failed.push("phụ đề");
+      dispatch(subtitleApi.util.invalidateTags([{ type: "Subtitles", id: video.id }]));
     }
     if (failed.length) toastEmitter.error(`Đã lưu, nhưng không cập nhật được ${failed.join(" và ")}.`);
     else toastEmitter.success(isDraft ? "Đã đăng video" : "Đã lưu thay đổi");
 
-    const saved = { ...form, thumbnailFile: null, targetLang: "" };
+    const saved = { ...form, thumbnailFile: null };
     setBaseline(saved);
     setFormState(saved);
     dispatch(playlistApi.util.invalidateTags(["Playlist"]));
@@ -193,7 +190,7 @@ function VideoDetailsEditor({ video }: { video: VideoFormDetail }) {
             isShort={!!video.isShort}
             showHeading={false}
           />
-          <StepElements form={form} setForm={setForm} />
+          <StepElements videoId={video.id} videoSrc={video.videoUrl} videoIsDraft={isDraft} />
           {isHidden ? (
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">Chế độ hiển thị</h2>

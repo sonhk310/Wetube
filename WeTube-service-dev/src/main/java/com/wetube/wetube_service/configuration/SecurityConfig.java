@@ -103,6 +103,8 @@ public class SecurityConfig {
 
                         // Tải video về máy (Premium): phải đăng nhập, đứng trước nhóm đọc công khai bên dưới
                         .requestMatchers(HttpMethod.GET, "/api/videos/*/download").authenticated()
+                        // Quản lý phụ đề (bản nháp, lỗi AI): chỉ chủ video; người xem nhận phụ đề qua chi tiết video
+                        .requestMatchers(HttpMethod.GET, "/api/videos/*/subtitles/**").authenticated()
 
                         // Đọc công khai (GET); mọi thao tác ghi bên dưới yêu cầu đăng nhập
                         .requestMatchers(HttpMethod.GET,

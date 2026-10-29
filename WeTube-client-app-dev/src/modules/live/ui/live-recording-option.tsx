@@ -41,7 +41,6 @@ export default function LiveRecordingOption({
     topicId,
     thumbnailFile: null,
     playlistIds: [],
-    targetLang: "",
     visibility: "ACTIVE",
   };
 

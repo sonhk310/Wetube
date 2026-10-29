@@ -145,6 +145,7 @@ public interface VideoMapper {
         if (subtitles == null)
             return Collections.emptyList();
         return subtitles.stream()
+                .filter(VideoSubtitle::isPublished)
                 .map(s -> new VideoSubtitleDto(s.getLanguage(), s.getSubtitleUrl())) // 👈 map đúng field
                 .toList();
     }

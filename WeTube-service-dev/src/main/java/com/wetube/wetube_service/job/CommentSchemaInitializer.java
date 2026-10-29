@@ -83,6 +83,24 @@ public class CommentSchemaInitializer implements CommandLineRunner {
         } catch (Exception e) {
             log.error("Không đổi được reports.video_id sang NULL: {}", e.getMessage());
         }
+        // Duyệt / sửa phụ đề (E2): phụ đề cũ đã công khai; AI chạy trong bộ nhớ nên khởi động lại là mất lượt đang chạy
+        addColumn("video_subtitles", "status", "VARCHAR(20) NULL");
+        addColumn("video_subtitles", "cues", "MEDIUMTEXT NULL");
+        addColumn("video_subtitles", "ai_generated", "BIT(1) NULL");
+        addColumn("video_subtitles", "error_message", "VARCHAR(500) NULL");
+        addColumn("video_subtitles", "updated_at", "DATETIME(6) NULL");
+        addIndex("video_subtitles", "idx_video_subtitles_video", "video_id");
+        execute("UPDATE video_subtitles SET status = 'PUBLISHED' WHERE status IS NULL", "phụ đề cũ sang PUBLISHED");
+        execute("UPDATE video_subtitles SET status = 'FAILED', error_message = 'Máy chủ khởi động lại khi đang tạo phụ đề, vui lòng tạo lại.' "
+                + "WHERE status = 'PROCESSING'", "phụ đề đang tạo sang FAILED");
+    }
+
+    private void execute(String sql, String what) {
+        try {
+            tx.executeWithoutResult(s -> em.createNativeQuery(sql).executeUpdate());
+        } catch (Exception e) {
+            log.error("Không chuyển được {}: {}", what, e.getMessage());
+        }
     }
 
     /** Tạo index nếu chưa có index tên này. */

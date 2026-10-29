@@ -2,7 +2,8 @@ package com.wetube.wetube_service.service.AI;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wetube.wetube_service.dto.request.CreateSubtitleRequest;
+import com.wetube.wetube_service.dto.video.SubtitleCue;
+import com.wetube.wetube_service.dto.video.SubtitleManageDto;
 import com.wetube.wetube_service.service.CloudinaryService;
 import com.wetube.wetube_service.service.video.VideoSubtitleService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -21,8 +24,8 @@ import java.util.concurrent.Executors;
 
 /**
  * Tạo phụ đề bằng Gemini: lấy audio mp3 của video từ Cloudinary, nhờ Gemini nghe + dịch
- * sang ngôn ngữ đích, dựng file WebVTT, upload lên Cloudinary và lưu vào video_subtitles.
- * Chạy nền để không chặn request upload.
+ * sang ngôn ngữ đích và lưu các câu vào video_subtitles ở dạng bản nháp (file WebVTT dựng lúc công khai).
+ * Chạy nền để không chặn request.
  */
 @Slf4j
 @Service
@@ -52,17 +55,24 @@ public class SubtitleAiService {
         return lang != null && LANGUAGE_NAMES.containsKey(lang);
     }
 
-    public void generateAsync(UUID videoId, String videoUrl, String targetLang) {
+    /**
+     * Tạo ngay dòng phụ đề PROCESSING (thay phụ đề cùng ngôn ngữ đang có) rồi chạy AI nền.
+     * Xong thì phụ đề thành bản nháp (DRAFT) để chủ video xem, sửa rồi công khai; lỗi thì FAILED.
+     */
+    public SubtitleManageDto start(UUID videoId, String videoUrl, String targetLang) {
+        SubtitleManageDto row = subtitleService.startAi(videoId, targetLang);
         executor.submit(() -> {
             try {
-                generate(videoId, videoUrl, targetLang);
+                generate(row.getId(), videoId, videoUrl, targetLang);
             } catch (Exception e) {
                 log.error("[SubtitleAI] video {} ({}) failed: {}", videoId, targetLang, e.getMessage(), e);
+                subtitleService.failAi(row.getId(), "Không tạo được phụ đề, vui lòng thử lại sau.");
             }
         });
+        return row;
     }
 
-    private void generate(UUID videoId, String videoUrl, String targetLang) throws Exception {
+    private void generate(UUID subtitleId, UUID videoId, String videoUrl, String targetLang) throws Exception {
         String audioUrl = cloudinaryService.audioUrlFor(videoUrl);
         HttpResponse<byte[]> audio = httpClient.send(
                 HttpRequest.newBuilder(URI.create(audioUrl)).timeout(Duration.ofMinutes(3)).GET().build(),
@@ -73,18 +83,14 @@ public class SubtitleAiService {
         log.info("[SubtitleAI] video {}: {} KB audio, translating to {}", videoId, audio.body().length / 1024, targetLang);
 
         String json = geminiClient.generateJsonFromAudio(audio.body(), prompt(targetLang));
-        String vtt = toWebVtt(objectMapper.readTree(json));
-        if (vtt == null) {
+        List<SubtitleCue> cues = toCues(objectMapper.readTree(json));
+        if (cues.isEmpty()) {
             log.info("[SubtitleAI] video {}: no speech detected, no subtitle created", videoId);
+            subtitleService.failAi(subtitleId, "Không nghe thấy lời nói rõ ràng trong video nên chưa tạo được phụ đề.");
             return;
         }
-
-        String url = cloudinaryService.uploadSubtitle(vtt, "subtitles/" + videoId + "_" + targetLang + ".vtt");
-        CreateSubtitleRequest req = new CreateSubtitleRequest();
-        req.setLanguage(targetLang);
-        req.setUrl(url);
-        subtitleService.addSubtitle(videoId, req);
-        log.info("[SubtitleAI] video {}: subtitle {} saved", videoId, targetLang);
+        subtitleService.completeAi(subtitleId, cues);
+        log.info("[SubtitleAI] video {}: subtitle {} draft saved ({} cues)", videoId, targetLang, cues.size());
     }
 
     private static String prompt(String targetLang) {
@@ -95,38 +101,41 @@ public class SubtitleAiService {
                 + "never guess or invent dialogue. If there is no clear speech, return [].";
     }
 
-    /** Dựng WebVTT từ mảng cue; null nếu không có cue nào. */
-    static String toWebVtt(JsonNode cues) {
-        if (!cues.isArray() || cues.isEmpty()) {
-            return null;
+    /** Mảng cue của Gemini → danh sách câu; bỏ câu trống và câu có giờ hỏng. */
+    static List<SubtitleCue> toCues(JsonNode cues) {
+        List<SubtitleCue> result = new ArrayList<>();
+        if (!cues.isArray()) {
+            return result;
         }
-        StringBuilder sb = new StringBuilder("WEBVTT\n\n");
-        int count = 0;
         for (JsonNode cue : cues) {
             String text = cue.path("translated").asText("").trim();
             if (text.isEmpty()) {
                 continue;
             }
-            sb.append(normalizeTime(cue.path("start").asText()))
-                    .append(" --> ")
-                    .append(normalizeTime(cue.path("end").asText()))
-                    .append('\n')
-                    .append(text.replace("-->", "->"))
-                    .append("\n\n");
-            count++;
+            double start;
+            double end;
+            try {
+                start = seconds(cue.path("start").asText());
+                end = seconds(cue.path("end").asText());
+            } catch (NumberFormatException e) {
+                continue;
+            }
+            if (start < 0 || end <= start) {
+                continue;
+            }
+            String original = cue.path("original").asText("").trim();
+            result.add(new SubtitleCue(start, end, text, original.isEmpty() ? null : original));
         }
-        return count == 0 ? null : sb.toString();
+        return result;
     }
 
-    /** Gemini đôi khi trả "MM:SS.mmm" hoặc "SS.mmm": đưa về "HH:MM:SS.mmm" mà player cần. */
-    static String normalizeTime(String t) {
+    /** Gemini đôi khi trả "MM:SS.mmm" hoặc "SS.mmm" thay vì "HH:MM:SS.mmm": đổi cả ba ra giây. */
+    static double seconds(String t) {
         String[] parts = t.trim().replace(',', '.').split(":");
         double seconds = 0;
         for (String part : parts) {
             seconds = seconds * 60 + Double.parseDouble(part);
         }
-        long millis = Math.round(seconds * 1000);
-        return String.format("%02d:%02d:%02d.%03d",
-                millis / 3_600_000, (millis / 60_000) % 60, (millis / 1000) % 60, millis % 1000);
+        return Math.round(seconds * 1000) / 1000.0;
     }
 }

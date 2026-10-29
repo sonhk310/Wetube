@@ -13,6 +13,7 @@ import { channelApi } from '@/app/api/channelApi';
 import { interactionApi } from "@/app/api/interactionApi";
 import { analyticsApi } from "@/app/api/analyticsApi";
 import { liveApi } from "@/app/api/liveApi";
+import { subtitleApi } from "@/app/api/subtitleApi";
 
 export const store = configureStore({
   reducer: {
@@ -29,6 +30,7 @@ export const store = configureStore({
     [interactionApi.reducerPath] : interactionApi.reducer,
     [analyticsApi.reducerPath]: analyticsApi.reducer,
     [liveApi.reducerPath]: liveApi.reducer,
+    [subtitleApi.reducerPath]: subtitleApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -44,7 +46,8 @@ export const store = configureStore({
       subscriptionsApi.middleware,
       interactionApi.middleware,
       analyticsApi.middleware,
-      liveApi.middleware
+      liveApi.middleware,
+      subtitleApi.middleware
     ),
 });
 

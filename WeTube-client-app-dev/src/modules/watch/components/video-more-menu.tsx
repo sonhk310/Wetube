@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
 import {
   DropdownMenu,
@@ -38,6 +39,7 @@ export default function VideoMoreMenu({ videoId, channelId }: { videoId: string;
   const [lang, setLang] = useState("vi");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
   if (!user?.sub) return null;
 
@@ -49,7 +51,8 @@ export default function VideoMoreMenu({ videoId, channelId }: { videoId: string;
         method: "POST",
       });
       const body = await res.json().catch(() => ({}));
-      setMessage(res.ok ? body.message : body.message || `Lỗi ${res.status}`);
+      setMessage(res.ok ? "Đang tạo phụ đề. Tạo xong là bản nháp: vào Studio để xem, sửa và công khai." : body.message || `Lỗi ${res.status}`);
+      setDone(res.ok);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Yêu cầu thất bại");
     } finally {
@@ -60,6 +63,7 @@ export default function VideoMoreMenu({ videoId, channelId }: { videoId: string;
   const closeAll = () => {
     setSubtitleOpen(false);
     setMessage(null);
+    setDone(false);
   };
 
   return (
@@ -87,7 +91,10 @@ export default function VideoMoreMenu({ videoId, channelId }: { videoId: string;
             <DialogTitle>Tạo phụ đề AI</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 text-sm">
-            <p>Gemini sẽ nghe video và tạo phụ đề dịch sang ngôn ngữ bạn chọn. Việc này mất khoảng 1 phút.</p>
+            <p>
+              Gemini sẽ nghe video và tạo phụ đề dịch sang ngôn ngữ bạn chọn. Việc này mất khoảng 1 phút. Phụ đề cùng
+              ngôn ngữ đang có sẽ bị thay.
+            </p>
             <select
               value={lang}
               onChange={(e) => setLang(e.target.value)}
@@ -100,6 +107,11 @@ export default function VideoMoreMenu({ videoId, channelId }: { videoId: string;
               ))}
             </select>
             {message && <p className="text-sm">{message}</p>}
+            {done && (
+              <Link href={`/studio/videos/${videoId}`} className="text-sm font-medium text-blue-600 hover:underline">
+                Mở trong Studio
+              </Link>
+            )}
           </div>
           <DialogFooter>
             <button
