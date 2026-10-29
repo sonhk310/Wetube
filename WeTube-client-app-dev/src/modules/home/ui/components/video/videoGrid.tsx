@@ -28,8 +28,6 @@ export default function VideoGrid({ seed }: { readonly seed?: string }) {
 
   const userId = user?.sub;
 
-  console.log("User object in VideoGrid:", user);
-
   // useEffect(() => {
   //   if (!user?.sub) {
   //     // setAllVideos([]);
@@ -55,9 +53,6 @@ export default function VideoGrid({ seed }: { readonly seed?: string }) {
   const { ref, inView } = useInView({
     threshold: 0,
   });
-
-  console.log("Query Params:", { userId: user?.sub, page, limit: LOAD_COUNT });
-  console.log("Is Skipped:", !user?.sub || !hasMore);
 
   const {
     data: recommendData,
@@ -125,8 +120,6 @@ export default function VideoGrid({ seed }: { readonly seed?: string }) {
       recommendData &&
       page < recommendData.totalPages
     ) {
-      console.log("Loading next page:", page + 1);
-
       setPage((prevPage) => prevPage + 1);
     }
   }, [inView, hasMore, isRecommendFetching, recommendData, page]);
@@ -154,13 +147,6 @@ export default function VideoGrid({ seed }: { readonly seed?: string }) {
   if (error) return <p className="p-4 text-red-500">Không tải được video</p>;
 
   const isEmpty = !isRecommendFetching && displayedVideos.length === 0;
-
-  console.log({
-    inView: inView,
-    hasMore: hasMore,
-    isFetching: isRecommendFetching,
-    "API báo hết?": recommendData?.last,
-  });
 
   return (
     <div className="p-4">

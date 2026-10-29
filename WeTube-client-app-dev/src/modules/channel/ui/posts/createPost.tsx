@@ -39,7 +39,6 @@ export default function CreatePostForm({ userId: _userId, onSubmit }: CreatePost
         const res = await uploadImage(file).unwrap();
         if (res.url) {
           setImageUrl(res.url);
-          console.log("📸 Uploaded imageUrl:", res.url);
         }
       } catch (err) {
         console.error("Upload failed:", err);

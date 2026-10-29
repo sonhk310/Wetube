@@ -36,6 +36,7 @@ import ReportDialog from "@/modules/reports/report-dialog";
 import LinkifiedText from "../linkified-text";
 import { Spinner } from "@/components/ui/spinner";
 import PremiumBadge from "@/components/premium-badge";
+import { confirmDialog } from "@/lib/dialogs";
 
 export interface Comment {
     id: string;
@@ -210,7 +211,12 @@ export const CommentComponent = ({
     const listTargetId = videoId ?? targetId;
 
     const handleDelete = async () => {
-        if (!window.confirm(isOwner ? "Xoá bình luận này?" : "Gỡ bình luận này khỏi video?")) return;
+        const ok = await confirmDialog({
+            title: isOwner ? "Xoá bình luận này?" : "Gỡ bình luận này khỏi video?",
+            confirmLabel: isOwner ? "Xoá" : "Gỡ",
+            destructive: true,
+        });
+        if (!ok) return;
         try {
             await deleteComment({ id: comment.id, targetId: listTargetId }).unwrap();
             onDeleted?.(comment.id);

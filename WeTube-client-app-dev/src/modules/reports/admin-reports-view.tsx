@@ -14,6 +14,7 @@ import {
 } from "./reports-api";
 import { Skeleton } from "@/components/ui/skeleton";
 import ChannelQuickView from "./channel-quick-view";
+import { confirmDialog } from "@/lib/dialogs";
 
 /** Khung chờ cùng hình với thẻ báo cáo: ảnh video bên trái, vài dòng chữ bên phải. */
 function ReportListSkeleton() {
@@ -74,6 +75,37 @@ const FILTERS: { label: string; value?: ReportStatus }[] = [
   { label: "Tất cả" },
 ];
 
+/** Hành động cần xác nhận trước khi thực hiện (DISMISS không cần). */
+const CONFIRM_BEFORE: Partial<Record<ReportAction, Parameters<typeof confirmDialog>[0]>> = {
+  HIDE_VIDEO: {
+    title: "Ẩn video này?",
+    message: "Video sẽ ẩn với mọi người (trừ chủ video).",
+    confirmLabel: "Ẩn video",
+    destructive: true,
+  },
+  DELETE_COMMENT: {
+    title: "Xoá bình luận này?",
+    message: "Các phản hồi của bình luận cũng bị xoá.",
+    confirmLabel: "Xoá bình luận",
+    destructive: true,
+  },
+  HIDE_CHANNEL: {
+    title: "Ẩn kênh này?",
+    message: "Kênh và mọi video đang xem được của kênh sẽ ẩn với mọi người (trừ chủ kênh).",
+    confirmLabel: "Ẩn kênh",
+    destructive: true,
+  },
+  UNHIDE_CHANNEL: {
+    title: "Bỏ ẩn kênh này?",
+    message: "Các video bị ẩn cùng kênh sẽ trở lại trạng thái trước khi bị ẩn.",
+    confirmLabel: "Bỏ ẩn kênh",
+  },
+  UNHIDE_VIDEO: {
+    title: "Bỏ ẩn video này?",
+    confirmLabel: "Bỏ ẩn video",
+  },
+};
+
 /**
  * Trang quản trị: admin xem báo cáo vi phạm (video, bình luận, kênh) và ẩn video / xoá bình luận / ẩn kênh /
  * bác bỏ; video hoặc kênh đang bị ẩn thì có nút bỏ ẩn.
@@ -106,19 +138,8 @@ export default function AdminReportsView() {
   }, [isAdmin, load]);
 
   const resolve = async (id: string, action: ReportAction) => {
-    if (action === "HIDE_VIDEO" && !window.confirm("Ẩn video này với mọi người (trừ chủ video)?")) return;
-    if (action === "DELETE_COMMENT" && !window.confirm("Xoá bình luận này (kèm các phản hồi)?")) return;
-    if (
-      action === "HIDE_CHANNEL" &&
-      !window.confirm("Ẩn kênh này và mọi video đang xem được của kênh với mọi người (trừ chủ kênh)?")
-    )
-      return;
-    if (
-      action === "UNHIDE_CHANNEL" &&
-      !window.confirm("Bỏ ẩn kênh này? Các video bị ẩn cùng kênh sẽ trở lại trạng thái trước khi bị ẩn.")
-    )
-      return;
-    if (action === "UNHIDE_VIDEO" && !window.confirm("Bỏ ẩn video này?")) return;
+    const question = CONFIRM_BEFORE[action];
+    if (question && !(await confirmDialog(question))) return;
     setBusyId(id);
     try {
       await reportsApi.resolve(id, action);

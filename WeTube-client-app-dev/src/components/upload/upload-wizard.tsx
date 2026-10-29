@@ -24,6 +24,7 @@ import { UploadPreview } from "./upload-preview";
 import { UploadStepper } from "./upload-stepper";
 import { UploadFooterStatus, UploadTopBar } from "./upload-status";
 import type { FormErrors, StepId, UploadState, VideoMeta, WizardForm } from "./types";
+import { confirmDialog } from "@/lib/dialogs";
 
 const STEPS: { id: StepId; label: string }[] = [
   { id: "details", label: "Chi tiết" },
@@ -337,12 +338,26 @@ export function UploadWizard({ file, draft, onClose }: UploadWizardProps) {
   const handleClose = async () => {
     if (publishing || savingDraft) return;
     if (upload.phase === "uploading" || upload.phase === "processing") {
-      if (!window.confirm("Huỷ tải lên? Video sẽ không được lưu.")) return;
+      const discard = await confirmDialog({
+        title: "Huỷ tải lên?",
+        message: "Video sẽ không được lưu.",
+        confirmLabel: "Huỷ tải lên",
+        cancelLabel: "Tiếp tục tải lên",
+        destructive: true,
+      });
+      if (!discard) return;
       abortRef.current?.abort();
     } else if (upload.phase === "done") {
       // Như YouTube: đóng là lưu những gì đã điền vào bản nháp (vẫn là bản nháp, chưa đăng)
       if (Object.keys(validate(form, true)).length > 0) {
-        if (!window.confirm("Các thay đổi đang có lỗi ở bước Chi tiết sẽ không được lưu. Vẫn đóng?")) return;
+        const closeAnyway = await confirmDialog({
+          title: "Vẫn đóng?",
+          message: "Các thay đổi đang có lỗi ở bước Chi tiết sẽ không được lưu.",
+          confirmLabel: "Đóng",
+          cancelLabel: "Ở lại",
+          destructive: true,
+        });
+        if (!closeAnyway) return;
       } else {
         setSavingDraft(true);
         try {

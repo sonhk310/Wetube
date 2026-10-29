@@ -81,9 +81,6 @@ export default function StudioNavbar() {
               variant="ghost"
               size="icon"
               className="rounded-full px-4 py-2 flex items-center gap-2 text-black shadow-md transition-all duration-200"
-              onClick={() => {
-                console.log("Notification button clicked");
-              }}
             >
               <Bell className="h-10 w-10" />
             </Button>

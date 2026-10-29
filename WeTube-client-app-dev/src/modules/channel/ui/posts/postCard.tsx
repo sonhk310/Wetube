@@ -6,6 +6,7 @@ import {Post} from "@/types/post";
 import {useDeletePostMutation, useUpdatePostMutation} from "@/app/api/postApi";
 import EditPostModal from "@/modules/channel/ui/posts/editPostModal";
 import {useState} from "react";
+import { confirmDialog } from "@/lib/dialogs";
 
 interface PostCardProps {
     post: Post;
@@ -18,7 +19,13 @@ export default function PostCard({post, userId}: PostCardProps) {
     const [isEditOpen, setIsEditOpen] = useState(false);
 
     const handleDelete = async (id: string) => {
-        if (confirm("Bạn có chắc chắn muốn xóa bài viết này?")) {
+        const ok = await confirmDialog({
+            title: "Xoá bài viết?",
+            message: "Bạn có chắc chắn muốn xoá bài viết này?",
+            confirmLabel: "Xoá",
+            destructive: true,
+        });
+        if (ok) {
             await deletePost(id);
         }
     };

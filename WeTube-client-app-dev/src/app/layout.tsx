@@ -8,6 +8,7 @@ import { LoadingBarProvider } from "@/contexts/loading-bar-context";
 import { LoadingBar } from "@/components/LoadingBar";
 import { NavigationEvents } from "@/components/NavigationEvents";
 import { Toaster } from "@/components/ui/sonner";
+import AppDialogHost from "@/components/app-dialog-host";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,6 +59,8 @@ export default function RootLayout({
               {children}
               {/* Toast của shadcn (Sonner), giữa cạnh dưới; gọi qua lib/toastEmitter hoặc toast của "sonner" */}
               <Toaster position="bottom-center" />
+              {/* Hộp thoại xác nhận / thông báo: gọi qua confirmDialog / noticeDialog của lib/dialogs */}
+              <AppDialogHost />
             </Providers>
           </AuthProvider>
         </LoadingBarProvider>

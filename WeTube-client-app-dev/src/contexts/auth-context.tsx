@@ -65,15 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const fetchUser = async () => {
       try {
         const response = await apiClient.get<User>("/me");
-        const user = response.data;
-        console.log("✅ Data from backendddddd:", response.data);
-        console.log("✅ Data from Usseerrrr:", user.playlists);
-        // Lấy playlist có type là HISTORY
-        const historyPlaylist = user.playlists.find(
-        (pl) => pl.playlistType === "HISTORY"
-        );
-        console.log("❤ PLaylist Data:", historyPlaylist?.playlistId);
-        setUser(user);
+        setUser(response.data);
         // Vừa đăng nhập từ liên kết mời phòng xem chung: quay lại đúng phòng
         try {
           const back = window.sessionStorage.getItem("wetube_after_login");
@@ -85,9 +77,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // sessionStorage bị chặn: ở lại trang hiện tại
         }
       } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          console.log("User is not authenticated (handled gracefully).");
-        } else {
+        // 401 = chưa đăng nhập, không phải lỗi
+        if (!(axios.isAxiosError(error) && error.response?.status === 401)) {
           console.error(
             "❌ An unexpected error occurred while fetching user:",
             error
@@ -102,7 +93,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchUser();
 
     const handleAuthFailure = () => {
-      console.log("Auth failure event received, clearing user.");
       setUser(null);
     };
     window.addEventListener("auth-failure", handleAuthFailure);

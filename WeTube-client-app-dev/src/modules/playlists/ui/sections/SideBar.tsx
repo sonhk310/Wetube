@@ -17,6 +17,7 @@ import { playlistService } from "../list/playlist-API";
 import { useHistoryStore } from "@/store/zustand/useHistoryStore";
 import { useWatchProgressStore } from "@/lib/watchProgress";
 import { toastEmitter } from "@/lib/toastEmitter";
+import { confirmDialog } from "@/lib/dialogs";
 
 const Sidebar = () => {
   const query = useHistoryStore((s) => s.query);
@@ -33,7 +34,13 @@ const Sidebar = () => {
   }, []);
 
   const handleClear = async () => {
-    if (!window.confirm("Xoá toàn bộ nhật ký xem? Thao tác này không hoàn tác được.")) return;
+    const ok = await confirmDialog({
+      title: "Xoá toàn bộ nhật ký xem?",
+      message: "Thao tác này không hoàn tác được.",
+      confirmLabel: "Xoá nhật ký",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await playlistService.clearHistory();

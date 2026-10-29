@@ -65,16 +65,10 @@ export default function VideosSection() {
   });
 
   useEffect(() => {
-    if (allPlaylists) {
-      console.log("✅ Playlists Fetched:", allPlaylists);
-    }
-    if (playlistDetail) {
-      console.log("✅ Playlist Detail Fetched:", playlistDetail);
-    }
     if (error) {
       console.error("❌ API Error:", error);
     }
-  }, [allPlaylists, playlistDetail, error]);
+  }, [error]);
 
   if (isLoading) {
     return <VideosSectionSkeleton />;
