@@ -7,6 +7,7 @@ import VideoTags from "./components/video-tags";
 import VideosList from "./components/videos-list";
 import PlaylistPanel from "./components/playlist-panel";
 import ChaptersPanel from "./components/chapters-panel";
+import AdCard from "@/modules/ads/ad-card";
 import {useVideoStore } from "@/store/zustand/videoStore";
 import { useEffect } from "react";
 import { useTheater } from "@/hooks/use-controls";
@@ -79,6 +80,8 @@ export default function App({ videoId }: AppProps) {
         </div>
         <section className="col-span-1 md:col-span-4 xxl:col-span-6 md:row-start-2 md:col-start-1">
           <VideoMetadata />
+          {/* Điện thoại: quảng cáo nằm dưới thông tin video, trước bình luận */}
+          <AdCard variant="side" className="my-4 md:hidden" />
           <Comments />
         </section>
         <section
@@ -87,6 +90,7 @@ export default function App({ videoId }: AppProps) {
             theater ? "md:row-start-2 md:pt-2" : "md:row-start-1 md:row-span-2"
           )}
         >
+          <AdCard variant="side" className="hidden md:block" />
           <ChaptersPanel videoId={videoId} />
           <PlaylistPanel videoId={videoId} />
           <VideoTags />

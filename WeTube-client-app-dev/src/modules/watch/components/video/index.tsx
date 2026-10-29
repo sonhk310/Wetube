@@ -35,6 +35,8 @@ import PlayerContextMenu, { CONTEXT_MENU_SIZE } from "./context-menu";
 import { useCopyToClipboard } from "@/lib/clipboard";
 import { toastEmitter } from "@/lib/toastEmitter";
 import EndScreen from "./end-screen";
+import PrerollAd from "@/modules/ads/preroll-ad";
+import { consumeContinuation, markContinuation, markPrerollShown, prerollDue } from "@/modules/ads/ads";
 import type { RecommendVideoDto } from "@/types/video";
 import { usePlaylistQueue } from "../../lib/use-playlist-queue";
 import { chapterIndexAt, parseChapters } from "../../lib/chapters";
@@ -172,7 +174,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
   const subtitles = video?.subtitles ?? [];
   const description = video?.description;
   const { setSeek } = useControls();
-  const { user } = useAuth();
+  const { user, isPremium, isLoading: authLoading } = useAuth();
   const { theater, toggleTheater } = useTheater();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -213,6 +215,42 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
   const scrubState = useRef<{ wasPlaying: boolean; lastSeek: number } | null>(null);
   const lastSubtitleIndex = useRef(0);
   const swallowTap = useRef(false);
+
+  // ---------- quảng cáo trước video (pre-roll) ----------
+  // Chỉ cho người chưa có Premium, tối đa 15 phút một lần; không hiện khi mở video tiếp theo của trình phát,
+  // mở bằng ?t= hay phát tiếp từ chỗ đang xem dở (start > 0)
+  const [preroll, setPreroll] = useState(false);
+  const prerollRef = useRef(false);
+  prerollRef.current = preroll;
+  const authRef = useRef({ isPremium, authLoading });
+  authRef.current = { isPremium, authLoading };
+  const startPosition = useRef<number | null>(null);
+  const playbackBegun = useRef(false);
+
+  const beginPlayback = useCallback(() => {
+    const v = videoRef.current;
+    // Chưa biết có phải Premium không thì chờ: effect bên dưới gọi lại khi đăng nhập xong
+    if (!v || playbackBegun.current || authRef.current.authLoading) return;
+    playbackBegun.current = true;
+    const continuation = consumeContinuation(videoId);
+    if (!authRef.current.isPremium && startPosition.current === 0 && !continuation && prerollDue()) {
+      markPrerollShown();
+      setWaiting(false);
+      setPreroll(true);
+      return;
+    }
+    // Tự phát như YouTube; trình duyệt chặn thì chờ người xem bấm nút phát
+    v.play().catch(() => setWaiting(false));
+  }, [videoId]);
+
+  useEffect(() => {
+    if (!authLoading && startPosition.current !== null) beginPlayback();
+  }, [authLoading, beginPlayback]);
+
+  const finishPreroll = useCallback(() => {
+    setPreroll(false);
+    videoRef.current?.play().catch(() => setWaiting(false));
+  }, []);
 
   // Sang video khác: tắt lặp lại, đóng menu chuột phải (như YouTube)
   useEffect(() => {
@@ -313,6 +351,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
         videoRef.current?.play().catch(() => {});
         return;
       }
+      markContinuation(id);
       const inList = queueRef.current.detail?.videos.some((v) => v.videoId === id);
       router.push(inList ? queueRef.current.hrefFor(id) : `/watch/${id}`);
     },
@@ -335,7 +374,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
   // ---------- thao tác ----------
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
-    if (!v) return;
+    if (!v || prerollRef.current) return;
     if (v.paused || v.ended) {
       v.play().catch(() => {});
       showFlash("play");
@@ -358,7 +397,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
     const onSeek = (event: Event) => {
       const time = (event as CustomEvent<number>).detail;
       const v = videoRef.current;
-      if (!v || typeof time !== "number") return;
+      if (!v || typeof time !== "number" || prerollRef.current) return;
       seekTo(time);
       v.play().catch(() => {});
     };
@@ -520,8 +559,8 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
       v.currentTime = start;
       setCurrentTime(start);
     }
-    // Tự phát như YouTube; trình duyệt chặn thì chờ người xem bấm nút phát
-    v.play().catch(() => setWaiting(false));
+    startPosition.current = start;
+    beginPlayback();
   };
 
   // Thanh tiến trình chạy mượt theo từng khung hình khi đang phát
@@ -594,7 +633,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
       const target = e.target as HTMLElement | null;
       if ((e.key === " " || e.key === "Enter") && target?.closest("button, a, [role='slider']")) return;
       const v = videoRef.current;
-      if (!v) return;
+      if (!v || prerollRef.current) return;
       const inPlayer = !!containerRef.current?.contains(document.activeElement);
 
       // Shift+N / Shift+P: video sau / trước trong danh sách phát
@@ -860,7 +899,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
       )}
 
       {/* Chưa phát (trình duyệt chặn tự phát) */}
-      {!waiting && !failed && !ended && !started && !playing && (
+      {!waiting && !failed && !ended && !started && !playing && !preroll && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <button
             type="button"
@@ -872,6 +911,8 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
           </button>
         </div>
       )}
+
+      {preroll && <PrerollAd onDone={finishPreroll} />}
 
       {failed && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80 px-6 text-center text-white">

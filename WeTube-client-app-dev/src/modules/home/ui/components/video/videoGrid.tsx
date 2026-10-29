@@ -13,8 +13,11 @@ import { SHORTS_SHELF_AFTER, SHORTS_SHELF_AFTER_MOBILE, splitHomeFeed } from "@/
 import { useIsMobile } from "@/hooks/use-mobile";
 import HomeShortsShelf from "./homeShortsShelf";
 import { SearchIcon } from "lucide-react";
+import AdCard from "@/modules/ads/ad-card";
 
 const LOAD_COUNT = 18;
+/** Quảng cáo nội bộ nằm ở vị trí thứ 4 của lưới (chỉ một thẻ). */
+const AD_POSITION = 3;
 
 export default function VideoGrid({ seed }: { readonly seed?: string }) {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -161,7 +164,7 @@ export default function VideoGrid({ seed }: { readonly seed?: string }) {
 
   return (
     <div className="p-4">
-      <VideoRow videos={feed.before} />
+      <VideoRow videos={feed.before} adAt={AD_POSITION} />
       <HomeShortsShelf shorts={feed.shorts} />
       <VideoRow videos={feed.after} />
 
@@ -206,16 +209,24 @@ export default function VideoGrid({ seed }: { readonly seed?: string }) {
   );
 }
 
-const VideoRow = ({ videos }: { videos: RecommendedVideoItem[] }) =>
-  videos.length === 0 ? null : (
+const VideoRow = ({ videos, adAt }: { videos: RecommendedVideoItem[]; adAt?: number }) => {
+  if (videos.length === 0) return null;
+  // Quảng cáo nội bộ (không hiện cho Premium) chen vào một lần ở hàng đầu, cùng cỡ thẻ video
+  const adIndex = adAt === undefined ? -1 : Math.min(adAt, videos.length);
+  return (
     <div className="flex flex-wrap gap-4">
-      {videos.map((video) => (
+      {videos.flatMap((video, i) => [
+        i === adIndex ? <AdCard key="ad" variant="feed" className="sm:w-[calc(33.333%-1rem)]" /> : null,
         <div key={video.id} className="w-full sm:w-[calc(33.333%-1rem)]">
           <VideoCard {...video} />
-        </div>
-      ))}
+        </div>,
+      ])}
+      {adIndex === videos.length && (
+        <AdCard key="ad" variant="feed" className="sm:w-[calc(33.333%-1rem)]" />
+      )}
     </div>
   );
+};
 
 const VideoGridSkeleton = () => (
   <div className="p-4">
