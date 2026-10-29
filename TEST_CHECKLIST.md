@@ -502,3 +502,5 @@ Bản thiết kế: `docs/superpowers/specs/2026-10-29-subtitle-review-design.md
 | 29.12 | Video **không có lời nói** (chỉ nhạc / im lặng) | Sau khi tạo: dòng đỏ "Không nghe thấy lời nói rõ ràng trong video…" + nút **Thử lại** và nút xoá | |
 | 29.13 | Trang xem video của mình → nút "…" → **Tạo phụ đề AI** | Báo "Đang tạo phụ đề. Tạo xong là bản nháp: vào Studio để xem, sửa và công khai." + link **Mở trong Studio** | |
 | 29.14 | Mở trình sửa trên điện thoại | Video ở trên, danh sách câu ở dưới, không tràn ngang | |
+| 29.15 | Xem mục Phụ đề AI (hộp thoại tải lên và Studio) và hộp thoại "Tạo phụ đề AI" ở trang xem | Có dòng "Giới hạn: chỉ tạo phụ đề AI cho video dài tối đa 10 phút; mỗi người tối đa 5 lượt mỗi giờ và cả WeTube tối đa 20 lượt mỗi ngày." | |
+| 29.16 | Tải lên (hoặc mở ở Studio) một video **dài hơn 10 phút** | Nút "Tạo phụ đề AI" khoá, kèm "Video dài m:ss, quá 10 phút nên không tạo được phụ đề AI." Ở trang xem, nút "…" → Tạo phụ đề AI → báo "Chỉ tạo được phụ đề AI cho video dài tối đa 10 phút." | |
