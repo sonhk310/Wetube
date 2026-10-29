@@ -1,6 +1,6 @@
 # Thiết kế: Thanh toán PayPal sandbox (đường thứ hai cạnh MoMo)
 
-Ngày: 2026-10-29. Trạng thái: **chờ anh duyệt**. Anh nói 29/10: MoMo sandbox lỗi (`resultCode 99` cho mọi yêu cầu, `developers.momo.vn` 403, đăng ký không được), muốn thêm PayPal sandbox, anh đã có Client ID và Secret.
+Ngày: 2026-10-29. Trạng thái: **anh duyệt 29/10 (tỉ giá 1 USD = 25.835,5 ₫, chỉ gói Basic, capture khi quay về, nhãn nút không ghi số USD); đã code, chờ anh báo push + deploy**. Anh nói 29/10: MoMo sandbox lỗi (`resultCode 99` cho mọi yêu cầu, `developers.momo.vn` 403, đăng ký không được), muốn thêm PayPal sandbox, anh đã có Client ID và Secret.
 
 ## 1. Vì sao làm
 - PRD 4.1.5 / BRD FR-7.3 đòi "một cổng thanh toán tích hợp", không chỉ định MoMo. MoMo hỏng thì không ai mua được Premium, quyền lợi P1 không có đường vào.
@@ -20,7 +20,7 @@ Ngày: 2026-10-29. Trạng thái: **chờ anh duyệt**. Anh nói 29/10: MoMo sa
 - Cookie đăng nhập (`SameSite=Strict`) không đi kèm lúc PayPal chuyển về, nên `/return` và `/cancel` là công khai (`permitAll`); an toàn vì chỉ capture được đơn đã tồn tại và người mua đã chấp thuận, và gói luôn cấp cho chủ đơn đã lưu.
 
 ## 4. Tiền tệ (PayPal không có VND)
-- Đổi VND → USD theo **tỉ giá cố định** trong biến `PAYPAL_VND_PER_USD` (mặc định 25000), làm tròn 2 chữ số. Gói Basic 99.000 ₫ → 3,96 USD.
+- Đổi VND → USD theo **tỉ giá cố định** trong biến `PAYPAL_VND_PER_USD` (mặc định 25835,5), làm tròn 2 chữ số. Gói Basic 99.000 ₫ → 3,83 USD.
 - Nút không ghi số USD (tránh phải thêm API báo giá); số tiền USD hiện ở trang PayPal.
 
 ## 5. Bảo mật / vận hành
@@ -37,7 +37,7 @@ Ngày: 2026-10-29. Trạng thái: **chờ anh duyệt**. Anh nói 29/10: MoMo sa
 | `PAYPAL_SECRET` | Secret sandbox |
 | `PAYPAL_BASE` | `https://api-m.sandbox.paypal.com` |
 | `PAYPAL_RETURN_BASE` | `https://wetube-service.vibe.tinhgon.xyz/api/payment/paypal` |
-| `PAYPAL_VND_PER_USD` | tuỳ chọn, mặc định 25000 |
+| `PAYPAL_VND_PER_USD` | tuỳ chọn, mặc định 25835.5 |
 
 Dùng lại `CLIENT_URL` đã có. Thiếu biến PayPal thì nút PayPal báo "chưa cấu hình", MoMo không bị ảnh hưởng.
 
@@ -51,7 +51,7 @@ Dùng lại `CLIENT_URL` đã có. Thiếu biến PayPal thì nút PayPal báo "
 - **Anh thử:** mua thật bằng tài khoản mua giả PayPal sandbox, thấy Premium có ngay.
 
 ## 9. Em tự quyết (anh xem khi đọc)
-- Tỉ giá cố định 25.000 ₫ = 1 USD, cấu hình bằng biến.
+- Tỉ giá cố định 1 USD = 25.835,5 ₫ (anh chốt), cấu hình bằng biến.
 - Chỉ gói Basic; nhãn nút không ghi số USD.
 - Capture khi quay về, không webhook.
 - Dùng chung bảng `payment_momo` với `provider = "PAYPAL"` (không đổi cấu trúc DB; tên bảng chưa đổi để khỏi phải migrate).
