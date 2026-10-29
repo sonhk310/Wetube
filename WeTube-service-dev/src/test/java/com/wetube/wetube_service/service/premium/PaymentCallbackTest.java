@@ -52,8 +52,8 @@ class PaymentCallbackTest {
     void setUp() {
         ReflectionTestUtils.setField(momo, "accessKey", ACCESS_KEY);
         ReflectionTestUtils.setField(momo, "secretKey", SECRET_KEY);
-        service = new PaymentServiceImpl(momo, paymentRepo, premiumRepo, mock(SubPackRepository.class),
-                mock(UserRepository.class), premiumService);
+        service = new PaymentServiceImpl(momo, paymentRepo, mock(SubPackRepository.class),
+                mock(UserRepository.class), new PremiumGranter(premiumRepo, premiumService));
         ReflectionTestUtils.setField(service, "verifySignature", true);
 
         SubPack pack = SubPack.builder().id(UUID.randomUUID()).name("Basic Plan")

@@ -87,6 +87,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/payment/momo/ipn", "/api/payment/momo/redirect",
                                 "/api/payment/momo/notify").permitAll()
 
+                        // PayPal chuyển trình duyệt về (cookie SameSite=Strict không đi kèm): chỉ thu được đơn đã tồn tại và đã chấp thuận
+                        .requestMatchers(HttpMethod.GET, "/api/payment/paypal/return", "/api/payment/paypal/cancel").permitAll()
+
                         // Ghi nhận lượt xem: khách chưa đăng nhập cũng được tính
                         .requestMatchers(HttpMethod.POST, "/api/videos/*/view").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/videos/*/watch-time").permitAll()

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/apiFetch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { payWithMomo } from "../../lib/pay";
 
 type SubPack = {
   id: string;
@@ -61,29 +62,7 @@ export default function PremiumFeatures() {
   const handlePayment = async (subPackId: string) => {
     setPayLoading(subPackId);
     try {
-      const res = await apiFetch(
-        `${API_PREFIX}/payment/momo/create`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user?.sub,
-            subPackId,
-            returnUrl: "https://wetube-client-app.onrender.com/",
-          }),
-        }
-      );
-
-      if (!res.ok) throw new Error("Gọi API thanh toán thất bại");
-
-      const data = await res.json();
-      console.log("MoMo response:", data);
-
-      if (data.payUrl) window.location.href = data.payUrl;
-      else alert("Không nhận được liên kết thanh toán từ MoMo");
-    } catch (err) {
-      console.error(err);
-      alert("Có lỗi khi tạo thanh toán");
+      await payWithMomo(subPackId, user?.sub);
     } finally {
       setPayLoading(null);
     }

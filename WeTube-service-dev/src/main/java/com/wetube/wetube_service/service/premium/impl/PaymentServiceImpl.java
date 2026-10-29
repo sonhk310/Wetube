@@ -1,7 +1,5 @@
     package com.wetube.wetube_service.service.premium.impl;
 
-    import java.time.LocalDate;
-    import java.time.ZoneId;
     import java.util.Base64;
     import java.util.HashMap;
     import java.util.Map;
@@ -22,16 +20,13 @@ import com.wetube.wetube_service.configuration.MomoConfiguration;
     import com.wetube.wetube_service.dto.response.PaymentResponseDto;
     import com.wetube.wetube_service.entity.AppUser;
     import com.wetube.wetube_service.entity.premium.PaymentMomo;
-    import com.wetube.wetube_service.entity.premium.PremiumUser;
     import com.wetube.wetube_service.entity.premium.SubPack;
-    import com.wetube.wetube_service.enumeration.ActiveStatus;
     import com.wetube.wetube_service.enumeration.PaymentStatus;
     import com.wetube.wetube_service.repository.premium.PaymentMomoRepository;
-    import com.wetube.wetube_service.repository.premium.PremiumUserRepository;
     import com.wetube.wetube_service.repository.premium.SubPackRepository;
     import com.wetube.wetube_service.repository.UserRepository;
     import com.wetube.wetube_service.service.premium.PaymentService;
-    import com.wetube.wetube_service.service.premium.PremiumUserService;
+    import com.wetube.wetube_service.service.premium.PremiumGranter;
 import com.wetube.wetube_service.utility.HmacSHA256Util;
 
 import jakarta.transaction.Transactional;
@@ -43,12 +38,10 @@ import jakarta.transaction.Transactional;
 
         private final MomoConfiguration momoConfiguration;
         private final PaymentMomoRepository paymentRepo;
-        private final PremiumUserRepository premiumUserRepo;
         private final SubPackRepository subPackRepo;
         private final UserRepository userRepo;
-        private final PremiumUserService premiumUserService;
+        private final PremiumGranter premiumGranter;
 
-        private static final ZoneId VIETNAM = ZoneId.of("Asia/Ho_Chi_Minh");
         private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PaymentServiceImpl.class);
 
         /** Đặt MOMO_VERIFY_SIGNATURE=false để tạm tắt kiểm tra chữ ký nếu cần gỡ lỗi. */
@@ -203,26 +196,7 @@ import jakarta.transaction.Transactional;
                 }
 
                 if ("0".equals(resultCode)) {
-                    // Gia hạn cộng dồn: gói mới bắt đầu sau ngày hết hạn xa nhất còn hiệu lực, không mất ngày còn lại
-                    LocalDate start = premiumUserService.premiumUntil(payment.getUser().getId())
-                            .map(until -> until.plusDays(1))
-                            .orElseGet(() -> LocalDate.now(VIETNAM));
-
-                    PremiumUser premiumUser = PremiumUser.builder()
-                            .user(payment.getUser())
-                            .subpack(payment.getSubpack())
-                            .startDate(start)
-                            .endDate(start.plusDays(payment.getSubpack().getDurationDays()))
-                            .status(ActiveStatus.ACTIVE)
-                            .build();
-
-                    premiumUserRepo.saveAndFlush(premiumUser);
-                 
-                    payment.setPremiumUser(premiumUser);
-                    payment.setStatus(PaymentStatus.SUCCESS);
-                    payment.setEventType("PAYMENT_SUCCESS");
-
-                    
+                    premiumGranter.grant(payment);
                     paymentRepo.save(payment);
                 } else {
                     payment.setStatus(PaymentStatus.FAILED);

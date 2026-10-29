@@ -47,6 +47,8 @@ public class RateLimiter {
         LIVE_REPLAY(10, Duration.ofHours(1), "Bạn tải bản ghi lên quá nhiều trong giờ này, vui lòng thử lại sau."),
         /** Premium tải video về máy (mỗi lần tốn băng thông Cloudinary như một lần xem trọn video). */
         DOWNLOAD(30, Duration.ofHours(1), "Bạn đã tải xuống quá nhiều video trong giờ này, vui lòng thử lại sau."),
+        /** Tạo đơn thanh toán PayPal (mỗi lần gọi một đơn mới ở PayPal). */
+        PAYMENT_CREATE(10, Duration.ofHours(1), "Bạn tạo đơn thanh toán quá nhiều trong giờ này, vui lòng thử lại sau."),
         /** Tải ảnh bìa / ảnh đại diện kênh lên Cloudinary. */
         CHANNEL_IMAGE(20, Duration.ofHours(1), "Bạn tải ảnh lên quá nhiều trong giờ này, vui lòng thử lại sau.");
 
