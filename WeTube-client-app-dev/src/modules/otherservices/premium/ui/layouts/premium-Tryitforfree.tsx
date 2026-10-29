@@ -33,7 +33,7 @@ export default function PremiumTryitforfree() {
   const { user } = useAuth();
 
   return (
-    <section className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center text-center px-4 py-20pt-10 pb-20">
+    <section className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center text-center px-4 pt-10 pb-20">
       <div className="max-w-3xl w-full flex flex-col items-center">
        
         <div className="flex items-center justify-center gap-x-4 mb-6">
