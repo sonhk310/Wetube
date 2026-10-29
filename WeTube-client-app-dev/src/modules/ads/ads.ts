@@ -106,3 +106,36 @@ export function consumeContinuation(videoId: string): boolean {
   continuationVideoId = null;
   return isContinuation;
 }
+
+// ---------- quảng cáo giữa video (mid-roll) ----------
+
+/** Video ngắn hơn chừng này (giây) thì không chen quảng cáo giữa video. */
+export const MIDROLL_MIN_DURATION_S = 30;
+/** Cứ mỗi chừng này giây video thì thêm một quảng cáo (ít nhất 1). */
+export const MIDROLL_EVERY_S = 180;
+/** Tối đa bao nhiêu quảng cáo giữa video. */
+export const MIDROLL_MAX = 3;
+
+/** Bộ sinh số ngẫu nhiên có hạt giống (mulberry32): cùng hạt giống và độ dài thì cùng các điểm quảng cáo. */
+function seededRandom(seed: number) {
+  let a = Math.floor(seed * 2 ** 32) >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Các giây chen quảng cáo giữa video, tăng dần. Video được chia thành các đoạn bằng nhau (mỗi đoạn một quảng cáo),
+ * điểm nằm ngẫu nhiên trong 60% giữa của đoạn: không bao giờ ở đầu hay cuối video và các quảng cáo cách xa nhau.
+ */
+export function midrollPoints(duration: number, seed: number): number[] {
+  if (!Number.isFinite(duration) || duration < MIDROLL_MIN_DURATION_S) return [];
+  const count = Math.min(MIDROLL_MAX, Math.max(1, Math.floor(duration / MIDROLL_EVERY_S)));
+  const random = seededRandom(seed);
+  const slot = duration / count;
+  return Array.from({ length: count }, (_, i) => Math.round((slot * i + slot * (0.2 + 0.6 * random())) * 10) / 10);
+}

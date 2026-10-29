@@ -12,6 +12,8 @@ interface ProgressBarProps {
   buffered: number;
   /** Có chương thì thanh tua chia đoạn và nhãn rê chuột hiện tên chương. */
   chapters: Chapter[];
+  /** Giây có quảng cáo sắp tới (người chưa Premium): hiện vạch vàng trên thanh. */
+  adMarks?: number[];
   onScrubStart: () => void;
   onScrub: (time: number) => void;
   onScrubEnd: (time: number) => void;
@@ -23,6 +25,7 @@ export default function ProgressBar({
   duration,
   buffered,
   chapters,
+  adMarks = [],
   onScrubStart,
   onScrub,
   onScrubEnd,
@@ -112,6 +115,17 @@ export default function ProgressBar({
           </div>
         ))}
       </div>
+      {/* Vạch vàng: chỗ sắp có quảng cáo (hết quảng cáo thì vạch biến mất) */}
+      {duration > 0 &&
+        adMarks.map((time) => (
+          <span
+            key={time}
+            data-ad-mark
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 z-[1] h-2.5 w-[5px] -translate-x-1/2 -translate-y-1/2 rounded-[1px] bg-yellow-400 shadow-[0_0_2px_rgba(0,0,0,0.6)]"
+            style={{ left: `${Math.min(100, (time / duration) * 100)}%` }}
+          />
+        ))}
       <div
         className={cn(
           "pointer-events-none absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-600 transition-transform duration-100",

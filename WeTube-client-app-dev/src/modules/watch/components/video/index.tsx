@@ -36,7 +36,7 @@ import { useCopyToClipboard } from "@/lib/clipboard";
 import { toastEmitter } from "@/lib/toastEmitter";
 import EndScreen from "./end-screen";
 import PrerollAd from "@/modules/ads/preroll-ad";
-import { consumeContinuation, markContinuation, markPrerollShown, prerollDue } from "@/modules/ads/ads";
+import { consumeContinuation, markContinuation, markPrerollShown, midrollPoints, prerollDue } from "@/modules/ads/ads";
 import type { RecommendVideoDto } from "@/types/video";
 import { usePlaylistQueue } from "../../lib/use-playlist-queue";
 import { chapterIndexAt, parseChapters } from "../../lib/chapters";
@@ -221,9 +221,9 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
   // ---------- quảng cáo trước video (pre-roll) ----------
   // Chỉ cho người chưa có Premium, tối đa 15 phút một lần; không hiện khi mở video tiếp theo của trình phát,
   // mở bằng ?t= hay phát tiếp từ chỗ đang xem dở (start > 0)
-  const [preroll, setPreroll] = useState(false);
-  const prerollRef = useRef(false);
-  prerollRef.current = preroll;
+  const [adActive, setAdActive] = useState(false);
+  const adActiveRef = useRef(false);
+  adActiveRef.current = adActive;
   const authRef = useRef({ isPremium, authLoading });
   authRef.current = { isPremium, authLoading };
   const startPosition = useRef<number | null>(null);
@@ -238,7 +238,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
     if (!authRef.current.isPremium && startPosition.current === 0 && !continuation && prerollDue()) {
       markPrerollShown();
       setWaiting(false);
-      setPreroll(true);
+      setAdActive(true);
       return;
     }
     // Tự phát như YouTube; trình duyệt chặn thì chờ người xem bấm nút phát
@@ -249,10 +249,38 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
     if (!authLoading && startPosition.current !== null) beginPlayback();
   }, [authLoading, beginPlayback]);
 
-  const finishPreroll = useCallback(() => {
-    setPreroll(false);
+  const finishAd = useCallback(() => {
+    setAdActive(false);
     videoRef.current?.play().catch(() => setWaiting(false));
   }, []);
+
+  // ---------- quảng cáo giữa video (mid-roll) ----------
+  // Người chưa có Premium: video đủ dài có 1–3 quảng cáo ở điểm ngẫu nhiên (chừa đầu và cuối), đánh dấu bằng vạch vàng
+  // trên thanh tua. Phát tới vạch, hoặc tua qua vạch, thì video dừng và quảng cáo chạy (không tua được trong lúc đó,
+  // chỉ bỏ qua được khi hiện nút), xong video chạy tiếp tại chỗ. Vị trí bắt đầu xem dở: các vạch phía trước coi như đã qua.
+  const adSeed = useRef(Math.random());
+  const [adFloor, setAdFloor] = useState(0);
+  const [playedAds, setPlayedAds] = useState<number[]>([]);
+  const showMidrolls = !isPremium && !authLoading && !roomMode;
+  const pendingAds = useMemo(
+    () => (showMidrolls ? midrollPoints(duration, adSeed.current).filter((p) => p > adFloor && !playedAds.includes(p)) : []),
+    [showMidrolls, duration, adFloor, playedAds]
+  );
+  const pendingAdsRef = useRef(pendingAds);
+  pendingAdsRef.current = pendingAds;
+
+  const maybeStartMidroll = () => {
+    const v = videoRef.current;
+    if (!v || adActiveRef.current || scrubState.current) return;
+    const due = pendingAdsRef.current.filter((p) => p <= v.currentTime);
+    if (due.length === 0) return;
+    // Cập nhật ngay (trước lần render kế) để các sự kiện timeupdate liền sau không kích hoạt lần nữa
+    adActiveRef.current = true;
+    pendingAdsRef.current = pendingAdsRef.current.filter((p) => !due.includes(p));
+    setPlayedAds((prev) => [...prev, ...due]);
+    v.pause();
+    setAdActive(true);
+  };
 
   // Sang video khác: tắt lặp lại, đóng menu chuột phải (như YouTube)
   useEffect(() => {
@@ -408,7 +436,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
   // ---------- thao tác ----------
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
-    if (!v || prerollRef.current) return;
+    if (!v || adActiveRef.current) return;
     if (v.paused || v.ended) {
       v.play().catch(() => {});
       showFlash("play");
@@ -431,7 +459,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
     const onSeek = (event: Event) => {
       const time = (event as CustomEvent<number>).detail;
       const v = videoRef.current;
-      if (!v || typeof time !== "number" || prerollRef.current) return;
+      if (!v || typeof time !== "number" || adActiveRef.current) return;
       seekTo(time);
       v.play().catch(() => {});
     };
@@ -594,6 +622,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
       setCurrentTime(start);
     }
     startPosition.current = start;
+    setAdFloor(start);
     beginPlayback();
   };
 
@@ -667,7 +696,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
       const target = e.target as HTMLElement | null;
       if ((e.key === " " || e.key === "Enter") && target?.closest("button, a, [role='slider']")) return;
       const v = videoRef.current;
-      if (!v || prerollRef.current) return;
+      if (!v || adActiveRef.current) return;
       const inPlayer = !!containerRef.current?.contains(document.activeElement);
 
       // Shift+N / Shift+P: video sau / trước trong danh sách phát
@@ -838,12 +867,14 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
           // Gom các lần tua liên tiếp (giữ phím →) thành một lượt, để không vượt giới hạn 60 lượt/phút
           window.clearTimeout(seekReportTimer.current);
           seekReportTimer.current = window.setTimeout(() => reportProgress(false), SEEK_REPORT_DELAY_MS);
+          maybeStartMidroll();
         }}
         onTimeUpdate={() => {
           const v = videoRef.current;
           if (v) lastTimeRef.current = v.currentTime;
           if (v && !scrubState.current) setCurrentTime(v.currentTime);
           updateBuffered();
+          maybeStartMidroll();
         }}
         onProgress={updateBuffered}
         onVolumeChange={() => {
@@ -933,7 +964,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
       )}
 
       {/* Chưa phát (trình duyệt chặn tự phát) */}
-      {!waiting && !failed && !ended && !started && !playing && !preroll && (
+      {!waiting && !failed && !ended && !started && !playing && !adActive && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <button
             type="button"
@@ -946,7 +977,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
         </div>
       )}
 
-      {preroll && <PrerollAd onDone={finishPreroll} />}
+      {adActive && <PrerollAd key={playedAds.length} onDone={finishAd} />}
 
       {failed && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80 px-6 text-center text-white">
@@ -966,6 +997,7 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
           duration={duration}
           buffered={buffered}
           chapters={chapters}
+          adMarks={pendingAds}
           onScrubStart={handleScrubStart}
           onScrub={handleScrub}
           onScrubEnd={handleScrubEnd}
