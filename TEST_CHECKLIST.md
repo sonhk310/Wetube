@@ -481,3 +481,24 @@ Bản thiết kế: `docs/superpowers/specs/2026-10-28-live-recording-cloudinary
 | 28.61 | Ở Nội dung, hàng **Trực tiếp** và bảng "Xem tất cả" (tab Trực tiếp) | Buổi không đặt ảnh thu nhỏ hiện **ảnh bìa kênh** thay vì ô đen; buổi có ảnh thu nhỏ hiện ảnh đó. Dòng trạng thái ghi "Có video xem lại · Riêng tư" (hoặc Công khai / Không công khai) | |
 | 28.62 | Buổi vừa phát xong: mở `/live/{id}` bằng tài khoản khác khi video xem lại còn riêng tư, rồi đổi video sang Công khai và mở lại | Lúc riêng tư: trang "đã kết thúc" **không** có nút "Xem lại" (chủ kênh vẫn thấy). Sau khi công khai: có nút "Xem lại" | |
 | 28.63 | Video xem lại **cũ** ("Test record stream", đã công khai từ trước) | Ở trang chủ kênh (Video mới nhất) và tìm kiếm có ảnh thu nhỏ (khung hình của video) thay vì ảnh lỗi. Nếu tìm kiếm vẫn ảnh lỗi thì báo em: chỉ mục tìm kiếm có thể cần đồng bộ lại | |
+
+## 29. Duyệt / sửa phụ đề AI trước khi đăng (E2)
+
+Bản thiết kế: `docs/superpowers/specs/2026-10-29-subtitle-review-design.md`. Cần một video **có lời nói rõ** (vd. 30 giây – 2 phút) để AI tạo được phụ đề.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 29.1 | Bấm **Tạo** → tải một video lên; trong lúc tệp đang tải, sang bước **Các thành phần** | Mục "Phụ đề AI" có ô chọn ngôn ngữ, nút "Tạo phụ đề AI" bị khoá kèm "Tệp tải lên xong mới tạo được phụ đề" | |
+| 29.2 | Tải xong, chọn **Tiếng Anh**, bấm **Tạo phụ đề AI** | Có dòng "Tiếng Anh · AI · Đang tạo phụ đề…"; sau 1–3 phút tự đổi thành "Bản nháp · N câu · công khai khi đăng video" (không cần tải lại trang) | |
+| 29.3 | Bấm **Xem và sửa** | Hộp thoại lớn: video bên trái, danh sách câu bên phải (giờ bắt đầu – kết thúc, câu dịch, "Câu gốc: …" in mờ). Bấm vào một câu thì video tua tới đó; phát video thì câu đang phát được tô xanh và phụ đề hiện trên video | |
+| 29.4 | Sửa chữ một câu, sửa giờ kết thúc thành trước giờ bắt đầu, xoá một câu, tua tới chỗ khác bấm **Thêm câu ở …** rồi gõ chữ | Giờ sai thì ô đỏ + "Giờ kết thúc phải sau giờ bắt đầu", nút Lưu khoá; sửa lại thì hết. Câu mới chèn đúng thứ tự giờ. Bấm **Lưu** → "Đã lưu phụ đề", mở lại thấy đúng chỗ đã sửa | |
+| 29.5 | Sửa gì đó rồi bấm Esc (hoặc dấu X) | Hỏi "Bỏ các thay đổi?"; "Tiếp tục sửa" giữ nguyên, "Bỏ thay đổi" đóng | |
+| 29.6 | Điền các bước còn lại, bấm **Đăng**; mở video ở tab ẩn danh (hoặc tài khoản khác) | Toast "Đã đăng video"; trình phát có nút phụ đề, phụ đề tiếng Anh đúng như bản đã sửa | |
+| 29.7 | Lặp lại 29.2 nhưng bấm **Đăng** ngay khi phụ đề còn "Đang tạo" | Toast "Đã đăng video. Phụ đề đang tạo sẽ là bản nháp, xem và công khai trong Studio."; người xem **chưa** thấy phụ đề | |
+| 29.8 | Vào **Studio → Nội dung →** video ở 29.7 → Chi tiết video | Mục "Phụ đề AI": phụ đề "Bản nháp · … · người xem chưa thấy" với nút **Công khai**. Bấm Công khai → "Đã công khai"; người xem thấy phụ đề. Bấm **Ẩn** → người xem không thấy nữa | |
+| 29.9 | Ở Studio, sửa một phụ đề **đang công khai** rồi Lưu; tải lại trang xem | Hộp thoại có dòng "lưu xong người xem thấy bản sửa ngay"; trang xem hiện bản đã sửa | |
+| 29.10 | Video cũ đã có phụ đề từ trước (trước E2): mở Chi tiết video | Phụ đề cũ hiện "Đã công khai"; **Xem và sửa** đọc được các câu từ file cũ (không có câu gốc) và sửa được | |
+| 29.11 | Bấm "Tạo phụ đề AI" cho một ngôn ngữ đã có phụ đề | Hỏi "Tạo lại phụ đề …?" vì bản cũ sẽ bị thay | |
+| 29.12 | Video **không có lời nói** (chỉ nhạc / im lặng) | Sau khi tạo: dòng đỏ "Không nghe thấy lời nói rõ ràng trong video…" + nút **Thử lại** và nút xoá | |
+| 29.13 | Trang xem video của mình → nút "…" → **Tạo phụ đề AI** | Báo "Đang tạo phụ đề. Tạo xong là bản nháp: vào Studio để xem, sửa và công khai." + link **Mở trong Studio** | |
+| 29.14 | Mở trình sửa trên điện thoại | Video ở trên, danh sách câu ở dưới, không tràn ngang | |
