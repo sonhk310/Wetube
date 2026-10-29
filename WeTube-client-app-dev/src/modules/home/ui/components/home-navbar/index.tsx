@@ -9,6 +9,7 @@ import NotificationBell from "@/modules/home/ui/components/home-navbar/notificat
 import { Plus, RadioTower, SquarePen, Video } from "lucide-react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import React from "react";
+import PremiumLogoBadge from "@/components/premium-logo-badge";
 import { useProgressRouter } from "@/hooks/use-progress-router";
 import AuthButton from "@/modules/auth/ui/components/auth-button";
 import { useAuth } from "@/contexts/auth-context";
@@ -46,6 +47,7 @@ const HomeNavbar = () => {
                 height={32}
               />
               <p className="text-xl font-semibold tracking-tight">WeTube</p>
+              <PremiumLogoBadge />
             </div>
           </Link>
         </div>

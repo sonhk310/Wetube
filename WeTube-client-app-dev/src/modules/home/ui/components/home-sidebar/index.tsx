@@ -6,6 +6,7 @@ import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {Separator} from "@/components/ui/separator";
 import {Sidebar, SidebarContent, SidebarHeader, SidebarTrigger, useSidebar} from "@/components/ui/sidebar";
+import PremiumLogoBadge from "@/components/premium-logo-badge";
 import {InfoSection} from "./info-section";
 import {MainSection} from "./main-section";
 import {OtherServices} from "./otherservices-section";
@@ -30,6 +31,7 @@ const HomeSidebar = () => {
                     <Link href="/" className="flex items-center gap-1 p-2">
                         <Image src="/image/Logo.png" alt="Logo" width={32} height={32}/>
                         <span className="text-xl font-semibold tracking-tight">WeTube</span>
+                        <PremiumLogoBadge/>
                     </Link>
                 </SidebarHeader>
             )}
