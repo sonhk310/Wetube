@@ -38,6 +38,8 @@ public class VideoDetailDto {
     private List<CommentResponseDto> comments;
     private List<VideoSubtitleDto> subtitles;
     private boolean isShort;
+    /** Bản MP3 của video để phát nền (điện thoại tắt màn hình); chỉ có khi người xem là Premium, còn lại null. */
+    private String audioUrl;
     /** Giây đã xem lần trước (người xem đã đăng nhập), để phát tiếp; null nếu chưa xem. */
     private Float resumeAt;
 }

@@ -63,6 +63,7 @@ import com.wetube.wetube_service.service.video.VideoService;
 import com.wetube.wetube_service.service.video.VideoSubtitleService;
 import com.wetube.wetube_service.service.video.WatchProgressService;
 import com.wetube.wetube_service.service.notification.NotificationService;
+import com.wetube.wetube_service.service.premium.PremiumUserService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -94,6 +95,7 @@ public class VideoServiceImpl implements VideoService {
     private final NotificationService notificationService;
     private final VideoStatsStore videoStatsStore;
     private final TopicCatalog topicCatalog;
+    private final PremiumUserService premiumUserService;
 
     private static final String ID_NOT_FOUND = "Video not found with id: ";
     private static final String VIDEO = "video";
@@ -505,6 +507,7 @@ private static String draftTitle(String fileName) {
                 .channelId(channelId)
                 .comments(comments)
                 .subtitles(subtitles)
+                .audioUrl(audioUrlForPremium(video, userId))
                 .build();
 
         List<String> tagNames = tags.stream().map(TagDto::getName).toList();
@@ -542,6 +545,16 @@ private static String draftTitle(String fileName) {
                 .build();
 
         return new VideoDetailResponseDto(detail, recommend);
+    }
+
+    /** Link MP3 để phát nền: chỉ cho người xem Premium và chỉ với video trên Cloudinary; còn lại null. */
+    private String audioUrlForPremium(Video video, UUID userId) {
+        String videoUrl = video.getVideoUrl();
+        if (userId == null || videoUrl == null || !videoUrl.contains("/video/upload/")
+                || premiumUserService.premiumUntil(userId).isEmpty()) {
+            return null;
+        }
+        return cloudinaryService.audioUrlFor(videoUrl);
     }
 
     @Override

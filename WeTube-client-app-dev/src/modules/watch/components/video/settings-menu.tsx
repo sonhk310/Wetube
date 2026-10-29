@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type RefObject } from "react";
-import { Check, ChevronLeft, ChevronRight, Gauge, Repeat, Settings, Subtitles } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Gauge, Headphones, Repeat, Settings, Subtitles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { VideoSubtitleDto } from "@/types/videoSubtitleDto";
 
@@ -36,6 +36,8 @@ interface SettingsMenuProps {
   maxHeight: number;
   /** Trong phòng xem chung: không có Lặp lại và Tốc độ phát (làm lệch với người khác). */
   inRoom?: boolean;
+  /** Công tắc Phát nền (chỉ Premium có); không truyền thì không hiện mục này. */
+  backgroundPlay?: { on: boolean; onToggle: () => void };
 }
 
 type Page = "main" | "rate" | "subtitles";
@@ -49,6 +51,7 @@ export default function SettingsMenu({
   rate,
   onRate,
   inRoom = false,
+  backgroundPlay,
   subtitles,
   subtitleIndex,
   onSubtitle,
@@ -101,6 +104,31 @@ export default function SettingsMenu({
                   />
                 </span>
               </button>
+              )}
+              {backgroundPlay && (
+                <button
+                  type="button"
+                  role="menuitemcheckbox"
+                  aria-checked={backgroundPlay.on}
+                  className={row}
+                  onClick={backgroundPlay.onToggle}
+                >
+                  <Headphones size={20} />
+                  <span className="flex-1">Phát nền</span>
+                  <span
+                    className={cn(
+                      "relative h-3.5 w-8 rounded-full transition-colors",
+                      backgroundPlay.on ? "bg-white/70" : "bg-white/30"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "absolute -top-[3px] size-5 rounded-full shadow transition-all",
+                        backgroundPlay.on ? "left-3 bg-white" : "left-0 bg-neutral-300"
+                      )}
+                    />
+                  </span>
+                </button>
               )}
               {!inRoom && (
               <button type="button" role="menuitem" className={row} onClick={() => setPage("rate")}>

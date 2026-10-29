@@ -98,6 +98,8 @@ export interface VideoDetailDto {
   subtitles: VideoSubtitleDto[]; // ✅ subtitles
   /** Giây đã xem lần trước (đã đăng nhập), để phát tiếp. */
   resumeAt?: number | null;
+  /** Bản MP3 để phát nền; chỉ có khi người xem là Premium. */
+  audioUrl?: string | null;
 }
 
 export interface VideoDetailResponseDto {

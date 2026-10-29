@@ -40,11 +40,13 @@ import { consumeContinuation, markContinuation, markPrerollShown, prerollDue } f
 import type { RecommendVideoDto } from "@/types/video";
 import { usePlaylistQueue } from "../../lib/use-playlist-queue";
 import { chapterIndexAt, parseChapters } from "../../lib/chapters";
+import { useBackgroundAudio } from "../../lib/use-background-audio";
 import { useChaptersPanelStore } from "@/store/zustand/useChaptersPanelStore";
 import { formatTime } from "./format-time";
 
 const VOLUME_KEY = "wetube_player_volume";
 const AUTOPLAY_KEY = "wetube_autoplay_next";
+const BACKGROUND_PLAY_KEY = "wetube_background_play";
 const HIDE_CONTROLS_MS = 2500;
 /** Khi kéo thanh tua, tua video thật tối đa mỗi khoảng này một lần (đỡ giật). */
 const SCRUB_SEEK_MS = 120;
@@ -298,11 +300,12 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
   const seekReportTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(seekReportTimer.current), []);
 
-  const reportProgress = useCallback((final: boolean) => {
+  // atTime: vị trí do nơi khác báo (thẻ audio khi phát nền), không đọc từ thẻ video
+  const reportProgress = useCallback((final: boolean, atTime?: number) => {
     const v = videoRef.current;
     const p = progressRef.current;
     if (!p.videoId || scrubState.current) return;
-    const t = v ? (v.ended ? v.duration : v.currentTime) : lastTimeRef.current;
+    const t = atTime ?? (v ? (v.ended ? v.duration : v.currentTime) : lastTimeRef.current);
     if (!Number.isFinite(t) || t < MIN_PROGRESS_SECONDS) return;
     if (Math.abs(t - p.lastSent) < 1) return;
     p.lastSent = t;
@@ -343,6 +346,37 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
       return !prev;
     });
   };
+
+  // ---------- phát nền (Premium, điện thoại): trang bị ẩn thì chuyển sang bản audio ----------
+  const [backgroundPlay, setBackgroundPlay] = useState(true);
+  useEffect(() => {
+    try {
+      setBackgroundPlay(window.localStorage.getItem(BACKGROUND_PLAY_KEY) !== "0");
+    } catch {
+      // localStorage bị chặn: mặc định bật
+    }
+  }, []);
+
+  const toggleBackgroundPlay = () => {
+    setBackgroundPlay((prev) => {
+      try {
+        window.localStorage.setItem(BACKGROUND_PLAY_KEY, prev ? "0" : "1");
+      } catch {
+        // bỏ qua
+      }
+      return !prev;
+    });
+  };
+
+  useBackgroundAudio({
+    enabled: isPremium && !roomMode && backgroundPlay && !!video?.videoUrl,
+    audioUrl: video?.audioUrl ?? undefined,
+    videoRef,
+    title: video?.title ?? "",
+    channelName: video?.name ?? "",
+    artwork: video?.thumbnailUrl,
+    report: reportProgress,
+  });
 
   const openVideo = useCallback(
     (id: string) => {
@@ -1035,6 +1069,9 @@ export default function ActiveVideo({ videoId, roomMode = false }: { videoId: st
             onSubtitle={chooseSubtitle}
             maxHeight={settingsMaxHeight}
             inRoom={roomMode}
+            backgroundPlay={
+              isPremium && !roomMode && video.audioUrl ? { on: backgroundPlay, onToggle: toggleBackgroundPlay } : undefined
+            }
           />
 
           {pipSupported && (
