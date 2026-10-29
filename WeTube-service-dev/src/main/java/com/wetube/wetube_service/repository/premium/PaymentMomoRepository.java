@@ -15,6 +15,8 @@ import com.wetube.wetube_service.entity.premium.PaymentMomo;
 public interface PaymentMomoRepository extends CrudRepository<PaymentMomo, UUID> {
     Optional<PaymentMomo> findByOrderId(String orderId);
 
+    boolean existsByTier_Id(UUID tierId);
+
     /** Như findByOrderId nhưng khoá dòng cho tới hết giao dịch: hai lần /return đồng thời không cấp gói hai lần. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from PaymentMomo p where p.orderId = :orderId")

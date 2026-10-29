@@ -14,6 +14,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { toastEmitter } from "@/lib/toastEmitter";
 import { formatCompact, timeAgo } from "@/lib/utils";
 import SubscribeControl from "@/modules/channel/ui/subscribeControl";
+import JoinMembershipButton from "@/modules/membership/join-membership-button";
 import LinkifiedText from "@/modules/watch/components/linkified-text";
 import ShareDialog from "@/modules/watch/components/share-dialog";
 import { useLiveChannel } from "../lib/useLiveChannel";
@@ -218,12 +219,15 @@ export default function LiveWatchView({ id }: { id: string }) {
                 </Link>
               ) : null
             ) : (
-              <SubscribeControl
-                key={live.channelId}
-                channelId={live.channelId}
-                subscribed={channel?.subscribed ?? false}
-                notificationMode={channel?.notificationMode}
-              />
+              <div className="flex shrink-0 items-center gap-2">
+                <SubscribeControl
+                  key={live.channelId}
+                  channelId={live.channelId}
+                  subscribed={channel?.subscribed ?? false}
+                  notificationMode={channel?.notificationMode}
+                />
+                <JoinMembershipButton key={`join-${live.channelId}`} channelId={live.channelId} />
+              </div>
             )}
           </div>
 

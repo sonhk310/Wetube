@@ -504,3 +504,26 @@ Bản thiết kế: `docs/superpowers/specs/2026-10-29-subtitle-review-design.md
 | 29.14 | Mở trình sửa trên điện thoại | Video ở trên, danh sách câu ở dưới, không tràn ngang | |
 | 29.15 | Xem mục Phụ đề AI (hộp thoại tải lên và Studio) và hộp thoại "Tạo phụ đề AI" ở trang xem | Có dòng "Giới hạn: chỉ tạo phụ đề AI cho video dài tối đa 10 phút; mỗi người tối đa 5 lượt mỗi giờ và cả WeTube tối đa 20 lượt mỗi ngày." | |
 | 29.16 | Tải lên (hoặc mở ở Studio) một video **dài hơn 10 phút** | Nút "Tạo phụ đề AI" khoá, kèm "Video dài m:ss, quá 10 phút nên không tạo được phụ đề AI." Ở trang xem, nút "…" → Tạo phụ đề AI → báo "Chỉ tạo được phụ đề AI cho video dài tối đa 10 phút." | |
+
+## 30. Hội viên kênh, phần M1a (cần 2 tài khoản: chủ kênh và người mua; PayPal sandbox)
+
+Bản thiết kế: `docs/superpowers/specs/2026-10-29-channel-membership-design.md`. Phần "video chỉ dành cho hội viên" (M1b) chưa làm.
+
+| # | Việc cần làm | Kết quả mong đợi | Kết quả |
+|---|---|---|---|
+| 30.1 | Tài khoản chủ kênh: **Studio → Hội viên** | Mục "Hội viên" ở sidebar; thẻ doanh thu 0 ₫ (Tổng thu, Phí WeTube 10%, Kênh nhận) + ghi chú chưa chi trả tiền thật; "Kênh chưa có cấp hội viên nào" | |
+| 30.2 | Bấm **Thêm cấp**: thử giá 5.000, rồi giá 25.000 + tên "Bạc" + mô tả | Giá ngoài 10.000 – 500.000 báo lỗi, chưa lưu; giá hợp lệ thì "Đã thêm cấp hội viên" và cấp hiện trong danh sách | |
+| 30.3 | Thêm cấp thứ 2, 3; thử thêm cấp thứ 4; thử đặt trùng tên hoặc trùng giá | Đủ 3 cấp thì nút Thêm cấp khoá + "Đã đủ 3 cấp"; trùng tên / giá thì báo lỗi | |
+| 30.4 | Sửa tên / giá / mô tả một cấp | Lưu được, danh sách cập nhật | |
+| 30.5 | Tài khoản người mua: mở trang kênh của chủ kênh (và một video của kênh đó, và một buổi phát nếu có) | Cạnh nút Đăng ký có nút **Tham gia**. Chủ kênh vào kênh của mình thì **không** thấy nút này. Kênh chưa có cấp trả phí thì không có nút | |
+| 30.6 | Bấm Tham gia → chọn một cấp | Hộp thoại liệt kê các cấp (giá / 30 ngày, quyền lợi), dòng "30 ngày hội viên, không tự động gia hạn", nút "Thanh toán bằng PayPal · giá". Không có MoMo | |
+| 30.7 | Bấm thanh toán PayPal, đăng nhập tài khoản sandbox, chấp thuận | Trang PayPal hiện số USD tương ứng; xong thì về trang "Thanh toán thành công! Bạn đã là hội viên của kênh …" rồi tự về trang kênh sau vài giây | |
+| 30.8 | Trang kênh sau khi mua | Nút đổi thành "Hội viên · đến dd/mm" (khoảng 30 ngày sau); người mua cũng đã đăng ký kênh | |
+| 30.9 | Người mua bình luận dưới video của kênh, rồi nhắn chat trong buổi phát của kênh (nếu có) | Có huy hiệu xanh cạnh tên, rê chuột thấy "Hội viên · tên cấp". Bình luận ở video của kênh **khác** thì không có huy hiệu này | |
+| 30.10 | Mua lại **cùng cấp** khi còn hạn | Ngày hết hạn cộng thêm 30 ngày (không mất ngày còn lại) | |
+| 30.11 | Mua **cấp khác** khi còn hạn | Cấp mới có hiệu lực ngay; ngày hết hạn = 30 ngày + số ngày còn lại quy đổi theo giá (còn 10 ngày cấp 20.000 ₫ lên cấp 50.000 ₫ thì +4 ngày) | |
+| 30.12 | Chủ kênh: Studio → Hội viên sau khi có người mua | Người mua hiện trong "Hội viên hiện tại" (cấp, từ → đến); số hội viên của cấp tăng; Tổng thu = giá cấp, Phí WeTube = 10%, Kênh nhận = 90% | |
+| 30.13 | Chủ kênh xoá một cấp chưa ai mua, rồi xoá cấp đã có hội viên | Cấp chưa ai mua bị xoá hẳn; cấp đã có hội viên chỉ ghi "Đã ngừng nhận" (không còn nút Sửa, người xem không chọn được nữa, hội viên cũ dùng hết hạn) | |
+| 30.14 | Chủ kênh thử tự mua hội viên kênh mình (gọi API, hoặc tài khoản khác cùng kênh) | Bị từ chối: "Bạn không thể làm hội viên kênh của chính mình" | |
+| 30.15 | Bấm Huỷ ở trang PayPal | Về trang "Thanh toán thất bại", không thành hội viên, không bị tính tiền | |
+| 30.16 | Điện thoại: hộp thoại Tham gia và trang Studio → Hội viên | Không tràn ngang, bấm được | |

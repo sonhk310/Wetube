@@ -13,6 +13,7 @@ import { formatCompact } from "@/lib/utils";
 import { LiveBadge } from "@/modules/live/ui/live-badge";
 import ChannelAboutDialog from "./channelAboutDialog";
 import SubscribeControl from "./subscribeControl";
+import JoinMembershipButton from "@/modules/membership/join-membership-button";
 
 const FALLBACK_AVATAR = "https://placehold.co/160x160?text=W";
 
@@ -136,13 +137,16 @@ export default function ChannelHeader() {
                 </Link>
               </>
             ) : (
-              <SubscribeControl
-                key={channel.id}
-                channelId={channel.id}
-                subscribed={channel.subscribed ?? false}
-                notificationMode={channel.notificationMode}
-                onChanged={() => void refetch()}
-              />
+              <>
+                <SubscribeControl
+                  key={channel.id}
+                  channelId={channel.id}
+                  subscribed={channel.subscribed ?? false}
+                  notificationMode={channel.notificationMode}
+                  onChanged={() => void refetch()}
+                />
+                <JoinMembershipButton key={`join-${channel.id}`} channelId={channel.id} />
+              </>
             )}
           </div>
         </div>

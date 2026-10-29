@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.wetube.wetube_service.entity.AppUser;
+import com.wetube.wetube_service.entity.channel.MembershipTier;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -64,6 +65,10 @@ public class PaymentMomo {
     @ManyToOne
     @JoinColumn(name = "sub_package_id")
     private SubPack subpack;
+    /** Đơn mua hội viên kênh (M1): cấp được mua; null với đơn Premium. */
+    @ManyToOne
+    @JoinColumn(name = "tier_id")
+    private MembershipTier tier;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

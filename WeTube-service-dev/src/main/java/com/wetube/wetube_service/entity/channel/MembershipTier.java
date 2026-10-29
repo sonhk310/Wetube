@@ -35,6 +35,11 @@ public class MembershipTier {
     @Column(name = "is_default")
     private boolean defaultTier;
 
+    /** Ngừng nhận hội viên mới (cấp đã có người mua thì không xoá được, chỉ ngừng nhận); hội viên cũ dùng hết hạn. */
+    @org.hibernate.annotations.ColumnDefault("false")
+    @Column(name = "archived", nullable = false)
+    private boolean archived;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "channel_id")
     private Channel channel;

@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/auth-context";
 import VideoMoreMenu from "./video-more-menu";
 import LinkifiedText from "./linkified-text";
 import SubscribeControl from "@/modules/channel/ui/subscribeControl";
+import JoinMembershipButton from "@/modules/membership/join-membership-button";
 import ShareDialog from "./share-dialog";
 import DownloadButton from "./download-button";
 import SaveToPlaylistDialog from "./save-to-playlist-dialog";
@@ -224,13 +225,16 @@ export default function VideoMetadata() {
               Chỉnh sửa video
             </Link>
           ) : (
-            <SubscribeControl
-              key={channelId}
-              channelId={channelId}
-              subscribed={videoDetail.detail.subscribed}
-              notificationMode={videoDetail.detail.notificationMode}
-              onChanged={(subscribed) => setSubscriberDelta((d) => d + (subscribed ? 1 : -1))}
-            />
+            <div className="flex shrink-0 items-center gap-2">
+              <SubscribeControl
+                key={channelId}
+                channelId={channelId}
+                subscribed={videoDetail.detail.subscribed}
+                notificationMode={videoDetail.detail.notificationMode}
+                onChanged={(subscribed) => setSubscriberDelta((d) => d + (subscribed ? 1 : -1))}
+              />
+              <JoinMembershipButton key={`join-${channelId}`} channelId={channelId} />
+            </div>
           )}
         </section>
 

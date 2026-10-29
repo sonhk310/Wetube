@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.wetube.wetube_service.entity.channel.Channel;
 import com.wetube.wetube_service.security.CurrentUser;
 import com.wetube.wetube_service.service.premium.paypal.PaypalPaymentService;
 
@@ -43,6 +44,16 @@ public class PaypalPaymentController {
         return ResponseEntity.ok(Map.of("approveUrl", paypalPaymentService.createOrder(userId, body.subPackId())));
     }
 
+    public record MembershipRequest(UUID tierId) {}
+
+    /** Mua hội viên kênh (M1): tạo đơn cho một cấp. Trả {approveUrl} như Premium. */
+    @PostMapping("/membership")
+    public ResponseEntity<Map<String, String>> createMembership(@RequestBody MembershipRequest body,
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = CurrentUser.id(jwt);
+        return ResponseEntity.ok(Map.of("approveUrl", paypalPaymentService.createMembershipOrder(userId, body.tierId())));
+    }
+
     @GetMapping("/return")
     public void paymentReturn(@RequestParam(value = "token", required = false) String token, HttpServletResponse response)
             throws IOException {
@@ -57,8 +68,16 @@ public class PaypalPaymentController {
         redirectToClient(response, false, token);
     }
 
+    /** Đơn hội viên kèm tên và @handle của kênh để trang kết quả báo "Bạn đã là hội viên kênh …" và đưa người mua về kênh. */
     private void redirectToClient(HttpServletResponse response, boolean paid, String orderId) throws IOException {
-        response.sendRedirect(clientUrl.replaceAll("/+$", "") + "/otherservices/payment-result?paymentStatus="
-                + (paid ? "0" : "1") + "&orderId=" + (orderId == null ? "" : URLEncoder.encode(orderId, StandardCharsets.UTF_8)));
+        StringBuilder url = new StringBuilder(clientUrl.replaceAll("/+$", ""))
+                .append("/otherservices/payment-result?paymentStatus=").append(paid ? "0" : "1")
+                .append("&orderId=").append(orderId == null ? "" : URLEncoder.encode(orderId, StandardCharsets.UTF_8));
+        Channel channel = paypalPaymentService.membershipChannelOf(orderId);
+        if (channel != null) {
+            url.append("&kind=member&channelName=").append(URLEncoder.encode(String.valueOf(channel.getName()), StandardCharsets.UTF_8))
+                    .append("&handle=").append(channel.getHandle() == null ? "" : URLEncoder.encode(channel.getHandle(), StandardCharsets.UTF_8));
+        }
+        response.sendRedirect(url.toString());
     }
 }

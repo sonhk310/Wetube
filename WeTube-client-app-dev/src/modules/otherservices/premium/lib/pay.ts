@@ -72,3 +72,28 @@ export async function payWithPaypal(subPackId: string): Promise<void> {
     await noticeDialog({ title: "Không tạo được thanh toán PayPal", message: "Không kết nối được máy chủ, vui lòng thử lại." });
   }
 }
+
+/** Mua hội viên kênh bằng PayPal (M1): chuyển sang trang chấp thuận của PayPal, hoặc hiện hộp thoại nói rõ lý do lỗi. */
+export async function payMembershipWithPaypal(tierId: string): Promise<void> {
+  try {
+    const res = await apiFetch(`${API_PREFIX}/payment/paypal/membership`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tierId }),
+    });
+    const data = await bodyOf(res);
+    if (res.ok && typeof data.approveUrl === "string" && data.approveUrl) {
+      window.location.href = data.approveUrl;
+      return;
+    }
+    await noticeDialog({
+      title: "Không tạo được thanh toán PayPal",
+      message:
+        res.status === 401
+          ? "Bạn cần đăng nhập để tham gia hội viên."
+          : data.message || "Vui lòng thử lại sau.",
+    });
+  } catch {
+    await noticeDialog({ title: "Không tạo được thanh toán PayPal", message: "Không kết nối được máy chủ, vui lòng thử lại." });
+  }
+}

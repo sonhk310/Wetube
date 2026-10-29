@@ -18,6 +18,7 @@ import com.wetube.wetube_service.entity.notification.Notification;
 import com.wetube.wetube_service.repository.video.VideoRepository;
 import com.wetube.wetube_service.service.channel.ChannelHandles;
 import com.wetube.wetube_service.service.notification.NotificationService;
+import com.wetube.wetube_service.service.membership.ChannelMembershipService;
 import com.wetube.wetube_service.service.premium.PremiumUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class CommentServiceImpl implements CommentService {
     private final VideoRepository videoRepository;
     private final NotificationService notificationService;
     private final PremiumUserService premiumUserService;
+    private final ChannelMembershipService membershipService;
 
     @Override
     public List<CommentResponseDto> getCommentsByTargetId(UUID targetId, Comment.TargetType type, Sort sort) {
@@ -57,10 +59,10 @@ public class CommentServiceImpl implements CommentService {
                     c -> Optional.ofNullable(c.getLikeCount()).orElse(0) + Optional.ofNullable(c.getReplyCount()).orElse(0),
                     Comparator.reverseOrder());
         }
-        return flagPremium(roots.stream()
+        return flagBadges(roots.stream()
                 .map(c -> toResponseWithReplies(c, ownerId))
                 .sorted(order)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList()), ownerId);
     }
 
     @Override
@@ -68,7 +70,37 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
-        return flagPremium(toResponseWithReplies(comment, ownerOf(comment)));
+        UUID commentOwner = ownerOf(comment);
+        return flagBadges(toResponseWithReplies(comment, commentOwner), commentOwner);
+    }
+
+    /**
+     * Huy hiệu cho tác giả của cả danh sách (kể cả trả lời): Premium, và hội viên của kênh chứa video
+     * (ownerUserId là chủ video; null nếu không phải bình luận video). Mỗi loại một truy vấn, không tra từng người.
+     */
+    private List<CommentResponseDto> flagBadges(List<CommentResponseDto> roots, UUID ownerUserId) {
+        flagPremium(roots);
+        UUID channelId = ownerUserId == null ? null
+                : userRepository.findById(ownerUserId).map(u -> u.getChannel() == null ? null : u.getChannel().getId()).orElse(null);
+        if (channelId != null) {
+            List<UserDto> authors = new ArrayList<>();
+            for (CommentResponseDto root : roots) {
+                authors.add(root.getUser());
+                if (root.getReplies() != null) {
+                    root.getReplies().forEach(reply -> authors.add(reply.getUser()));
+                }
+            }
+            authors.removeIf(a -> a == null || a.getId() == null);
+            Map<UUID, String> tiers = membershipService.tierTitles(channelId,
+                    authors.stream().map(UserDto::getId).collect(Collectors.toSet()));
+            authors.forEach(a -> a.setMemberTier(tiers.get(a.getId())));
+        }
+        return roots;
+    }
+
+    private CommentResponseDto flagBadges(CommentResponseDto comment, UUID ownerUserId) {
+        flagBadges(List.of(comment), ownerUserId);
+        return comment;
     }
 
     /** Huy hiệu Premium cho tác giả của cả danh sách (kể cả trả lời): một truy vấn, không tra từng người. */
@@ -85,11 +117,6 @@ public class CommentServiceImpl implements CommentService {
                 authors.stream().map(UserDto::getId).collect(Collectors.toSet()));
         authors.forEach(a -> a.setPremium(premium.contains(a.getId())));
         return roots;
-    }
-
-    private CommentResponseDto flagPremium(CommentResponseDto comment) {
-        flagPremium(List.of(comment));
-        return comment;
     }
 
     @Override
@@ -132,7 +159,8 @@ public class CommentServiceImpl implements CommentService {
         }
         Comment updated = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
-        return flagPremium(toResponseBasic(updated, ownerOf(updated)));
+        UUID updatedOwner = ownerOf(updated);
+        return flagBadges(toResponseBasic(updated, updatedOwner), updatedOwner);
     }
 
     @Override
@@ -175,7 +203,7 @@ public class CommentServiceImpl implements CommentService {
             });
         }
 
-        return flagPremium(toResponseWithReplies(saved, ownerId));
+        return flagBadges(toResponseWithReplies(saved, ownerId), ownerId);
     }
 
     /**
@@ -255,9 +283,9 @@ public class CommentServiceImpl implements CommentService {
     public List<CommentResponseDto> getReplies(UUID parentId) {
         List<Comment> replies = commentRepository.findByParentCommentIdOrderByCreatedAtAsc(parentId);
         UUID ownerId = replies.isEmpty() ? null : ownerOf(replies.get(0));
-        return flagPremium(replies.stream()
+        return flagBadges(replies.stream()
                 .map(c -> toResponseBasic(c, ownerId))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList()), ownerId);
     }
 
     /** Chủ video chứa bình luận, null nếu không phải bình luận video. */

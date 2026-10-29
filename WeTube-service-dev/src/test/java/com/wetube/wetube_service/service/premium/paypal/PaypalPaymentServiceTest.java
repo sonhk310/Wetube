@@ -32,10 +32,12 @@ import com.wetube.wetube_service.entity.premium.PremiumUser;
 import com.wetube.wetube_service.entity.premium.SubPack;
 import com.wetube.wetube_service.enumeration.PaymentStatus;
 import com.wetube.wetube_service.repository.UserRepository;
+import com.wetube.wetube_service.repository.channel.MemberTierRepository;
 import com.wetube.wetube_service.repository.premium.PaymentMomoRepository;
 import com.wetube.wetube_service.repository.premium.PremiumUserRepository;
 import com.wetube.wetube_service.repository.premium.SubPackRepository;
 import com.wetube.wetube_service.security.RateLimiter;
+import com.wetube.wetube_service.service.membership.ChannelMembershipService;
 import com.wetube.wetube_service.service.premium.PremiumGranter;
 import com.wetube.wetube_service.service.premium.PremiumUserService;
 
@@ -67,7 +69,8 @@ class PaypalPaymentServiceTest {
         ReflectionTestUtils.setField(config, "returnBase", "https://api.example.test/api/payment/paypal/");
         ReflectionTestUtils.setField(config, "vndPerUsd", new BigDecimal("25835.5"));
         service = new PaypalPaymentService(config, client, paymentRepo, subPackRepo, userRepo,
-                new PremiumGranter(premiumRepo, premiumService), rateLimiter);
+                new PremiumGranter(premiumRepo, premiumService), mock(ChannelMembershipService.class),
+                mock(MemberTierRepository.class), rateLimiter);
 
         user = AppUser.builder().id(userId).email("a@b.c").build();
         pack = SubPack.builder().id(packId).name("Basic Plan").price(BigDecimal.valueOf(99_000)).durationDays(30).build();

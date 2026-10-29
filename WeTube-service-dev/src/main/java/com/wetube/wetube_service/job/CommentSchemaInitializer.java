@@ -93,6 +93,32 @@ public class CommentSchemaInitializer implements CommandLineRunner {
         execute("UPDATE video_subtitles SET status = 'PUBLISHED' WHERE status IS NULL", "phụ đề cũ sang PUBLISHED");
         execute("UPDATE video_subtitles SET status = 'FAILED', error_message = 'Máy chủ khởi động lại khi đang tạo phụ đề, vui lòng tạo lại.' "
                 + "WHERE status = 'PROCESSING'", "phụ đề đang tạo sang FAILED");
+        membershipSchema();
+    }
+
+    /** Hội viên kênh (M1): bảng channel_members, cấp ngừng nhận, đơn thanh toán gắn với cấp. */
+    private void membershipSchema() {
+        addColumn("tiers", "archived", "BIT(1) NOT NULL DEFAULT 0");
+        addColumn("payment_momo", "tier_id", "VARCHAR(36) NULL");
+        try {
+            tx.executeWithoutResult(s -> em.createNativeQuery("""
+                    CREATE TABLE IF NOT EXISTS channel_members (
+                        id VARCHAR(36) NOT NULL,
+                        user_id VARCHAR(36) NOT NULL,
+                        channel_id VARCHAR(36) NOT NULL,
+                        tier_id VARCHAR(36) NOT NULL,
+                        start_date DATE NOT NULL,
+                        end_date DATE NOT NULL,
+                        created_at DATETIME(6),
+                        PRIMARY KEY (id)
+                    )""").executeUpdate());
+        } catch (Exception e) {
+            log.error("Không tạo được bảng channel_members: {}", e.getMessage());
+        }
+        addIndex("channel_members", "idx_channel_members_user_channel", "user_id, channel_id, end_date");
+        addIndex("channel_members", "idx_channel_members_channel", "channel_id, end_date");
+        addIndex("channel_members", "idx_channel_members_tier", "tier_id");
+        addIndex("payment_momo", "idx_payment_momo_tier", "tier_id");
     }
 
     private void execute(String sql, String what) {

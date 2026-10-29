@@ -30,6 +30,8 @@ export interface Comment {
         picture?: string;
         /** Đang có Premium (huy hiệu cạnh tên). */
         premium?: boolean;
+        /** Tên cấp hội viên ở kênh chứa video (huy hiệu); null nếu không phải hội viên. */
+        memberTier?: string | null;
     };
 }
 

@@ -185,7 +185,7 @@ class LiveControllerTest {
     @Test
     void recentChatIsReadableWithoutLogin() {
         UUID id = UUID.randomUUID();
-        List<LiveChatMessage> messages = List.of(new LiveChatMessage("m1", "u", "Fan", null, null, "xin chào", false, 1L, false));
+        List<LiveChatMessage> messages = List.of(new LiveChatMessage("m1", "u", "Fan", null, null, "xin chào", false, 1L, false, null));
         when(chat.recent(id)).thenReturn(messages);
 
         assertThat(controller.chat(id)).isEqualTo(messages);

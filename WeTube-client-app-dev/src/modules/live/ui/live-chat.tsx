@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
+import MemberBadge from "@/components/member-badge";
 import PremiumBadge from "@/components/premium-badge";
 import LinkifiedText from "@/modules/watch/components/linkified-text";
 import type { LiveChannel } from "../lib/useLiveChannel";
@@ -41,6 +42,7 @@ function Message({
           {name}
         </span>
         {message.premium && <PremiumBadge className="mr-1.5" />}
+        {message.memberTier && <MemberBadge tier={message.memberTier} className="mr-1.5" />}
         {/* Văn bản thuần: React tự thoát ký tự, không dựng HTML từ nội dung chat */}
         <LinkifiedText text={message.text} seekable={false} className="inline" />
       </p>

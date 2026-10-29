@@ -35,6 +35,7 @@ import {
 import ReportDialog from "@/modules/reports/report-dialog";
 import LinkifiedText from "../linkified-text";
 import { Spinner } from "@/components/ui/spinner";
+import MemberBadge from "@/components/member-badge";
 import PremiumBadge from "@/components/premium-badge";
 import { confirmDialog } from "@/lib/dialogs";
 
@@ -58,6 +59,8 @@ export interface Comment {
     byCreator: boolean;
     /** Người viết đang có Premium. */
     premium: boolean;
+    /** Tên cấp hội viên của người viết ở kênh chứa video; undefined nếu không phải hội viên. */
+    memberTier?: string;
 }
 
 // Sửa sau khi đăng hơn chừng này thì hiện "(đã chỉnh sửa)"
@@ -86,6 +89,7 @@ export const mapApiCommentToUI = (apiComment: any): Comment => ({
     hearted: !!apiComment.hearted,
     byCreator: !!apiComment.byCreator,
     premium: !!apiComment.user?.premium,
+    memberTier: apiComment.user?.memberTier ?? undefined,
 });
 
 const item = {
@@ -371,6 +375,7 @@ export const CommentComponent = ({
                         </p>
                     )}
                     {comment.premium && <PremiumBadge />}
+                    {comment.memberTier && <MemberBadge tier={comment.memberTier} />}
                     {comment.handle && <p className="text-xs text-gray-500">@{comment.handle}</p>}
                     <p className="text-xs text-gray-600">
                         {timeAgo(comment.commentedAt)}

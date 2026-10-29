@@ -49,9 +49,8 @@ public class MemberTierController {
     }
 
     @DeleteMapping("/{tierId}")
-    public ResponseEntity<Void> deleteTier(@PathVariable UUID tierId, @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<java.util.Map<String, Boolean>> deleteTier(@PathVariable UUID tierId, @AuthenticationPrincipal Jwt jwt) {
         ownershipGuard.tierOwner(tierId, jwt);
-        memberTierService.deleteTier(tierId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(java.util.Map.of("archived", memberTierService.deleteTier(tierId)));
     }
 }

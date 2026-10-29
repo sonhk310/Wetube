@@ -101,6 +101,8 @@ export interface LiveChatMessage {
   at: number;
   /** Người gửi đang có Premium. */
   premium?: boolean;
+  /** Tên cấp hội viên của người gửi ở kênh đang phát; null nếu không phải hội viên. */
+  memberTier?: string | null;
 }
 
 export type LiveEventType = "CHAT" | "CHAT_DELETED" | "CHAT_STATE" | "VIEWERS" | "POLL" | "STATUS" | "THUMBNAIL" | "ERROR";

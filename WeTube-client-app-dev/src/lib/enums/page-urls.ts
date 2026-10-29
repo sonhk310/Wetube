@@ -16,6 +16,7 @@ export const pageUrls = {
     ROOMS:"/rooms",
     LIVESTREAM:"/live",
     STUDIO_LIVE: "/studio/live",
+    STUDIO_MEMBERS: "/studio/members",
     MUSIC: "/music",
     SPORTS: "/sports",
     REPORT: "/otherservices/reportdiary",

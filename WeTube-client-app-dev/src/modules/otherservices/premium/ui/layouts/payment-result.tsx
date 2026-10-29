@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/auth-context";
 type PaymentStatus = {
   success: boolean;
   orderId: string;
+  /** Đơn hội viên kênh (M1): tên kênh và @handle (không có "@") để đưa người mua về kênh. */
+  member?: { channelName: string; handle: string };
 };
 
 export default function PaymentResult() {
@@ -28,11 +30,17 @@ export default function PaymentResult() {
     }
 
     const success = resultCode === "0";
-    setStatus({ success, orderId });
+    const member =
+      params.get("kind") === "member"
+        ? { channelName: params.get("channelName") ?? "", handle: params.get("handle") ?? "" }
+        : undefined;
+    setStatus({ success, orderId, member });
     setLoading(false);
     // Quyền lợi Premium có ngay, không cần đăng nhập lại
     if (success) void refresh();
-    const timer = setTimeout(() => router.replace("/"), 3000);
+    // Mua hội viên xong thì về kênh vừa tham gia
+    const backTo = member?.handle ? `/@${member.handle}` : "/";
+    const timer = setTimeout(() => router.replace(backTo), 3000);
     return () => clearTimeout(timer);
   }, [params, router, refresh]);
 
@@ -51,8 +59,15 @@ export default function PaymentResult() {
       ) : (
         <h1 className="text-red-600 text-2xl">Thanh toán thất bại!</h1>
       )}
+      {status?.success && status.member && (
+        <p className="mt-2 text-lg">
+          Bạn đã là hội viên của kênh <strong>{status.member.channelName}</strong>.
+        </p>
+      )}
       <p>Order ID: {status?.orderId}</p>
-      <p>Trang sẽ tự quay về Trang chủ sau vài giây...</p>
+      <p>
+        Trang sẽ tự quay về {status?.member?.handle ? "kênh" : "Trang chủ"} sau vài giây...
+      </p>
     </div>
   );
 }

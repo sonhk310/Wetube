@@ -16,13 +16,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wetube.wetube_service.configuration.PaypalConfiguration;
 import com.wetube.wetube_service.entity.AppUser;
+import com.wetube.wetube_service.entity.channel.Channel;
+import com.wetube.wetube_service.entity.channel.MembershipTier;
 import com.wetube.wetube_service.entity.premium.PaymentMomo;
 import com.wetube.wetube_service.entity.premium.SubPack;
 import com.wetube.wetube_service.enumeration.PaymentStatus;
 import com.wetube.wetube_service.repository.UserRepository;
+import com.wetube.wetube_service.repository.channel.MemberTierRepository;
 import com.wetube.wetube_service.repository.premium.PaymentMomoRepository;
 import com.wetube.wetube_service.repository.premium.SubPackRepository;
 import com.wetube.wetube_service.security.RateLimiter;
+import com.wetube.wetube_service.service.membership.ChannelMembershipService;
 import com.wetube.wetube_service.service.premium.PremiumGranter;
 
 import lombok.RequiredArgsConstructor;
@@ -45,6 +49,8 @@ public class PaypalPaymentService {
     private final SubPackRepository subPackRepo;
     private final UserRepository userRepo;
     private final PremiumGranter premiumGranter;
+    private final ChannelMembershipService membershipService;
+    private final MemberTierRepository tierRepo;
     private final RateLimiter rateLimiter;
 
     /** VND -> USD theo tỉ giá cố định, làm tròn 2 chữ số, tối thiểu 0,01. */
@@ -62,12 +68,39 @@ public class PaypalPaymentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
         SubPack pack = subPackRepo.findById(subPackId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy gói Premium"));
+        return createPaypalOrder(user, pack.getPrice(), "WeTube Premium - " + pack.getName(), pack, null);
+    }
 
-        BigDecimal usd = toUsd(pack.getPrice(), config.getVndPerUsd());
+    /**
+     * Tạo đơn PayPal cho một cấp hội viên kênh (M1). Không mua được cấp mặc định, cấp đã ngừng nhận, hay hội viên
+     * kênh của chính mình. Hội viên chỉ được cấp khi PayPal báo đã thu tiền (completeReturn).
+     */
+    public String createMembershipOrder(UUID userId, UUID tierId) {
+        if (!config.isConfigured()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Thanh toán PayPal chưa được cấu hình.");
+        }
+        rateLimiter.check(RateLimiter.Limit.PAYMENT_CREATE, userId);
+        AppUser user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
+        MembershipTier tier = tierRepo.findById(tierId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy cấp hội viên"));
+        if (tier.isDefaultTier() || tier.isArchived() || tier.getPrice() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cấp hội viên này không nhận đăng ký.");
+        }
+        Channel channel = tier.getChannel();
+        if (channel.getUserId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bạn không thể làm hội viên kênh của chính mình.");
+        }
+        return createPaypalOrder(user, BigDecimal.valueOf((long) tier.getPrice()),
+                "WeTube - Hội viên " + channel.getName() + " - " + tier.getTitle(), null, tier);
+    }
+
+    private String createPaypalOrder(AppUser user, BigDecimal priceVnd, String description, SubPack pack, MembershipTier tier) {
+        BigDecimal usd = toUsd(priceVnd, config.getVndPerUsd());
         String base = config.getReturnBase().replaceAll("/+$", "");
         PaypalClient.Order order;
         try {
-            order = client.createOrder(usd, "WeTube Premium - " + pack.getName(), base + "/return", base + "/cancel");
+            order = client.createOrder(usd, description, base + "/return", base + "/cancel");
         } catch (PaypalException e) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, e.getMessage());
         }
@@ -76,13 +109,26 @@ public class PaypalPaymentService {
         paymentRepo.save(PaymentMomo.builder()
                 .orderId(order.id())
                 .provider(PROVIDER)
-                .amount(pack.getPrice().longValue())
+                .amount(priceVnd.longValue())
                 .status(PaymentStatus.PENDING)
                 .subpack(pack)
+                .tier(tier)
                 .user(user)
                 .payload(payload.toString())
                 .build());
         return order.approveUrl();
+    }
+
+    /** Đơn đã thanh toán của một cấp hội viên: kênh được tham gia (để trang kết quả đưa người mua về kênh); null nếu không phải. */
+    @Transactional(readOnly = true)
+    public Channel membershipChannelOf(String token) {
+        if (token == null) {
+            return null;
+        }
+        return paymentRepo.findByOrderId(token)
+                .filter(p -> PROVIDER.equals(p.getProvider()) && p.getTier() != null)
+                .map(p -> p.getTier().getChannel())
+                .orElse(null);
     }
 
     /**
@@ -125,7 +171,11 @@ public class PaypalPaymentService {
             paymentRepo.save(payment);
             return false;
         }
-        premiumGranter.grant(payment);
+        if (payment.getTier() != null) {
+            membershipService.grant(payment);
+        } else {
+            premiumGranter.grant(payment);
+        }
         paymentRepo.save(payment);
         return true;
     }

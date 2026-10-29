@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { StudioSidebarHeader } from "./studio-sidebar-header";
 import { pageUrls } from "@/lib/enums/page-urls";
 
-import { LogOutIcon, VideoIcon, SlidersHorizontal, BarChart3, RadioTower } from "lucide-react";
+import { LogOutIcon, VideoIcon, SlidersHorizontal, BarChart3, RadioTower, BadgeCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -56,6 +56,21 @@ export default function StudioSidebar() {
                 >
                   <RadioTower className="size-5" />
                   <span className="text-sm">Phát trực tiếp</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={pathname === pageUrls.STUDIO_MEMBERS}
+                tooltip="Hội viên"
+                asChild
+              >
+                <Link
+                  prefetch
+                  href={pageUrls.STUDIO_MEMBERS}
+                >
+                  <BadgeCheck className="size-5" />
+                  <span className="text-sm">Hội viên</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
